@@ -18,12 +18,24 @@ function SettingsForm() {
   const [selectedScanner, setSelectedScanner] = useState(null);
   const [loadingScanners, setLoadingScanners] = useState(false);
   const [scanFolder, setScanFolder] = useState(null);
+  const [scannerAvailable, setScannerAvailable] = useState(false);
   const [templates, setTemplates] = useState({
     securityzettel: null,
     handtuchzettel: null,
     technikzettel: null,
     uebersichtzettel: null
   });
+
+  const checkScannerAvailability = async () => {
+    if (window.electronAPI && window.electronAPI.checkScannerAvailability) {
+      try {
+        const result = await window.electronAPI.checkScannerAvailability();
+        setScannerAvailable(result.available || false);
+      } catch (error) {
+        setScannerAvailable(false);
+      }
+    }
+  };
 
   useEffect(() => {
     loadItems();
@@ -32,6 +44,11 @@ function SettingsForm() {
     loadSelectedScanner();
     loadScanFolder();
     loadTemplates();
+    checkScannerAvailability();
+    
+    // Check scanner availability periodically
+    const interval = setInterval(checkScannerAvailability, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadScanFolder = async () => {
@@ -111,6 +128,8 @@ function SettingsForm() {
       const scanner = scanners.find(s => s.id === scannerId);
       await window.electronAPI.setSelectedScanner(scannerId, scanner || null);
       setSelectedScanner(scannerId);
+      // Check availability after selection
+      setTimeout(checkScannerAvailability, 500);
     }
   };
 
@@ -519,6 +538,13 @@ function SettingsForm() {
             {loadingScanners ? 'Lädt...' : 'Aktualisieren'}
           </button>
         </div>
+        {selectedScanner && (
+          <div className="settings-scanner-status">
+            <span className={`settings-scanner-status-indicator ${scannerAvailable ? 'settings-scanner-available' : 'settings-scanner-unavailable'}`}>
+              {scannerAvailable ? '✓ Verfügbar' : '✗ Nicht verfügbar'}
+            </span>
+          </div>
+        )}
         {scanners.length === 0 && !loadingScanners && (
           <p className="settings-empty">Keine Scanner gefunden. Stellen Sie sicher, dass ein Scanner angeschlossen ist.</p>
         )}

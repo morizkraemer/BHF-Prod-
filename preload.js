@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setSelectedScanner: (scannerId, scannerInfo) => ipcRenderer.invoke('set-selected-scanner', scannerId, scannerInfo),
   getSelectedScanner: () => ipcRenderer.invoke('get-selected-scanner'),
   getSelectedScannerInfo: () => ipcRenderer.invoke('get-selected-scanner-info'),
+  checkScannerAvailability: () => ipcRenderer.invoke('check-scanner-availability'),
   setScanFolder: () => ipcRenderer.invoke('set-scan-folder'),
   getScanFolder: () => ipcRenderer.invoke('get-scan-folder'),
   scanDocument: (source = 'glass', scanName = 'scan') => ipcRenderer.invoke('scan-document', source, scanName),

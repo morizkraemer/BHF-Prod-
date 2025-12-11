@@ -242,6 +242,54 @@ ipcMain.handle('print-template', async (event, templateKey) => {
 const NAPS2_PATH = '/Applications/NAPS2.app/Contents/MacOS/NAPS2';
 const NAPS2_SUBCOMMAND = 'console';
 
+// Helper function to get available scanners (extracted from list-scanners logic)
+async function getAvailableScannersList() {
+  const scanners = [];
+  if (process.platform === 'darwin') {
+    const fs = require('fs');
+    if (fs.existsSync(NAPS2_PATH)) {
+      const drivers = ['escl'];
+      for (const driver of drivers) {
+        try {
+          const listArgs = [NAPS2_SUBCOMMAND, '--listdevices', '--driver', driver];
+          let naps2Output = '';
+          try {
+            const result = await execFileAsync(NAPS2_PATH, listArgs, {
+              timeout: 5000,
+              maxBuffer: 1024 * 1024
+            });
+            naps2Output = result.stdout || '';
+          } catch (execError) {
+            naps2Output = execError.stdout || '';
+          }
+          
+          if (naps2Output && naps2Output.trim()) {
+            const lines = naps2Output.split('\n').filter(line => line.trim());
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (trimmed && 
+                  !trimmed.toLowerCase().includes('error') && 
+                  !trimmed.toLowerCase().includes('device') &&
+                  !trimmed.toLowerCase().includes('driver') &&
+                  !trimmed.toLowerCase().includes('not supported') &&
+                  !trimmed.toLowerCase().includes('not valid')) {
+                scanners.push({
+                  id: trimmed.toLowerCase().replace(/[^a-zA-Z0-9]/g, '-'),
+                  name: trimmed,
+                  driver: driver
+                });
+              }
+            }
+          }
+        } catch (error) {
+          // Continue to next driver
+        }
+      }
+    }
+  }
+  return scanners;
+}
+
 // Check if NAPS2 is installed
 function checkNAPS2Installed() {
   if (process.platform === 'darwin') {
@@ -397,6 +445,34 @@ ipcMain.handle('get-selected-scanner', () => {
 
 ipcMain.handle('get-selected-scanner-info', () => {
   return store.get('selectedScannerInfo', null);
+});
+
+// Check if selected scanner is still available
+ipcMain.handle('check-scanner-availability', async () => {
+  try {
+    const selectedScannerId = store.get('selectedScanner', null);
+    const selectedScannerInfo = store.get('selectedScannerInfo', null);
+    
+    if (!selectedScannerId || !selectedScannerInfo) {
+      return { available: false, name: null };
+    }
+    
+    // Get current list of available scanners using helper function
+    const availableScanners = await getAvailableScannersList();
+    
+    // Check if selected scanner is in the available list (match by name or ID)
+    const isAvailable = availableScanners.some(scanner => 
+      scanner.id === selectedScannerId || scanner.name === selectedScannerInfo.name
+    );
+    
+    return {
+      available: isAvailable,
+      name: selectedScannerInfo.name
+    };
+  } catch (error) {
+    console.error('Error checking scanner availability:', error);
+    return { available: false, name: null };
+  }
 });
 
 // IPC Handlers for Scan Folder
@@ -594,6 +670,7 @@ ipcMain.handle('scan-document', async (event, source = 'glass', scanName = 'scan
               base64: `data:${mimeType};base64,${base64Data}`,
               type: fileType,
               filename: outputFilename,
+              scanName: scanName, // Include scanName so components can filter
               needsConfirmation: true
             });
           }

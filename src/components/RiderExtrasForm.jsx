@@ -54,6 +54,12 @@ function RiderExtrasForm({ formData, onDataChange }) {
     }
   }, [items, standardbestueckung, getInCatering, dinner, buyout, buyoutProvider, buyoutPeople, buyoutPerPerson, scannedDocuments, purchaseReceipts]);
 
+  useEffect(() => {
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  }, [items]); // Re-initialize icons when items change
+
   // Calculate buyout total
   const buyoutTotal = buyoutPeople && buyoutPerPerson 
     ? (parseFloat(buyoutPeople) * parseFloat(buyoutPerPerson)).toFixed(2)
@@ -325,9 +331,12 @@ function RiderExtrasForm({ formData, onDataChange }) {
 
         {/* Extras Section */}
         <div className="rider-extras-items-section">
+          <h3 className="rider-extras-section-header">Extras</h3>
           {/* Column Headers */}
           <div className="rider-extras-header">
-            <div className="rider-extras-header-checkbox">eingebongt</div>
+            <div className="rider-extras-header-checkbox">
+              Bon <i data-lucide="check" style={{ width: '14px', height: '14px', display: 'inline-block', marginLeft: '4px' }}></i>
+            </div>
             <div className="rider-extras-header-amount">Anzahl</div>
             <div className="rider-extras-header-name">Name</div>
             <div className="rider-extras-header-price">Preis</div>

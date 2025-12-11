@@ -16,38 +16,20 @@ function DocumentScanner({
   const [pendingScan, setPendingScan] = useState(null); // File waiting for confirmation
   const [previewDocument, setPreviewDocument] = useState(null); // Document to preview in popup
   const [scanSource, setScanSource] = useState(defaultSource); // 'glass' or 'feeder'
-  const [scannerName, setScannerName] = useState(null); // Scanner name
-  const [scannerConnected, setScannerConnected] = useState(false); // Scanner connection status
 
   useEffect(() => {
-    // Load scanner info
-    const loadScannerInfo = async () => {
-      if (window.electronAPI && window.electronAPI.getSelectedScannerInfo) {
-        try {
-          const scannerInfo = await window.electronAPI.getSelectedScannerInfo();
-          if (scannerInfo && scannerInfo.name) {
-            setScannerName(scannerInfo.name);
-            setScannerConnected(true);
-          } else {
-            setScannerName('Kein Scanner ausgewählt');
-            setScannerConnected(false);
-          }
-        } catch (error) {
-          setScannerName('Kein Scanner ausgewählt');
-          setScannerConnected(false);
-        }
-      } else {
-        setScannerName('Kein Scanner ausgewählt');
-        setScannerConnected(false);
-      }
-    };
+    // Initialize Lucide icons
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  }, []);
 
-    loadScannerInfo();
-
+  useEffect(() => {
     // Listen for auto-detected scan files
     if (window.electronAPI && window.electronAPI.onScanFileDetected) {
       const handleAutoDetected = (result) => {
-        if (result && result.success && result.needsConfirmation) {
+        // Only handle scans that match this component's scanName
+        if (result && result.success && result.needsConfirmation && result.scanName === scanName) {
           // Show confirmation popup instead of auto-importing
           setPendingScan(result);
           setIsScanning(false);
@@ -62,7 +44,7 @@ function DocumentScanner({
         }
       };
     }
-  }, []);
+  }, [scanName]); // Include scanName in dependencies
   
   const handleConfirmScan = () => {
     if (pendingScan) {
@@ -88,6 +70,12 @@ function DocumentScanner({
   };
 
   const handleScan = async () => {
+    // Check scanner availability before scanning
+    if (window.scannerAvailability && !window.scannerAvailability.available) {
+      alert('Scanner ist nicht verfügbar. Bitte überprüfen Sie die Verbindung.');
+      return;
+    }
+    
     try {
       setIsScanning(true);
       if (window.electronAPI && window.electronAPI.scanDocument) {
@@ -227,11 +215,7 @@ function DocumentScanner({
                 className="scan-print-icon-button"
                 title="Template drucken"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="6 9 6 2 18 2 18 9"></polyline>
-                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-                  <rect x="6" y="14" width="12" height="8"></rect>
-                </svg>
+                <i data-lucide="printer" style={{ width: '16px', height: '16px' }}></i>
                 <span>drucken</span>
               </button>
             )}
@@ -263,11 +247,6 @@ function DocumentScanner({
                 <option value="glass">Glas</option>
                 <option value="feeder">Oben</option>
               </select>
-            </div>
-            <div className="scanner-status">
-              <span className={`scanner-status-name ${scannerConnected ? 'scanner-connected' : 'scanner-disconnected'}`}>
-                {scannerName || 'Kein Scanner ausgewählt'}
-              </span>
             </div>
           </div>
         </div>
@@ -351,7 +330,7 @@ function DocumentScanner({
                   className="remove-scan-button"
                   title="Entfernen"
                 >
-                  ×
+                  <i data-lucide="x" style={{ width: '16px', height: '16px' }}></i>
                 </button>
               </div>
             ))}

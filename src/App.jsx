@@ -1,4 +1,4 @@
-const { useState } = React;
+const { useState, useEffect } = React;
 
 function App() {
   const [activeSection, setActiveSection] = useState('uebersicht');
@@ -19,6 +19,71 @@ function App() {
   ];
 
   const settingsSection = { id: 'settings', name: 'Settings' };
+  const [scannerName, setScannerName] = useState(null);
+  const [scannerAvailable, setScannerAvailable] = useState(false);
+  
+  // Global scanner availability state - can be accessed by child components
+  window.scannerAvailability = {
+    available: scannerAvailable,
+    name: scannerName,
+    setAvailable: setScannerAvailable,
+    setName: setScannerName
+  };
+
+  useEffect(() => {
+    // Check scanner availability
+    const checkScannerAvailability = async () => {
+      if (window.electronAPI && window.electronAPI.checkScannerAvailability) {
+        try {
+          const result = await window.electronAPI.checkScannerAvailability();
+          if (result && result.name) {
+            setScannerName(result.name);
+            setScannerAvailable(result.available);
+            // Update global state
+            if (window.scannerAvailability) {
+              window.scannerAvailability.available = result.available;
+              window.scannerAvailability.name = result.name;
+            }
+          } else {
+            setScannerName('Kein Scanner ausgewählt');
+            setScannerAvailable(false);
+            if (window.scannerAvailability) {
+              window.scannerAvailability.available = false;
+              window.scannerAvailability.name = 'Kein Scanner ausgewählt';
+            }
+          }
+        } catch (error) {
+          setScannerName('Kein Scanner ausgewählt');
+          setScannerAvailable(false);
+          if (window.scannerAvailability) {
+            window.scannerAvailability.available = false;
+            window.scannerAvailability.name = 'Kein Scanner ausgewählt';
+          }
+        }
+      }
+    };
+
+    checkScannerAvailability();
+    // Refresh scanner availability every 5 seconds
+    const interval = setInterval(checkScannerAvailability, 5000);
+    
+    // Initialize Lucide icons
+    const initIcons = () => {
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    };
+    initIcons();
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  useEffect(() => {
+    // Re-initialize icons when active section changes
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  }, [activeSection]);
 
   const handleFormDataChange = (sectionId, data) => {
     setFormData(prev => ({
@@ -95,20 +160,29 @@ function App() {
           ))}
         </nav>
         <div className="sidebar-bottom-section">
+          {/* Printer Status */}
+          <div className="sidebar-printer-section">
+            <div className="sidebar-printer-label">Printer</div>
+            <div className="sidebar-scanner-status">
+              <span className={`sidebar-scanner-status-name ${scannerAvailable ? 'sidebar-scanner-connected' : 'sidebar-scanner-disconnected'}`}>
+                {scannerName || 'Kein Scanner ausgewählt'}
+              </span>
+            </div>
+          </div>
           <div className="sidebar-divider"></div>
-          <nav className="sidebar-nav sidebar-nav-bottom">
-            <button
-              className={`sidebar-item ${activeSection === settingsSection.id ? 'active' : ''}`}
+          {/* Close Shift and Settings Buttons */}
+          <div className="sidebar-bottom-buttons">
+            <button 
+              className={`settings-button-sidebar ${activeSection === settingsSection.id ? 'active' : ''}`}
               onClick={() => setActiveSection(settingsSection.id)}
+              title="Settings"
             >
-              {settingsSection.name}
+              <i data-lucide="settings"></i>
             </button>
-          </nav>
-          <div className="sidebar-divider"></div>
-          {/* Close Shift Button */}
-          <button className="close-shift-button-sidebar" onClick={handleCloseShift}>
-            Close Shift
-          </button>
+            <button className="close-shift-button-sidebar" onClick={handleCloseShift}>
+              Close Shift
+            </button>
+          </div>
         </div>
       </aside>
 
