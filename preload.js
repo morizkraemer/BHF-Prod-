@@ -17,6 +17,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveData: (key, data) => ipcRenderer.invoke('save-data', key, data),
   loadData: (key) => ipcRenderer.invoke('load-data', key),
   
+  // Item Catalog (Rider Extras)
+  getRiderItems: () => ipcRenderer.invoke('get-rider-items'),
+  addRiderItem: (item) => ipcRenderer.invoke('add-rider-item', item),
+  updateRiderItem: (itemId, updates) => ipcRenderer.invoke('update-rider-item', itemId, updates),
+  deleteRiderItem: (itemId) => ipcRenderer.invoke('delete-rider-item', itemId),
+  
   // Dialog operations
   showMessageBox: (options) => ipcRenderer.invoke('show-message-box', options),
   showErrorBox: (title, content) => ipcRenderer.invoke('show-error-box', title, content)

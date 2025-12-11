@@ -3,6 +3,18 @@
 ## Project Overview
 An Electron desktop application for gathering end-of-shift information at a nightclub. The app collects data through multiple forms, generates PDFs, handles scanner input, and organizes everything into structured folders on the hard drive.
 
+## Current Status
+- ✅ **Phase 1 Complete** - Basic setup and UI structure working
+- ✅ **Phase 2 Complete** - UI layout, sidebar, navigation, and Close Shift button in sidebar
+- ✅ **Phase 3 In Progress** - Uebersicht and Rider Extras forms implemented
+  - ✅ Uebersicht form complete
+  - ✅ Rider Extras form complete with item catalog integration
+  - ✅ Settings page for managing catalog items
+  - ⏳ Tontechniker and Kassenbelege forms pending
+- ✅ **Item Catalog System** - Implemented with electron-store
+- ✅ **Hot Reload** - Development setup with electron-reload
+- 🔄 **Next**: Complete remaining forms (Tontechniker, Kassenbelege) or proceed to Phase 4
+
 ## Core Features
 
 ### 1. Multi-Form Data Collection
@@ -17,10 +29,15 @@ An Electron desktop application for gathering end-of-shift information at a nigh
     - Event name
     - Number of attendees
     - Additional production details
-  - **Rider Extras** - Artist rider and extras information
+  - **Rider / Backstage** - Artist rider and extras information
+    - Backstage Kuehlschrank selector (Standard Konzert, Standard Tranzit, None)
+    - Extras section with dynamic items
+    - Item catalog integration with autocomplete
+    - Amount, Name, Discount (50%, 75%, 100%), Price, Checkbox (eingebongt)
   - **Tontechniker** - Sound technician details and notes
   - **Kassenbelege** - Cash register receipts and financial information
-- **Close Shift Button** (Bottom right)
+- **Close Shift Button** (Bottom of sidebar)
+  - Positioned at bottom of sidebar for easy access
   - Validates all required information across all sections
   - Shows validation errors if information is missing
   - Generates PDFs and saves all data when validation passes
@@ -53,15 +70,17 @@ An Electron desktop application for gathering end-of-shift information at a nigh
 
 ### Core Technologies
 - **Electron** - Desktop app framework
-- **React** - UI library
+- **React** - UI library (via CDN)
 - **Node.js** - Backend runtime
+- **npm** - Package manager
 
 ### Key Dependencies
 - `electron` - Main framework
-- `react` + `react-dom` - UI components
-- `pdfkit` or `jspdf` - PDF generation
-- `electron-store` - Local data persistence
-- `node-twain` or `scanner-js` - Scanner integration
+- `react` + `react-dom` - UI components (via CDN)
+- `pdfkit` - PDF generation
+- `electron-store` - Local data persistence ✅ Implemented
+- `electron-reload` - Hot reload for development ✅ Implemented
+- `node-twain` or `scanner-js` - Scanner integration (pending)
 - `date-fns` - Date handling
 - `react-router-dom` - Navigation (if needed)
 
@@ -98,27 +117,37 @@ Produktionstool/
 
 ## Implementation Phases
 
-### Phase 1: Basic Setup
-- [ ] Initialize Electron project
-- [ ] Set up React in renderer process
-- [ ] Configure build tools and scripts
-- [ ] Create basic window structure
+### Phase 1: Basic Setup ✅ COMPLETE
+- [x] Initialize Electron project
+- [x] Set up React in renderer process
+- [x] Configure build tools and scripts (using pnpm)
+- [x] Create basic window structure
+- [x] Sidebar navigation with 4 sections
+- [x] Close Shift button (UI only, functionality in Phase 4)
 
-### Phase 2: UI Layout & Navigation
-- [ ] Create sidebar component with section navigation
-- [ ] Implement main content area layout
-- [ ] Add "Close Shift" button component (bottom right)
-- [ ] Set up section switching/routing
-- [ ] Add visual indicators for active/completed sections
+### Phase 2: UI Layout & Navigation ✅ COMPLETE
+- [x] Create sidebar component with section navigation
+- [x] Implement main content area layout
+- [x] Add "Close Shift" button component (moved to bottom of sidebar)
+- [x] Set up section switching/routing
+- [x] Settings page added to sidebar bottom
+- [ ] Add visual indicators for active/completed sections (enhancement)
 
-### Phase 3: Form System
-- [ ] Create Uebersicht form component
-- [ ] Create Rider Extras form component
+### Phase 3: Form System 🔄 IN PROGRESS
+- [x] Create Uebersicht form component ✅
+- [x] Implement form fields for Uebersicht section ✅
+- [x] Set up centralized form state management ✅
+- [x] Create Rider Extras form component ✅
+- [x] Implement form fields for Rider Extras section ✅
+  - [x] Backstage Kuehlschrank selector
+  - [x] Dynamic extras items with Amount, Name, Discount, Price, Checkbox
+  - [x] Column headers for better organization
+  - [x] Item catalog integration with autocomplete
+- [x] Create Settings page for catalog management ✅
 - [ ] Create Tontechniker form component
 - [ ] Create Kassenbelege form component
-- [ ] Implement form fields for each section
+- [ ] Implement form fields for remaining sections
 - [ ] Add form validation for each section
-- [ ] Set up centralized form state management
 
 ### Phase 4: Validation & Close Shift Logic
 - [ ] Implement form validation utility
@@ -148,9 +177,10 @@ Produktionstool/
 - [ ] Implement scan-to-PDF functionality
 - [ ] Integrate scanner with file management
 
-### Phase 8: Data Persistence
-- [ ] Set up electron-store
-- [ ] Implement form data saving
+### Phase 8: Data Persistence 🔄 PARTIALLY COMPLETE
+- [x] Set up electron-store ✅
+- [x] Implement item catalog persistence (Rider Extras items) ✅
+- [ ] Implement form data saving (session persistence)
 - [ ] Add session resume functionality
 - [ ] Create data export/import
 
@@ -163,22 +193,38 @@ Produktionstool/
 
 ## Form Sections & Fields
 
-### Uebersicht (Overview)
-#### Required Fields
-- Date
-- Event Name
-- Number of Attendees
-- Shift End Time
+### Uebersicht (Overview) ✅ IMPLEMENTED
+#### Implemented Fields
+- **Date** (date picker, preselected to current date) *
+- **Event Name** (text input) *
+- **Get In Zeit** (time selector) *
+- **Doors Zeit** (time selector) *
+- **Travel Party Anzahl** (number input)
+- **Night Lead** (dropdown selector) *
 
-#### Optional Fields (to be confirmed)
-- Staff present
-- Revenue information
-- Special notes
-- Issues/incidents
-- Equipment status
+\* Required fields
 
-### Rider Extras
-- Fields to be defined
+#### Notes
+- Form component created: `src/components/UebersichtForm.jsx`
+- Form state integrated with App component
+- Night Lead dropdown currently has placeholder options - needs actual names
+
+### Rider / Backstage ✅ IMPLEMENTED
+#### Implemented Fields
+- **Backstage Kuehlschrank** (dropdown: Standard Konzert, Standard Tranzit, None)
+- **Extras Section** (dynamic list of items)
+  - **Anzahl** (number input) - Amount/quantity
+  - **Name** (text input with autocomplete from catalog) *
+  - **Rabatt** (dropdown: 50%, 75%, 100%) - Discount percentage
+  - **Preis** (number input) - Price (auto-calculated with discount)
+  - **eingebongt** (checkbox) - Checked in status
+
+#### Features
+- Item catalog integration with autocomplete
+- Discount calculation (50%, 75%, 100% reduction)
+- Dynamic add/remove items
+- Column headers for organization
+- Settings page for managing catalog items
 
 ### Tontechniker (Sound Technician)
 - Fields to be defined
@@ -233,13 +279,19 @@ Produktionstool/
 - **Layout**
   - Left sidebar with section navigation
   - Main content area for active form
-  - Fixed "Close Shift" button in bottom right corner
+  - "Close Shift" button at bottom of sidebar ✅
 - Intuitive form navigation
 - Clear progress indicators
 - Error messages and validation feedback
 - Keyboard shortcuts
 - Auto-save functionality
 - Visual indicators for completed/incomplete sections
+
+### Development
+- **Hot Reload** ✅ Implemented
+  - Use `npm run dev` for development with hot reload
+  - Automatically reloads on file changes
+  - DevTools opens automatically
 
 ## Future Enhancements (Optional)
 
