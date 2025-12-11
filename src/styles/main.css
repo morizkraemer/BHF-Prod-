@@ -578,62 +578,70 @@ body {
   border-bottom: 2px solid #e0e0e0;
 }
 
-.rider-extras-header {
+.rider-extras-items-section {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 12px;
-  padding: 10px;
-  background-color: #e8e8e8;
-  border-radius: 6px;
-  border: 1px solid #d0d0d0;
+}
+
+.rider-extras-header {
+  display: grid;
+  grid-template-columns: 80px 1fr 100px 100px 40px 40px;
+  gap: 12px;
+  padding: 8px 0;
   font-weight: 600;
-  font-size: 13px;
   color: #2c3e50;
-  margin-bottom: 8px;
+  font-size: 13px;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .rider-extras-header-amount {
-  width: 100px;
+  padding-left: 4px;
 }
 
 .rider-extras-header-name {
-  flex: 1;
+  padding-left: 4px;
 }
 
 .rider-extras-header-discount {
-  width: 100px;
+  text-align: center;
 }
 
 .rider-extras-header-price {
-  width: 120px;
   text-align: left;
 }
 
 .rider-extras-header-checkbox {
-  width: 120px;
   text-align: center;
-  flex-shrink: 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rider-extras-header-actions {
+  /* Empty column for remove button alignment */
+  min-width: 40px;
 }
 
 .rider-extras-line {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 80px 1fr 100px 100px 40px 40px;
   gap: 12px;
-  padding: 10px;
-  background-color: #f9f9f9;
-  border-radius: 6px;
-  border: 1px solid #e0e0e0;
+  align-items: center;
+  padding: 8px 0;
 }
 
 .rider-extras-amount {
-  width: 100px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
   font-family: inherit;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   background-color: white;
+  width: 100%;
 }
 
 .rider-extras-amount:focus {
@@ -647,7 +655,6 @@ body {
 }
 
 .rider-extras-input-wrapper {
-  flex: 1;
   position: relative;
 }
 
@@ -713,7 +720,6 @@ body {
 }
 
 .rider-extras-discount {
-  width: 100px;
   padding: 10px 12px;
   border: 1px solid #ddd;
   border-radius: 6px;
@@ -731,14 +737,14 @@ body {
 }
 
 .rider-extras-price {
-  width: 120px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
   font-family: inherit;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   background-color: white;
+  width: 100%;
 }
 
 .rider-extras-price:focus {
@@ -751,13 +757,18 @@ body {
   color: #999;
 }
 
+.rider-extras-checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  min-width: 0;
+}
+
 .rider-extras-controls {
   display: flex;
   align-items: center;
-  gap: 8px;
-  width: 120px;
   justify-content: center;
-  flex-shrink: 0;
 }
 
 .checkbox-label {
@@ -1190,6 +1201,95 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+/* Secu Form */
+.secu-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.secu-personnel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.secu-section-heading {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.secu-personnel-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 40px;
+  gap: 12px;
+  padding: 8px 0;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 13px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.secu-header-name {
+  padding-left: 4px;
+}
+
+.secu-header-start,
+.secu-header-end {
+  text-align: center;
+}
+
+.secu-personnel-line {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 40px;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.secu-personnel-name {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background-color: white;
+}
+
+.secu-personnel-name:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.secu-personnel-time {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background-color: white;
+  text-align: center;
+}
+
+.secu-personnel-time:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.secu-personnel-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Kassenbelege Form */

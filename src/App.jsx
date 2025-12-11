@@ -6,13 +6,15 @@ function App() {
     uebersicht: {},
     'rider-extras': {},
     tontechniker: {},
-    kassenbelege: {}
+    kassenbelege: {},
+    secu: {}
   });
 
   const sections = [
     { id: 'uebersicht', name: 'Uebersicht' },
     { id: 'rider-extras', name: 'Rider / Backstage' },
     { id: 'tontechniker', name: 'Ton/Lichttechnik' },
+    { id: 'secu', name: 'Secu' },
     { id: 'kassenbelege', name: 'Kassenbelege' }
   ];
 
@@ -53,6 +55,13 @@ function App() {
           <TontechnikerForm
             formData={formData.tontechniker}
             onDataChange={(data) => handleFormDataChange('tontechniker', data)}
+          />
+        );
+      case 'secu':
+        return (
+          <SecuForm
+            formData={formData.secu}
+            onDataChange={(data) => handleFormDataChange('secu', data)}
           />
         );
       case 'kassenbelege':

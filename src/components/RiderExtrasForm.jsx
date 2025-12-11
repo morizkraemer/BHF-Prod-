@@ -286,122 +286,126 @@ function RiderExtrasForm({ formData, onDataChange }) {
         </div>
 
         {/* Extras Section */}
-        <h3 className="extras-section-heading">Extras</h3>
-
-        {/* Column Headers */}
-        <div className="rider-extras-header">
-          <div className="rider-extras-header-amount">Anzahl</div>
-          <div className="rider-extras-header-name">Name</div>
-          <div className="rider-extras-header-discount">Rabatt</div>
-          <div className="rider-extras-header-price">Preis</div>
-          <div className="rider-extras-header-checkbox">eingebongt</div>
-        </div>
-
-        {/* Items List */}
-        {items.map((item, index) => (
-          <div key={index} className="rider-extras-line">
-            <input
-              type="number"
-              value={item.amount}
-              onChange={(e) => handleAmountChange(index, e.target.value)}
-              className="rider-extras-amount"
-              placeholder="Anzahl"
-              min="0"
-            />
-            <div className="rider-extras-input-wrapper">
-              <input
-                type="text"
-                value={item.text}
-                onChange={(e) => handleTextChange(index, e.target.value)}
-                onFocus={() => {
-                  if (item.text.length > 0 && catalogItems.length > 0) {
-                    const filtered = catalogItems.filter(catItem =>
-                      catItem.name.toLowerCase().includes(item.text.toLowerCase())
-                    );
-                    if (filtered.length > 0) {
-                      setFilteredSuggestions(prev => ({ ...prev, [index]: filtered }));
-                      setShowSuggestions(prev => ({ ...prev, [index]: true }));
-                    }
-                  }
-                }}
-                onBlur={() => {
-                  // Delay hiding suggestions to allow click
-                  setTimeout(() => {
-                    setShowSuggestions(prev => ({ ...prev, [index]: false }));
-                  }, 200);
-                }}
-                className="rider-extras-input"
-                placeholder="Extra item..."
-              />
-              {showSuggestions[index] && filteredSuggestions[index] && (
-                <div className="suggestions-dropdown">
-                  {filteredSuggestions[index].map((catItem) => (
-                    <div
-                      key={catItem.id}
-                      className="suggestion-item"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        handleSelectCatalogItem(index, catItem);
-                      }}
-                    >
-                      <span className="suggestion-name">{catItem.name}</span>
-                      <span className="suggestion-price">€{catItem.price.toFixed(2)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <select
-              value={item.discount || ''}
-              onChange={(e) => handleDiscountChange(index, e.target.value)}
-              className="rider-extras-discount"
-            >
-              <option value="" disabled>--</option>
-              {discountOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <input
-              type="number"
-              value={item.price}
-              onChange={(e) => handlePriceChange(index, e.target.value)}
-              className="rider-extras-price"
-              placeholder="Preis"
-              min="0"
-              step="0.01"
-            />
-            <div className="rider-extras-controls">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={item.checked}
-                  onChange={() => handleCheckboxChange(index)}
-                  className="rider-extras-checkbox"
-                />
-                <span className="checkbox-custom"></span>
-              </label>
-              {items.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => handleRemoveLine(index)}
-                  className="remove-line-button"
-                  title="Remove line"
-                >
-                  ×
-                </button>
-              )}
-            </div>
+        <div className="rider-extras-items-section">
+          {/* Column Headers */}
+          <div className="rider-extras-header">
+            <div className="rider-extras-header-amount">Anzahl</div>
+            <div className="rider-extras-header-name">Name</div>
+            <div className="rider-extras-header-price">Preis</div>
+            <div className="rider-extras-header-discount">Rabatt</div>
+            <div className="rider-extras-header-checkbox">eingebongt</div>
+            <div className="rider-extras-header-actions"></div>
           </div>
-        ))}
-        <button
-          type="button"
-          onClick={handleAddLine}
-          className="add-line-button"
-        >
-          + Add Item
-        </button>
+
+          {/* Items List */}
+          {items.map((item, index) => (
+            <div key={index} className="rider-extras-line">
+              <input
+                type="number"
+                value={item.amount}
+                onChange={(e) => handleAmountChange(index, e.target.value)}
+                className="rider-extras-amount"
+                placeholder="Anzahl"
+                min="0"
+              />
+              <div className="rider-extras-input-wrapper">
+                <input
+                  type="text"
+                  value={item.text}
+                  onChange={(e) => handleTextChange(index, e.target.value)}
+                  onFocus={() => {
+                    if (item.text.length > 0 && catalogItems.length > 0) {
+                      const filtered = catalogItems.filter(catItem =>
+                        catItem.name.toLowerCase().includes(item.text.toLowerCase())
+                      );
+                      if (filtered.length > 0) {
+                        setFilteredSuggestions(prev => ({ ...prev, [index]: filtered }));
+                        setShowSuggestions(prev => ({ ...prev, [index]: true }));
+                      }
+                    }
+                  }}
+                  onBlur={() => {
+                    // Delay hiding suggestions to allow click
+                    setTimeout(() => {
+                      setShowSuggestions(prev => ({ ...prev, [index]: false }));
+                    }, 200);
+                  }}
+                  className="rider-extras-input"
+                  placeholder="Extra item..."
+                />
+                {showSuggestions[index] && filteredSuggestions[index] && (
+                  <div className="suggestions-dropdown">
+                    {filteredSuggestions[index].map((catItem) => (
+                      <div
+                        key={catItem.id}
+                        className="suggestion-item"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleSelectCatalogItem(index, catItem);
+                        }}
+                      >
+                        <span className="suggestion-name">{catItem.name}</span>
+                        <span className="suggestion-price">€{catItem.price.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <input
+                type="number"
+                value={item.price}
+                onChange={(e) => handlePriceChange(index, e.target.value)}
+                className="rider-extras-price"
+                placeholder="Preis"
+                min="0"
+                step="0.01"
+              />
+              <select
+                value={item.discount || ''}
+                onChange={(e) => handleDiscountChange(index, e.target.value)}
+                className="rider-extras-discount"
+              >
+                <option value="" disabled>--</option>
+                {discountOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <div className="rider-extras-checkbox-wrapper">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={item.checked}
+                    onChange={() => handleCheckboxChange(index)}
+                    className="rider-extras-checkbox"
+                  />
+                  <span className="checkbox-custom"></span>
+                </label>
+              </div>
+              <div className="rider-extras-controls">
+                {items.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveLine(index)}
+                    className="remove-line-button"
+                    title="Remove line"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+          
+          <button
+            type="button"
+            onClick={handleAddLine}
+            className="add-line-button"
+          >
+            + Add Item
+          </button>
+        </div>
       </div>
     </div>
   );
