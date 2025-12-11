@@ -6,14 +6,21 @@ An Electron desktop application for gathering end-of-shift information at a nigh
 ## Current Status
 - ✅ **Phase 1 Complete** - Basic setup and UI structure working
 - ✅ **Phase 2 Complete** - UI layout, sidebar, navigation, and Close Shift button in sidebar
-- ✅ **Phase 3 In Progress** - Uebersicht and Rider Extras forms implemented
+- ✅ **Phase 3 In Progress** - Forms implementation
   - ✅ Uebersicht form complete
   - ✅ Rider Extras form complete with item catalog integration
-  - ✅ Settings page for managing catalog items
-  - ⏳ Tontechniker and Kassenbelege forms pending
+  - ✅ Tontechniker form complete with scanner integration
+  - ✅ Settings page for managing catalog items and scanner settings
+  - ⏳ Kassenbelege form pending
 - ✅ **Item Catalog System** - Implemented with electron-store
 - ✅ **Hot Reload** - Development setup with electron-reload
-- 🔄 **Next**: Complete remaining forms (Tontechniker, Kassenbelege) or proceed to Phase 4
+- ✅ **Scanner Integration** - Complete with NAPS2 CLI
+  - ✅ Scanner detection and selection
+  - ✅ Scan from glass (flatbed) or feeder
+  - ✅ PDF preview with PDF.js
+  - ✅ Document management with filename list and preview popup
+  - ✅ NAPS2 installation check
+- 🔄 **Next**: Complete Kassenbelege form or proceed to Phase 4
 
 ## Core Features
 
@@ -34,7 +41,11 @@ An Electron desktop application for gathering end-of-shift information at a nigh
     - Extras section with dynamic items
     - Item catalog integration with autocomplete
     - Amount, Name, Discount (50%, 75%, 100%), Price, Checkbox (eingebongt)
-  - **Tontechniker** - Sound technician details and notes
+  - **Tontechniker** - Sound technician details and notes ✅
+    - Document scanner integration
+    - Scan documents (PDF/images)
+    - Preview scanned documents
+    - Remove documents
   - **Kassenbelege** - Cash register receipts and financial information
 - **Close Shift Button** (Bottom of sidebar)
   - Positioned at bottom of sidebar for easy access
@@ -55,11 +66,16 @@ An Electron desktop application for gathering end-of-shift information at a nigh
 - Organize all documents in one location
 - Handle file naming conventions
 
-### 4. Scanner Integration
-- Connect to scanner hardware
-- Scan documents and convert to PDF
-- Save scanned PDFs to report folder
-- Support for multiple scans per session
+### 4. Scanner Integration ✅ IMPLEMENTED
+- ✅ Connect to scanner hardware (NAPS2 CLI)
+- ✅ Scan documents and convert to PDF
+- ✅ Scanner detection and selection in settings
+- ✅ Scan source selection (glass/flatbed or feeder)
+- ✅ PDF preview with PDF.js library
+- ✅ Document management (filename list with preview popup)
+- ✅ NAPS2 installation check on startup
+- ⏳ Save scanned PDFs to report folder (pending file management)
+- ✅ Support for multiple scans per session
 
 ### 5. Data Persistence
 - Save form progress locally
@@ -100,8 +116,9 @@ Produktionstool/
 │   │   ├── RiderExtrasForm.jsx      # Rider Extras form
 │   │   ├── TontechnikerForm.jsx     # Sound Technician form
 │   │   ├── KassenbelegeForm.jsx     # Cash Receipts form
-│   │   ├── ScannerControl.jsx       # Scanner integration component
-│   │   └── PDFPreview.jsx
+│   │   ├── DocumentScanner.jsx     # Reusable scanner component ✅
+│   │   ├── PDFViewer.jsx           # PDF preview component ✅
+│   │   └── TontechnikerForm.jsx    # Sound Technician form ✅
 │   ├── utils/
 │   │   ├── pdfGenerator.js
 │   │   ├── fileManager.js
@@ -144,7 +161,10 @@ Produktionstool/
   - [x] Column headers for better organization
   - [x] Item catalog integration with autocomplete
 - [x] Create Settings page for catalog management ✅
-- [ ] Create Tontechniker form component
+- [x] Create Tontechniker form component ✅
+  - [x] Document scanner integration
+  - [x] Reusable DocumentScanner component
+  - [x] PDF preview functionality
 - [ ] Create Kassenbelege form component
 - [ ] Implement form fields for remaining sections
 - [ ] Add form validation for each section
@@ -170,12 +190,17 @@ Produktionstool/
 - [ ] Handle file organization
 - [ ] Add error handling for file operations
 
-### Phase 7: Scanner Integration
-- [ ] Research scanner compatibility
-- [ ] Set up scanner library
-- [ ] Create scanner UI component
-- [ ] Implement scan-to-PDF functionality
-- [ ] Integrate scanner with file management
+### Phase 7: Scanner Integration ✅ COMPLETE
+- [x] Research scanner compatibility ✅ (NAPS2 CLI chosen)
+- [x] Set up scanner library ✅ (NAPS2 CLI integration)
+- [x] Create scanner UI component ✅ (DocumentScanner component)
+- [x] Implement scan-to-PDF functionality ✅
+- [x] Scanner detection and selection ✅
+- [x] Scan source selection (glass/feeder) ✅
+- [x] PDF preview with PDF.js ✅
+- [x] Document preview popup ✅
+- [x] NAPS2 installation check ✅
+- [ ] Integrate scanner with file management (pending Phase 6)
 
 ### Phase 8: Data Persistence 🔄 PARTIALLY COMPLETE
 - [x] Set up electron-store ✅
@@ -226,8 +251,15 @@ Produktionstool/
 - Column headers for organization
 - Settings page for managing catalog items
 
-### Tontechniker (Sound Technician)
-- Fields to be defined
+### Tontechniker (Sound Technician) ✅ IMPLEMENTED
+- **Document Scanner** ✅
+  - Scan button (scans from selected source)
+  - File selection button
+  - Scan source selection (Glass/Feeder)
+  - Scanned documents list (filename-based)
+  - Document preview popup (click filename to preview)
+  - Remove document functionality
+- **Notes**: Uses reusable DocumentScanner component
 
 ### Kassenbelege (Cash Receipts)
 - Fields to be defined
@@ -248,19 +280,24 @@ Produktionstool/
         └── ...
 ```
 
-## Scanner Requirements
+## Scanner Requirements ✅ IMPLEMENTED
 
-### Supported Protocols
-- TWAIN (Windows/Mac)
-- WIA (Windows)
-- Image Capture (macOS)
-- SANE (Linux)
+### Implementation
+- **NAPS2 CLI** - Cross-platform scanner utility
+- **eSCL Driver** - Used on macOS for network scanners (shows IP addresses)
+- **Scanner Detection** - Automatic detection via NAPS2 CLI
+- **Scan Sources** - Glass (flatbed) or Feeder (automatic document feeder)
 
-### Scanner Features Needed
-- Scan to PDF
-- Multiple page scanning
-- Resolution settings
-- Color/B&W options
+### Supported Features ✅
+- ✅ Scan to PDF
+- ✅ Multiple page scanning (supported by NAPS2, not currently implemented in UI)
+- ✅ Resolution settings (300 DPI default)
+- ⏳ Color/B&W options (NAPS2 supports, not exposed in UI yet)
+
+### Scanner Settings
+- Scanner selection in Settings → Printer / Scanner
+- Scan folder selection
+- NAPS2 installation check on startup
 
 ## Development Considerations
 
@@ -291,7 +328,7 @@ Produktionstool/
 - **Hot Reload** ✅ Implemented
   - Use `npm run dev` for development with hot reload
   - Automatically reloads on file changes
-  - DevTools opens automatically
+  - DevTools can be opened manually (Cmd+Option+I / Ctrl+Shift+I)
 
 ## Future Enhancements (Optional)
 

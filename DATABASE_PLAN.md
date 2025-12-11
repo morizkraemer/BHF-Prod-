@@ -74,3 +74,4 @@ If the catalog grows large or we need complex queries:
 ## Current Recommendation
 Start with **electron-store** - it's perfect for this use case and already installed!
 
+

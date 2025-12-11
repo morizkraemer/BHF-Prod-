@@ -11,7 +11,28 @@ contextBridge.exposeInMainWorld('electronAPI', {
   generatePDF: (data) => ipcRenderer.invoke('generate-pdf', data),
   
   // Scanner operations
-  scanDocument: () => ipcRenderer.invoke('scan-document'),
+  listScanners: () => ipcRenderer.invoke('list-scanners'),
+  setSelectedScanner: (scannerId, scannerInfo) => ipcRenderer.invoke('set-selected-scanner', scannerId, scannerInfo),
+  getSelectedScanner: () => ipcRenderer.invoke('get-selected-scanner'),
+  setScanFolder: () => ipcRenderer.invoke('set-scan-folder'),
+  getScanFolder: () => ipcRenderer.invoke('get-scan-folder'),
+  scanDocument: (source = 'glass') => ipcRenderer.invoke('scan-document', source),
+  selectScanFile: () => ipcRenderer.invoke('select-scan-file'),
+  
+  // Scanner messages
+  onScanMessage: (callback) => {
+    ipcRenderer.on('scan-message', (event, data) => callback(data));
+  },
+  removeScanMessageListener: () => {
+    ipcRenderer.removeAllListeners('scan-message');
+  },
+  // Auto-detected scan files
+  onScanFileDetected: (callback) => {
+    ipcRenderer.on('scan-file-detected', (event, data) => callback(data));
+  },
+  removeScanFileDetectedListener: () => {
+    ipcRenderer.removeAllListeners('scan-file-detected');
+  },
   
   // Data persistence
   saveData: (key, data) => ipcRenderer.invoke('save-data', key, data),

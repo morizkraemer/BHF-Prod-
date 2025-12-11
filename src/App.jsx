@@ -49,7 +49,12 @@ function App() {
           />
         );
       case 'tontechniker':
-        return <p>Tontechniker form will be implemented soon</p>;
+        return (
+          <TontechnikerForm
+            formData={formData.tontechniker}
+            onDataChange={(data) => handleFormDataChange('tontechniker', data)}
+          />
+        );
       case 'kassenbelege':
         return <p>Kassenbelege form will be implemented soon</p>;
       case 'settings':

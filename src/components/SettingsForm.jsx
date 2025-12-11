@@ -1,16 +1,72 @@
 const { useState, useEffect } = React;
 
 function SettingsForm() {
+  const [activeSettingsSection, setActiveSettingsSection] = useState('rider');
   const [catalogItems, setCatalogItems] = useState([]);
   const [newItemName, setNewItemName] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('');
   const [editingItem, setEditingItem] = useState(null);
   const [editItemName, setEditItemName] = useState('');
   const [editItemPrice, setEditItemPrice] = useState('');
+  const [scanners, setScanners] = useState([]);
+  const [selectedScanner, setSelectedScanner] = useState(null);
+  const [loadingScanners, setLoadingScanners] = useState(false);
+  const [scanFolder, setScanFolder] = useState(null);
 
   useEffect(() => {
     loadItems();
+    loadScanners();
+    loadSelectedScanner();
+    loadScanFolder();
   }, []);
+
+  const loadScanFolder = async () => {
+    if (window.electronAPI && window.electronAPI.getScanFolder) {
+      const folder = await window.electronAPI.getScanFolder();
+      setScanFolder(folder);
+    }
+  };
+
+  const handleSelectScanFolder = async () => {
+    if (window.electronAPI && window.electronAPI.setScanFolder) {
+      const folder = await window.electronAPI.setScanFolder();
+      if (folder) {
+        setScanFolder(folder);
+      }
+    }
+  };
+
+  const loadScanners = async () => {
+    setLoadingScanners(true);
+    if (window.electronAPI && window.electronAPI.listScanners) {
+      try {
+        const scannerList = await window.electronAPI.listScanners();
+        console.log('Found scanners:', scannerList);
+        setScanners(scannerList || []);
+      } catch (error) {
+        console.error('Error loading scanners:', error);
+        alert('Fehler beim Laden der Scanner: ' + error.message);
+        setScanners([]);
+      }
+    }
+    setLoadingScanners(false);
+  };
+
+  const loadSelectedScanner = async () => {
+    if (window.electronAPI && window.electronAPI.getSelectedScanner) {
+      const scannerId = await window.electronAPI.getSelectedScanner();
+      setSelectedScanner(scannerId);
+    }
+  };
+
+  const handleScannerChange = async (scannerId) => {
+    if (window.electronAPI && window.electronAPI.setSelectedScanner) {
+      // Find the scanner object to pass full info
+      const scanner = scanners.find(s => s.id === scannerId);
+      await window.electronAPI.setSelectedScanner(scannerId, scanner || null);
+      setSelectedScanner(scannerId);
+    }
+  };
 
   const loadItems = async () => {
     if (window.electronAPI && window.electronAPI.getRiderItems) {
@@ -87,16 +143,15 @@ function SettingsForm() {
     }
   };
 
-  return (
-    <div className="form-container">
-      <div className="settings-form">
-        <h2>Rider Extras Katalog</h2>
-        <p className="settings-description">
-          Verwalten Sie die verfügbaren Items für Rider Extras. Diese Items können dann beim Ausfüllen des Formulars ausgewählt werden.
-        </p>
+  const renderRiderSection = () => (
+    <>
+      <h2>Rider Extras Katalog</h2>
+      <p className="settings-description">
+        Verwalten Sie die verfügbaren Items für Rider Extras. Diese Items können dann beim Ausfüllen des Formulars ausgewählt werden.
+      </p>
 
-        {/* Add New Item */}
-        <div className="settings-add-section">
+      {/* Add New Item */}
+      <div className="settings-add-section">
           <h3>Neues Item hinzufügen</h3>
           <div className="settings-add-form">
             <input
@@ -199,6 +254,101 @@ function SettingsForm() {
               ))}
             </div>
           )}
+        </div>
+    </>
+  );
+
+  const renderScannerSection = () => (
+    <>
+      <h2>Printer / Scanner</h2>
+      <p className="settings-description">
+        Wählen Sie den Scanner aus, der für das Scannen von Dokumenten verwendet werden soll.
+      </p>
+
+      {/* Scanner Selection */}
+      <div className="settings-scanner-section">
+        <h3>Scanner</h3>
+        <div className="settings-scanner-form">
+          <select
+            value={selectedScanner || ''}
+            onChange={(e) => handleScannerChange(e.target.value)}
+            className="settings-scanner-select"
+            disabled={loadingScanners}
+          >
+            <option value="">-- Scanner auswählen --</option>
+            {scanners.map((scanner) => (
+              <option key={scanner.id} value={scanner.id}>
+                {scanner.name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={loadScanners}
+            className="settings-refresh-button"
+            disabled={loadingScanners}
+          >
+            {loadingScanners ? 'Lädt...' : 'Aktualisieren'}
+          </button>
+        </div>
+        {scanners.length === 0 && !loadingScanners && (
+          <p className="settings-empty">Keine Scanner gefunden. Stellen Sie sicher, dass ein Scanner angeschlossen ist.</p>
+        )}
+      </div>
+
+      {/* Scan Folder Selection */}
+      <div className="settings-scanner-section">
+        <h3>Scan-Ordner</h3>
+        <p className="settings-description">
+          Wählen Sie den Ordner aus, in dem gescannte Dateien gespeichert werden sollen. Die App überwacht diesen Ordner automatisch nach neuen Scans.
+        </p>
+        <div className="settings-scan-folder-form">
+          <div className="settings-scan-folder-display">
+            <span className="settings-scan-folder-path">
+              {scanFolder || 'Kein Ordner ausgewählt'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleSelectScanFolder}
+            className="settings-select-folder-button"
+          >
+            Ordner auswählen
+          </button>
+        </div>
+        {!scanFolder && (
+          <p className="settings-empty">Bitte wählen Sie einen Ordner aus. Standardmäßig wird ~/Documents/NightclubScans verwendet.</p>
+        )}
+      </div>
+    </>
+  );
+
+  return (
+    <div className="form-container">
+      <div className="settings-container">
+        {/* Settings Sub-Sidebar */}
+        <aside className="settings-sidebar">
+          <nav className="settings-sidebar-nav">
+            <button
+              className={`settings-sidebar-item ${activeSettingsSection === 'rider' ? 'active' : ''}`}
+              onClick={() => setActiveSettingsSection('rider')}
+            >
+              Rider
+            </button>
+            <button
+              className={`settings-sidebar-item ${activeSettingsSection === 'scanner' ? 'active' : ''}`}
+              onClick={() => setActiveSettingsSection('scanner')}
+            >
+              Printer / Scanner
+            </button>
+          </nav>
+        </aside>
+
+        {/* Settings Content */}
+        <div className="settings-content">
+          <div className="settings-form">
+            {activeSettingsSection === 'rider' ? renderRiderSection() : renderScannerSection()}
+          </div>
         </div>
       </div>
     </div>
