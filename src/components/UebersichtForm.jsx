@@ -1,4 +1,4 @@
-const { useState, useEffect } = React;
+const { useState, useEffect, useCallback } = React;
 
 function UebersichtForm({ formData, onDataChange }) {
   const [localData, setLocalData] = useState({
@@ -12,6 +12,29 @@ function UebersichtForm({ formData, onDataChange }) {
   });
 
   const [nightLeadOptions, setNightLeadOptions] = useState(['']);
+  const [zettelPrinted, setZettelPrinted] = useState(false);
+
+  useEffect(() => {
+    // Render print button in the title row
+    const container = document.getElementById('uebersicht-print-button-container');
+    if (container) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `uebersicht-print-button ${zettelPrinted ? 'uebersicht-print-button-printed' : ''}`;
+      button.title = zettelPrinted ? 'Alle nochmal drucken' : 'Alle Vorlagen drucken';
+      button.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 6 2 18 2 18 9"></polyline>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+          <rect x="6" y="14" width="12" height="8"></rect>
+        </svg>
+        <span>${zettelPrinted ? 'alle nochmal drucken' : 'alle Vorlagen drucken'}</span>
+      `;
+      button.onclick = handlePrintZettel;
+      container.innerHTML = '';
+      container.appendChild(button);
+    }
+  }, [zettelPrinted, handlePrintZettel]);
 
   useEffect(() => {
     // Load night leads from catalog
@@ -41,6 +64,18 @@ function UebersichtForm({ formData, onDataChange }) {
       [field]: value
     }));
   };
+
+  const handlePrintZettel = useCallback(async () => {
+    try {
+      if (window.electronAPI && window.electronAPI.printTemplate) {
+        await window.electronAPI.printTemplate('uebersichtzettel');
+        setZettelPrinted(true);
+      }
+    } catch (error) {
+      alert('Fehler beim Drucken: ' + error.message);
+      console.error('Print error:', error);
+    }
+  }, []);
 
   return (
     <div className="form-container">

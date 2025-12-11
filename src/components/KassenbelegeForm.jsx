@@ -25,6 +25,8 @@ function KassenbelegeForm({ formData, onDataChange }) {
             showScannedList={true}
             className="kassenbelege-scanner"
             defaultSource="glass"
+            title="Belege scannen"
+            scanName="Orderbird-Belege"
           />
         </div>
       </div>

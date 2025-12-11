@@ -141,10 +141,12 @@ function TontechnikerForm({ formData, onDataChange }) {
           <DocumentScanner
             scannedDocuments={localData.scannedImages}
             onDocumentsChange={handleDocumentsChange}
-            showFileSelect={true}
             showScannedList={true}
             className="tontechniker-scanner"
             defaultSource="feeder"
+            title="Technikzettel scannen"
+            scanName="Technikzettel"
+            templateKey="technikzettel"
           />
         </div>
       </div>

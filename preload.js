@@ -17,7 +17,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSelectedScannerInfo: () => ipcRenderer.invoke('get-selected-scanner-info'),
   setScanFolder: () => ipcRenderer.invoke('set-scan-folder'),
   getScanFolder: () => ipcRenderer.invoke('get-scan-folder'),
-  scanDocument: (source = 'glass') => ipcRenderer.invoke('scan-document', source),
+  scanDocument: (source = 'glass', scanName = 'scan') => ipcRenderer.invoke('scan-document', source, scanName),
   selectScanFile: () => ipcRenderer.invoke('select-scan-file'),
   
   // Scanner messages
@@ -54,6 +54,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Tech Names
   getTechNames: () => ipcRenderer.invoke('get-tech-names'),
   saveTechNames: (names) => ipcRenderer.invoke('save-tech-names', names),
+  
+  // Template management
+  getTemplate: (templateKey) => ipcRenderer.invoke('get-template', templateKey),
+  uploadTemplate: (templateKey) => ipcRenderer.invoke('upload-template', templateKey),
+  printTemplate: (templateKey) => ipcRenderer.invoke('print-template', templateKey),
   
   // Dialog operations
   showMessageBox: (options) => ipcRenderer.invoke('show-message-box', options),

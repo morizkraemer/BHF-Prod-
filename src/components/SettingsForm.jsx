@@ -5,9 +5,11 @@ function SettingsForm() {
   const [catalogItems, setCatalogItems] = useState([]);
   const [newItemName, setNewItemName] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('');
+  const [newItemEkPrice, setNewItemEkPrice] = useState('');
   const [editingItem, setEditingItem] = useState(null);
   const [editItemName, setEditItemName] = useState('');
   const [editItemPrice, setEditItemPrice] = useState('');
+  const [editItemEkPrice, setEditItemEkPrice] = useState('');
   const [nightLeads, setNightLeads] = useState([]);
   const [newLeadName, setNewLeadName] = useState('');
   const [editingLead, setEditingLead] = useState(null);
@@ -16,6 +18,12 @@ function SettingsForm() {
   const [selectedScanner, setSelectedScanner] = useState(null);
   const [loadingScanners, setLoadingScanners] = useState(false);
   const [scanFolder, setScanFolder] = useState(null);
+  const [templates, setTemplates] = useState({
+    securityzettel: null,
+    handtuchzettel: null,
+    technikzettel: null,
+    uebersichtzettel: null
+  });
 
   useEffect(() => {
     loadItems();
@@ -23,12 +31,45 @@ function SettingsForm() {
     loadScanners();
     loadSelectedScanner();
     loadScanFolder();
+    loadTemplates();
   }, []);
 
   const loadScanFolder = async () => {
     if (window.electronAPI && window.electronAPI.getScanFolder) {
       const folder = await window.electronAPI.getScanFolder();
       setScanFolder(folder);
+    }
+  };
+
+  const loadTemplates = async () => {
+    if (window.electronAPI && window.electronAPI.getTemplate) {
+      const securityzettel = await window.electronAPI.getTemplate('securityzettel');
+      const handtuchzettel = await window.electronAPI.getTemplate('handtuchzettel');
+      const technikzettel = await window.electronAPI.getTemplate('technikzettel');
+      const uebersichtzettel = await window.electronAPI.getTemplate('uebersichtzettel');
+      setTemplates({
+        securityzettel,
+        handtuchzettel,
+        technikzettel,
+        uebersichtzettel
+      });
+    }
+  };
+
+  const handleUploadTemplate = async (templateKey) => {
+    if (window.electronAPI && window.electronAPI.uploadTemplate) {
+      try {
+        const result = await window.electronAPI.uploadTemplate(templateKey);
+        if (result.success) {
+          setTemplates(prev => ({
+            ...prev,
+            [templateKey]: result.filePath
+          }));
+          alert('Template erfolgreich hochgeladen!');
+        }
+      } catch (error) {
+        alert('Fehler beim Hochladen des Templates: ' + error.message);
+      }
     }
   };
 
@@ -102,10 +143,12 @@ function SettingsForm() {
     if (window.electronAPI && window.electronAPI.addRiderItem) {
       await window.electronAPI.addRiderItem({
         name: newItemName.trim(),
-        price: price
+        price: price,
+        ekPrice: newItemEkPrice.trim() ? parseFloat(newItemEkPrice) : null
       });
       setNewItemName('');
       setNewItemPrice('');
+      setNewItemEkPrice('');
       loadItems();
     }
   };
@@ -114,6 +157,7 @@ function SettingsForm() {
     setEditingItem(item.id);
     setEditItemName(item.name);
     setEditItemPrice(item.price.toString());
+    setEditItemEkPrice(item.ekPrice ? item.ekPrice.toString() : '');
   };
 
   const handleSaveEdit = async () => {
@@ -131,11 +175,13 @@ function SettingsForm() {
     if (window.electronAPI && window.electronAPI.updateRiderItem) {
       await window.electronAPI.updateRiderItem(editingItem, {
         name: editItemName.trim(),
-        price: price
+        price: price,
+        ekPrice: editItemEkPrice.trim() ? parseFloat(editItemEkPrice) : null
       });
       setEditingItem(null);
       setEditItemName('');
       setEditItemPrice('');
+      setEditItemEkPrice('');
       loadItems();
     }
   };
@@ -144,6 +190,7 @@ function SettingsForm() {
     setEditingItem(null);
     setEditItemName('');
     setEditItemPrice('');
+    setEditItemEkPrice('');
   };
 
   const handleDeleteItem = async (itemId) => {
@@ -243,6 +290,20 @@ function SettingsForm() {
                 }
               }}
             />
+            <input
+              type="number"
+              value={newItemEkPrice}
+              onChange={(e) => setNewItemEkPrice(e.target.value)}
+              className="settings-input settings-price-input"
+              placeholder="EK Preis (optional)"
+              min="0"
+              step="0.01"
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleAddItem();
+                }
+              }}
+            />
             <button
               type="button"
               onClick={handleAddItem}
@@ -278,6 +339,15 @@ function SettingsForm() {
                         min="0"
                         step="0.01"
                       />
+                      <input
+                        type="number"
+                        value={editItemEkPrice}
+                        onChange={(e) => setEditItemEkPrice(e.target.value)}
+                        className="settings-edit-input settings-price-input"
+                        placeholder="EK Preis"
+                        min="0"
+                        step="0.01"
+                      />
                       <button
                         type="button"
                         onClick={handleSaveEdit}
@@ -297,6 +367,7 @@ function SettingsForm() {
                     <>
                       <span className="settings-item-name">{item.name}</span>
                       <span className="settings-item-price">€{item.price.toFixed(2)}</span>
+                      <span className="settings-item-price">{item.ekPrice ? `EK: €${item.ekPrice.toFixed(2)}` : 'Kein EK Preis'}</span>
                       <button
                         type="button"
                         onClick={() => handleStartEdit(item)}
@@ -325,7 +396,7 @@ function SettingsForm() {
     <>
       <h2>Night Leads Katalog</h2>
       <p className="settings-description">
-        Verwalten Sie die verfügbaren Night Leads. Diese können dann im Uebersicht-Formular ausgewählt werden.
+        Verwalten Sie die verfügbaren Night Leads. Diese können dann im Übersicht-Formular ausgewählt werden.
       </p>
 
       {/* Add New Lead */}
@@ -480,6 +551,105 @@ function SettingsForm() {
     </>
   );
 
+  const renderTemplatesSection = () => (
+    <>
+      <div className="settings-section">
+        <h2>Templates</h2>
+        <p className="settings-description">
+          Laden Sie PDF-Templates hoch, die beim Drucken neben den Scan-Komponenten verwendet werden können.
+        </p>
+      </div>
+
+      {/* Securityzettel Template */}
+      <div className="settings-scanner-section">
+        <h3>Secuzettel Template</h3>
+        <p className="settings-description">
+          Template für Securityzettel-Drucke
+        </p>
+        <div className="settings-template-form">
+          <div className="settings-template-display">
+            <span className="settings-template-path">
+              {templates.securityzettel ? templates.securityzettel.split('/').pop() : 'Kein Template hochgeladen'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleUploadTemplate('securityzettel')}
+            className="settings-upload-template-button"
+          >
+            Template hochladen
+          </button>
+        </div>
+      </div>
+
+      {/* Handtuchzettel Template */}
+      <div className="settings-scanner-section">
+        <h3>Handtuchzettel Template</h3>
+        <p className="settings-description">
+          Template für Handtuchzettel-Drucke
+        </p>
+        <div className="settings-template-form">
+          <div className="settings-template-display">
+            <span className="settings-template-path">
+              {templates.handtuchzettel ? templates.handtuchzettel.split('/').pop() : 'Kein Template hochgeladen'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleUploadTemplate('handtuchzettel')}
+            className="settings-upload-template-button"
+          >
+            Template hochladen
+          </button>
+        </div>
+      </div>
+
+      {/* Technikzettel Template */}
+      <div className="settings-scanner-section">
+        <h3>Technikzettel Template</h3>
+        <p className="settings-description">
+          Template für Technikzettel-Drucke
+        </p>
+        <div className="settings-template-form">
+          <div className="settings-template-display">
+            <span className="settings-template-path">
+              {templates.technikzettel ? templates.technikzettel.split('/').pop() : 'Kein Template hochgeladen'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleUploadTemplate('technikzettel')}
+            className="settings-upload-template-button"
+          >
+            Template hochladen
+          </button>
+        </div>
+      </div>
+
+      {/* Übersichtzettel Template */}
+      <div className="settings-scanner-section">
+        <h3>Übersichtzettel Template</h3>
+        <p className="settings-description">
+          Template für Übersichtzettel-Drucke
+        </p>
+        <div className="settings-template-form">
+          <div className="settings-template-display">
+            <span className="settings-template-path">
+              {templates.uebersichtzettel ? templates.uebersichtzettel.split('/').pop() : 'Kein Template hochgeladen'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleUploadTemplate('uebersichtzettel')}
+            className="settings-upload-template-button"
+          >
+            Template hochladen
+          </button>
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <div className="form-container">
       <div className="settings-container">
@@ -504,6 +674,12 @@ function SettingsForm() {
             >
               Printer / Scanner
             </button>
+            <button
+              className={`settings-sidebar-item ${activeSettingsSection === 'templates' ? 'active' : ''}`}
+              onClick={() => setActiveSettingsSection('templates')}
+            >
+              Templates
+            </button>
           </nav>
         </aside>
 
@@ -512,6 +688,7 @@ function SettingsForm() {
           <div className="settings-form">
             {activeSettingsSection === 'rider' ? renderRiderSection() : 
              activeSettingsSection === 'night-leads' ? renderNightLeadsSection() : 
+             activeSettingsSection === 'templates' ? renderTemplatesSection() :
              renderScannerSection()}
           </div>
         </div>

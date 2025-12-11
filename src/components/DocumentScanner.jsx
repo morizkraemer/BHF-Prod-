@@ -4,10 +4,13 @@ const { useState, useEffect } = React;
 function DocumentScanner({ 
   scannedDocuments = [], 
   onDocumentsChange,
-  showFileSelect = true,
+  showFileSelect = false,
   showScannedList = true,
   className = '',
-  defaultSource = 'glass' // Default scan source
+  defaultSource = 'glass', // Default scan source
+  title = 'Dokument scannen', // Title displayed in the component
+  scanName = 'scan', // Name prefix for scanned files
+  templateKey = null // Template key for printing (e.g., 'securityzettel', 'handtuchzettel', 'technikzettel')
 }) {
   const [isScanning, setIsScanning] = useState(false);
   const [pendingScan, setPendingScan] = useState(null); // File waiting for confirmation
@@ -88,7 +91,7 @@ function DocumentScanner({
     try {
       setIsScanning(true);
       if (window.electronAPI && window.electronAPI.scanDocument) {
-        const result = await window.electronAPI.scanDocument(scanSource);
+        const result = await window.electronAPI.scanDocument(scanSource, scanName);
         
         if (result.success) {
           // Scan completed - file will be detected via scan-file-detected event
@@ -149,6 +152,19 @@ function DocumentScanner({
     setPreviewDocument(null);
   };
 
+  const handlePrintTemplate = async () => {
+    if (!templateKey) return;
+    
+    try {
+      if (window.electronAPI && window.electronAPI.printTemplate) {
+        await window.electronAPI.printTemplate(templateKey);
+      }
+    } catch (error) {
+      alert('Fehler beim Drucken: ' + error.message);
+      console.error('Print error:', error);
+    }
+  };
+
   return (
     <div className={className}>
       {/* Confirmation Popup */}
@@ -200,30 +216,31 @@ function DocumentScanner({
       
       {/* Scan Controls */}
       <div className="scan-section">
-        {/* Scanner Status */}
-        <div className="scanner-status">
-          <span className={`scanner-status-name ${scannerConnected ? 'scanner-connected' : 'scanner-disconnected'}`}>
-            {scannerName || 'Kein Scanner ausgewählt'}
-          </span>
-        </div>
+        {/* Title with Print Button */}
+        {title && (
+          <div className="scan-section-title-row">
+            <h3 className="scan-section-title">{title}</h3>
+            {templateKey && (
+              <button
+                type="button"
+                onClick={handlePrintTemplate}
+                className="scan-print-icon-button"
+                title="Template drucken"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                  <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                <span>drucken</span>
+              </button>
+            )}
+          </div>
+        )}
         
         <div className="scan-controls-row">
-          <div className="scan-source-select">
-            <label htmlFor="scan-source" className="scan-source-label">
-              Scan-Quelle:
-            </label>
-            <select
-              id="scan-source"
-              value={scanSource}
-              onChange={(e) => setScanSource(e.target.value)}
-              className="scan-source-dropdown"
-              disabled={isScanning || pendingScan}
-            >
-              <option value="glass">Glas</option>
-              <option value="feeder">Oben</option>
-            </select>
-          </div>
-          <div className="scan-buttons">
+          {/* Middle Stack: Scan Button, Source, Printer Name */}
+          <div className="scan-controls-middle">
             <button
               type="button"
               onClick={handleScan}
@@ -232,16 +249,26 @@ function DocumentScanner({
             >
               {isScanning ? 'Scannt...' : 'Scannen'}
             </button>
-            {showFileSelect && (
-              <button
-                type="button"
-                onClick={handleSelectFile}
-                className="scan-button scan-button-secondary"
+            <div className="scan-source-select">
+              <label htmlFor="scan-source" className="scan-source-label">
+                Scan-Quelle:
+              </label>
+              <select
+                id="scan-source"
+                value={scanSource}
+                onChange={(e) => setScanSource(e.target.value)}
+                className="scan-source-dropdown"
                 disabled={isScanning || pendingScan}
               >
-                Datei auswählen
-              </button>
-            )}
+                <option value="glass">Glas</option>
+                <option value="feeder">Oben</option>
+              </select>
+            </div>
+            <div className="scanner-status">
+              <span className={`scanner-status-name ${scannerConnected ? 'scanner-connected' : 'scanner-disconnected'}`}>
+                {scannerName || 'Kein Scanner ausgewählt'}
+              </span>
+            </div>
           </div>
         </div>
         {isScanning && (

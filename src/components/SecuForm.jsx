@@ -107,10 +107,12 @@ function SecuForm({ formData, onDataChange }) {
           <DocumentScanner
             scannedDocuments={scannedDocuments}
             onDocumentsChange={handleDocumentsChange}
-            showFileSelect={true}
             showScannedList={true}
             className="secu-scanner"
             defaultSource="glass"
+            title="Secuzettel scannen"
+            scanName="Securityzettel"
+            templateKey="securityzettel"
           />
         </div>
       </div>

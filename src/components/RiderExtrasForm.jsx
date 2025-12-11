@@ -1,7 +1,7 @@
 const { useState, useEffect } = React;
 
 function RiderExtrasForm({ formData, onDataChange }) {
-  const [items, setItems] = useState(formData?.items || [{ amount: '', text: '', price: '', discount: '', originalPrice: '', checked: false }]);
+  const [items, setItems] = useState(formData?.items || [{ amount: '', text: '', price: '', discount: '', originalPrice: '', ekPrice: null, checked: false }]);
   const [standardbestueckung, setStandardbestueckung] = useState(formData?.standardbestueckung || '');
   const [getInCatering, setGetInCatering] = useState(formData?.getInCatering || false);
   const [dinner, setDinner] = useState(formData?.dinner || false);
@@ -9,6 +9,8 @@ function RiderExtrasForm({ formData, onDataChange }) {
   const [buyoutProvider, setBuyoutProvider] = useState(formData?.buyoutProvider || '');
   const [buyoutPeople, setBuyoutPeople] = useState(formData?.buyoutPeople || '');
   const [buyoutPerPerson, setBuyoutPerPerson] = useState(formData?.buyoutPerPerson || '');
+  const [scannedDocuments, setScannedDocuments] = useState(formData?.scannedDocuments || []);
+  const [purchaseReceipts, setPurchaseReceipts] = useState(formData?.purchaseReceipts || []);
   const [catalogItems, setCatalogItems] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState({});
   const [filteredSuggestions, setFilteredSuggestions] = useState({});
@@ -16,7 +18,8 @@ function RiderExtrasForm({ formData, onDataChange }) {
   const discountOptions = [
     { value: '50', label: '50%' },
     { value: '75', label: '75%' },
-    { value: '100', label: '100%' }
+    { value: '100', label: '100%' },
+    { value: 'EK', label: 'EK' }
   ];
 
   const standardbestueckungOptions = [
@@ -44,10 +47,12 @@ function RiderExtrasForm({ formData, onDataChange }) {
         buyout,
         buyoutProvider,
         buyoutPeople,
-        buyoutPerPerson
+        buyoutPerPerson,
+        scannedDocuments,
+        purchaseReceipts
       });
     }
-  }, [items, standardbestueckung, getInCatering, dinner, buyout, buyoutProvider, buyoutPeople, buyoutPerPerson]);
+  }, [items, standardbestueckung, getInCatering, dinner, buyout, buyoutProvider, buyoutPeople, buyoutPerPerson, scannedDocuments, purchaseReceipts]);
 
   // Calculate buyout total
   const buyoutTotal = buyoutPeople && buyoutPerPerson 
@@ -102,9 +107,12 @@ function RiderExtrasForm({ formData, onDataChange }) {
     newItems[index].text = catalogItem.name;
     const originalPrice = catalogItem.price;
     newItems[index].originalPrice = originalPrice.toString();
+    newItems[index].ekPrice = catalogItem.ekPrice || null;
     
     // Apply discount if one is set
-    if (newItems[index].discount) {
+    if (newItems[index].discount === 'EK' && catalogItem.ekPrice) {
+      newItems[index].price = catalogItem.ekPrice.toString();
+    } else if (newItems[index].discount) {
       const discountPercent = parseFloat(newItems[index].discount);
       newItems[index].price = (originalPrice * (1 - discountPercent / 100)).toFixed(2);
     } else {
@@ -134,7 +142,15 @@ function RiderExtrasForm({ formData, onDataChange }) {
     }
     
     // Calculate discounted price
-    if (discountValue && newItems[index].originalPrice) {
+    if (discountValue === 'EK') {
+      // Use EK price if available
+      if (newItems[index].ekPrice) {
+        newItems[index].price = newItems[index].ekPrice.toString();
+      } else {
+        // Keep current price if no EK price available
+        newItems[index].discount = '';
+      }
+    } else if (discountValue && newItems[index].originalPrice) {
       const discountPercent = parseFloat(discountValue);
       const originalPrice = parseFloat(newItems[index].originalPrice);
       if (!isNaN(originalPrice)) {
@@ -148,6 +164,28 @@ function RiderExtrasForm({ formData, onDataChange }) {
     setItems(newItems);
   };
 
+  // Calculate total for a single item
+  const calculateItemTotal = (item) => {
+    const amount = parseFloat(item.amount) || 0;
+    const price = parseFloat(item.price) || 0;
+    return (amount * price).toFixed(2);
+  };
+
+  // Check if EK option should be disabled for an item
+  const isEkDisabled = (item) => {
+    // Find matching catalog item
+    const catalogItem = catalogItems.find(catItem => catItem.name === item.text);
+    return !catalogItem || !catalogItem.ekPrice;
+  };
+
+  const handleDocumentsChange = (updatedDocuments) => {
+    setScannedDocuments(updatedDocuments);
+  };
+
+  const handlePurchaseReceiptsChange = (updatedDocuments) => {
+    setPurchaseReceipts(updatedDocuments);
+  };
+
   const handleCheckboxChange = (index) => {
     const newItems = [...items];
     newItems[index].checked = !newItems[index].checked;
@@ -155,7 +193,7 @@ function RiderExtrasForm({ formData, onDataChange }) {
   };
 
   const handleAddLine = () => {
-    setItems([...items, { amount: '', text: '', price: '', discount: '', originalPrice: '', checked: false }]);
+    setItems([...items, { amount: '', text: '', price: '', discount: '', originalPrice: '', ekPrice: null, checked: false }]);
   };
 
   const handleRemoveLine = (index) => {
@@ -220,7 +258,7 @@ function RiderExtrasForm({ formData, onDataChange }) {
             {/* Backstage Kuehlschrank Select */}
             <div className="standardbestueckung-section">
               <label htmlFor="standardbestueckung" className="standardbestueckung-label">
-                Backstage Kuehlschrank
+                Backstage Kühlschrank
               </label>
               <select
                 id="standardbestueckung"
@@ -289,17 +327,29 @@ function RiderExtrasForm({ formData, onDataChange }) {
         <div className="rider-extras-items-section">
           {/* Column Headers */}
           <div className="rider-extras-header">
+            <div className="rider-extras-header-checkbox">eingebongt</div>
             <div className="rider-extras-header-amount">Anzahl</div>
             <div className="rider-extras-header-name">Name</div>
             <div className="rider-extras-header-price">Preis</div>
             <div className="rider-extras-header-discount">Rabatt</div>
-            <div className="rider-extras-header-checkbox">eingebongt</div>
+            <div className="rider-extras-header-sum">Summe</div>
             <div className="rider-extras-header-actions"></div>
           </div>
 
           {/* Items List */}
           {items.map((item, index) => (
             <div key={index} className="rider-extras-line">
+              <div className="rider-extras-checkbox-wrapper">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={item.checked}
+                    onChange={() => handleCheckboxChange(index)}
+                    className="rider-extras-checkbox"
+                  />
+                  <span className="checkbox-custom"></span>
+                </label>
+              </div>
               <input
                 type="number"
                 value={item.amount}
@@ -365,23 +415,20 @@ function RiderExtrasForm({ formData, onDataChange }) {
                 onChange={(e) => handleDiscountChange(index, e.target.value)}
                 className="rider-extras-discount"
               >
-                <option value="" disabled>--</option>
+                <option value="">--</option>
                 {discountOptions.map(option => (
-                  <option key={option.value} value={option.value}>
+                  <option 
+                    key={option.value} 
+                    value={option.value}
+                    disabled={option.value === 'EK' && isEkDisabled(item)}
+                    style={option.value === 'EK' && isEkDisabled(item) ? { color: '#999', fontStyle: 'italic' } : {}}
+                  >
                     {option.label}
                   </option>
                 ))}
               </select>
-              <div className="rider-extras-checkbox-wrapper">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={item.checked}
-                    onChange={() => handleCheckboxChange(index)}
-                    className="rider-extras-checkbox"
-                  />
-                  <span className="checkbox-custom"></span>
-                </label>
+              <div className="rider-extras-sum">
+                €{calculateItemTotal(item)}
               </div>
               <div className="rider-extras-controls">
                 {items.length > 1 && (
@@ -405,6 +452,34 @@ function RiderExtrasForm({ formData, onDataChange }) {
           >
             + Add Item
           </button>
+        </div>
+
+        {/* Scanner Sections */}
+        <div className="scanner-boxes-container">
+          <div className="scanner-box">
+            <DocumentScanner
+              scannedDocuments={scannedDocuments}
+              onDocumentsChange={handleDocumentsChange}
+              showScannedList={true}
+              className="rider-extras-scanner"
+              defaultSource="glass"
+              title="Handtuchzettel scannen"
+              scanName="Handtuchzettel"
+              templateKey="handtuchzettel"
+            />
+          </div>
+
+          <div className="scanner-box">
+            <DocumentScanner
+              scannedDocuments={purchaseReceipts}
+              onDocumentsChange={handlePurchaseReceiptsChange}
+              showScannedList={true}
+              className="rider-extras-scanner"
+              defaultSource="glass"
+              title="Einkaufsbeleg scannen"
+              scanName="Einkaufsbeleg"
+            />
+          </div>
         </div>
       </div>
     </div>

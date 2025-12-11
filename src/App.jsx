@@ -11,8 +11,8 @@ function App() {
   });
 
   const sections = [
-    { id: 'uebersicht', name: 'Uebersicht' },
-    { id: 'rider-extras', name: 'Rider / Backstage' },
+    { id: 'uebersicht', name: 'Übersicht' },
+    { id: 'rider-extras', name: 'Hospitality' },
     { id: 'tontechniker', name: 'Ton/Lichttechnik' },
     { id: 'secu', name: 'Secu' },
     { id: 'kassenbelege', name: 'Kassenbelege' }
@@ -115,7 +115,12 @@ function App() {
       {/* Main Content */}
       <main className="main-content">
         <div className="content-area">
-          <h1>{sections.find(s => s.id === activeSection)?.name || settingsSection.name}</h1>
+          <div className={`content-title-row ${activeSection === 'uebersicht' ? 'content-title-row-with-button' : ''}`}>
+            <h1>{sections.find(s => s.id === activeSection)?.name || settingsSection.name}</h1>
+            {activeSection === 'uebersicht' && (
+              <div id="uebersicht-print-button-container"></div>
+            )}
+          </div>
           {renderActiveSection()}
         </div>
       </main>

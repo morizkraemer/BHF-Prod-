@@ -28,6 +28,12 @@ const store = new Store({
     techNames: {
       soundEngineerName: '',
       lightingTechName: ''
+    },
+    templates: {
+      securityzettel: null, // File path to template PDF
+      handtuchzettel: null,
+      technikzettel: null,
+      uebersichtzettel: null
     }
   }
 });
@@ -98,6 +104,7 @@ ipcMain.handle('add-rider-item', (event, item) => {
     id: Date.now().toString(),
     name: item.name,
     price: parseFloat(item.price) || 0,
+    ekPrice: item.ekPrice ? parseFloat(item.ekPrice) : null,
     createdAt: new Date().toISOString()
   };
   items.push(newItem);
@@ -169,6 +176,66 @@ ipcMain.handle('get-tech-names', () => {
 ipcMain.handle('save-tech-names', (event, names) => {
   store.set('techNames', names);
   return true;
+});
+
+// Template management
+ipcMain.handle('get-template', (event, templateKey) => {
+  const templates = store.get('templates', {});
+  return templates[templateKey] || null;
+});
+
+ipcMain.handle('set-template', async (event, templateKey, filePath) => {
+  const templates = store.get('templates', {});
+  templates[templateKey] = filePath;
+  store.set('templates', templates);
+  return true;
+});
+
+ipcMain.handle('upload-template', async (event, templateKey) => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Template PDF auswählen',
+    filters: [
+      { name: 'PDF Files', extensions: ['pdf'] }
+    ],
+    properties: ['openFile']
+  });
+
+  if (!result.canceled && result.filePaths.length > 0) {
+    const filePath = result.filePaths[0];
+    const templates = store.get('templates', {});
+    templates[templateKey] = filePath;
+    store.set('templates', templates);
+    return { success: true, filePath };
+  }
+  
+  return { success: false };
+});
+
+ipcMain.handle('print-template', async (event, templateKey) => {
+  const templates = store.get('templates', {});
+  const templatePath = templates[templateKey];
+  
+  if (!templatePath) {
+    throw new Error(`Kein Template für ${templateKey} gefunden. Bitte laden Sie ein Template in den Einstellungen hoch.`);
+  }
+
+  // Check if file exists
+  try {
+    await fs.access(templatePath);
+  } catch (error) {
+    throw new Error(`Template-Datei nicht gefunden: ${templatePath}`);
+  }
+
+  // Use Electron's webContents.printToPDF or shell.openPath with print dialog
+  // For now, we'll use shell.openPath which opens the PDF and user can print manually
+  // Or we can use a better approach with webContents.printToPDF
+  try {
+    // Open PDF in default viewer, which allows printing
+    await shell.openPath(templatePath);
+    return { success: true };
+  } catch (error) {
+    throw new Error(`Fehler beim Öffnen des Templates: ${error.message}`);
+  }
 });
 
 // NAPS2 CLI path and subcommand
@@ -382,7 +449,7 @@ ipcMain.handle('select-scan-file', async () => {
 // Store active file watchers
 const activeWatchers = new Map();
 
-ipcMain.handle('scan-document', async (event, source = 'glass') => {
+ipcMain.handle('scan-document', async (event, source = 'glass', scanName = 'scan') => {
   const selectedScannerId = store.get('selectedScanner', null);
   
   // Validate source parameter
@@ -437,7 +504,7 @@ ipcMain.handle('scan-document', async (event, source = 'glass') => {
       
       // Generate output filename with timestamp
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-      const outputFilename = `scan_${timestamp}.pdf`; // NAPS2 defaults to PDF
+      const outputFilename = `${scanName}_${timestamp}.pdf`; // NAPS2 defaults to PDF
       const outputPath = path.join(scanDir, outputFilename);
       
       // Build NAPS2 CLI command arguments
