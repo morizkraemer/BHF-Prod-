@@ -1,0 +1,30 @@
+{
+  "name": "nightclub-production-tool",
+  "version": "1.0.0",
+  "description": "Electron app for gathering end-of-shift information at nightclub",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder"
+  },
+  "keywords": [
+    "electron",
+    "nightclub",
+    "production"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "pdfkit": "^0.14.0",
+    "electron-store": "^8.1.0",
+    "date-fns": "^2.30.0"
+  }
+}
+
