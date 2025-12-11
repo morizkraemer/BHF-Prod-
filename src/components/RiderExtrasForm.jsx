@@ -3,6 +3,12 @@ const { useState, useEffect } = React;
 function RiderExtrasForm({ formData, onDataChange }) {
   const [items, setItems] = useState(formData?.items || [{ amount: '', text: '', price: '', discount: '', originalPrice: '', checked: false }]);
   const [standardbestueckung, setStandardbestueckung] = useState(formData?.standardbestueckung || '');
+  const [getInCatering, setGetInCatering] = useState(formData?.getInCatering || false);
+  const [dinner, setDinner] = useState(formData?.dinner || false);
+  const [buyout, setBuyout] = useState(formData?.buyout || false);
+  const [buyoutProvider, setBuyoutProvider] = useState(formData?.buyoutProvider || '');
+  const [buyoutPeople, setBuyoutPeople] = useState(formData?.buyoutPeople || '');
+  const [buyoutPerPerson, setBuyoutPerPerson] = useState(formData?.buyoutPerPerson || '');
   const [catalogItems, setCatalogItems] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState({});
   const [filteredSuggestions, setFilteredSuggestions] = useState({});
@@ -30,9 +36,39 @@ function RiderExtrasForm({ formData, onDataChange }) {
 
   useEffect(() => {
     if (onDataChange) {
-      onDataChange({ items, standardbestueckung });
+      onDataChange({ 
+        items, 
+        standardbestueckung,
+        getInCatering,
+        dinner,
+        buyout,
+        buyoutProvider,
+        buyoutPeople,
+        buyoutPerPerson
+      });
     }
-  }, [items, standardbestueckung]);
+  }, [items, standardbestueckung, getInCatering, dinner, buyout, buyoutProvider, buyoutPeople, buyoutPerPerson]);
+
+  // Calculate buyout total
+  const buyoutTotal = buyoutPeople && buyoutPerPerson 
+    ? (parseFloat(buyoutPeople) * parseFloat(buyoutPerPerson)).toFixed(2)
+    : '0.00';
+
+  // Handle buyout checkbox - disable dinner when buyout is checked
+  const handleBuyoutChange = (checked) => {
+    setBuyout(checked);
+    if (checked) {
+      setDinner(false); // Uncheck dinner when buyout is checked
+    }
+  };
+
+  // Handle dinner checkbox - disable buyout when dinner is checked
+  const handleDinnerChange = (checked) => {
+    setDinner(checked);
+    if (checked) {
+      setBuyout(false); // Uncheck buyout when dinner is checked
+    }
+  };
 
   const handleAmountChange = (index, value) => {
     const newItems = [...items];
@@ -132,23 +168,121 @@ function RiderExtrasForm({ formData, onDataChange }) {
   return (
     <div className="form-container">
       <div className="rider-extras-form">
-        {/* Backstage Kuehlschrank Select */}
-        <div className="standardbestueckung-section">
-          <label htmlFor="standardbestueckung" className="standardbestueckung-label">
-            Backstage Kuehlschrank
-          </label>
-          <select
-            id="standardbestueckung"
-            value={standardbestueckung}
-            onChange={(e) => setStandardbestueckung(e.target.value)}
-            className="standardbestueckung-select"
-          >
-            {standardbestueckungOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+        {/* Get In Catering Section */}
+        <div className="get-in-catering-section">
+          <div className="catering-header-row">
+            <div className="catering-checkboxes-wrapper">
+              <div className="catering-checkboxes">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={getInCatering}
+                    onChange={(e) => {
+                      setGetInCatering(e.target.checked);
+                      if (!e.target.checked) {
+                        // Reset dinner and buyout when unchecked
+                        setDinner(false);
+                        setBuyout(false);
+                      }
+                    }}
+                    className="get-in-catering-checkbox"
+                  />
+                  <span className="checkbox-custom"></span>
+                  <span className="checkbox-text">Get In Catering</span>
+                </label>
+
+                <label className={`checkbox-label ${buyout ? 'disabled' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={dinner}
+                    onChange={(e) => handleDinnerChange(e.target.checked)}
+                    disabled={buyout}
+                    className="dinner-checkbox"
+                  />
+                  <span className="checkbox-custom"></span>
+                  <span className="checkbox-text">Dinner</span>
+                </label>
+
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={buyout}
+                    onChange={(e) => handleBuyoutChange(e.target.checked)}
+                    disabled={dinner}
+                    className="buyout-checkbox"
+                  />
+                  <span className="checkbox-custom"></span>
+                  <span className="checkbox-text">Buyout</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Backstage Kuehlschrank Select */}
+            <div className="standardbestueckung-section">
+              <label htmlFor="standardbestueckung" className="standardbestueckung-label">
+                Backstage Kuehlschrank
+              </label>
+              <select
+                id="standardbestueckung"
+                value={standardbestueckung}
+                onChange={(e) => setStandardbestueckung(e.target.value)}
+                className="standardbestueckung-select"
+              >
+                {standardbestueckungOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className={`buyout-details ${!buyout ? 'disabled' : ''}`}>
+            <div className="buyout-details-row">
+              <div className="buyout-provider-section">
+                <select
+                  id="buyoutProvider"
+                  value={buyoutProvider}
+                  onChange={(e) => setBuyoutProvider(e.target.value)}
+                  disabled={!buyout}
+                  className="buyout-provider-select"
+                >
+                  <option value="">Provider</option>
+                  <option value="uber-bahnhof-pauli">Uber Bahnhof Pauli</option>
+                  <option value="uber-agentur">Uber Agentur</option>
+                </select>
+              </div>
+              <div className="buyout-fields">
+                <div className="buyout-field">
+                  <input
+                    type="number"
+                    id="buyoutPeople"
+                    value={buyoutPeople}
+                    onChange={(e) => setBuyoutPeople(e.target.value)}
+                    disabled={!buyout}
+                    min="0"
+                    placeholder="Anzahl Personen"
+                  />
+                </div>
+                <div className="buyout-field">
+                  <input
+                    type="number"
+                    id="buyoutPerPerson"
+                    value={buyoutPerPerson}
+                    onChange={(e) => setBuyoutPerPerson(e.target.value)}
+                    disabled={!buyout}
+                    min="0"
+                    step="0.01"
+                    placeholder="Buyout pro Person"
+                  />
+                </div>
+                <div className="buyout-total">
+                  <span className="buyout-total-label">Total:</span>
+                  <span className="buyout-total-amount">€{buyoutTotal}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Extras Section */}
@@ -266,7 +400,7 @@ function RiderExtrasForm({ formData, onDataChange }) {
           onClick={handleAddLine}
           className="add-line-button"
         >
-          + Add Line
+          + Add Item
         </button>
       </div>
     </div>

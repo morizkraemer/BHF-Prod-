@@ -51,6 +51,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   updateNightLead: (leadId, updates) => ipcRenderer.invoke('update-night-lead', leadId, updates),
   deleteNightLead: (leadId) => ipcRenderer.invoke('delete-night-lead', leadId),
   
+  // Tech Names
+  getTechNames: () => ipcRenderer.invoke('get-tech-names'),
+  saveTechNames: (names) => ipcRenderer.invoke('save-tech-names', names),
+  
   // Dialog operations
   showMessageBox: (options) => ipcRenderer.invoke('show-message-box', options),
   showErrorBox: (title, content) => ipcRenderer.invoke('show-error-box', title, content)

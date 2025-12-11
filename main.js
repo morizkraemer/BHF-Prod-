@@ -24,7 +24,11 @@ const store = new Store({
     riderExtrasItems: [],
     nightLeads: [],
     selectedScanner: null,
-    scanFolder: null // Will default to ~/Documents/NightclubScans if not set
+    scanFolder: null, // Will default to ~/Documents/NightclubScans if not set
+    techNames: {
+      soundEngineerName: '',
+      lightingTechName: ''
+    }
   }
 });
 
@@ -151,6 +155,19 @@ ipcMain.handle('delete-night-lead', (event, leadId) => {
   const leads = store.get('nightLeads', []);
   const filtered = leads.filter(lead => lead.id !== leadId);
   store.set('nightLeads', filtered);
+  return true;
+});
+
+// IPC Handlers for Tech Names
+ipcMain.handle('get-tech-names', () => {
+  return store.get('techNames', {
+    soundEngineerName: '',
+    lightingTechName: ''
+  });
+});
+
+ipcMain.handle('save-tech-names', (event, names) => {
+  store.set('techNames', names);
   return true;
 });
 

@@ -11,11 +11,42 @@ function TontechnikerForm({ formData, onDataChange }) {
     scannedImages: formData?.scannedImages || []
   });
 
+  // Load saved tech names on mount (only if formData doesn't have them)
+  useEffect(() => {
+    if (!formData?.soundEngineerName && !formData?.lightingTechName) {
+      if (window.electronAPI && window.electronAPI.getTechNames) {
+        window.electronAPI.getTechNames().then(savedNames => {
+          if (savedNames) {
+            setLocalData(prev => ({
+              ...prev,
+              soundEngineerName: savedNames.soundEngineerName || prev.soundEngineerName || '',
+              lightingTechName: savedNames.lightingTechName || prev.lightingTechName || ''
+            }));
+          }
+        });
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (onDataChange) {
       onDataChange(localData);
     }
   }, [localData]);
+
+  // Save tech names when they change (debounced)
+  useEffect(() => {
+    if (window.electronAPI && window.electronAPI.saveTechNames) {
+      const timeoutId = setTimeout(() => {
+        window.electronAPI.saveTechNames({
+          soundEngineerName: localData.soundEngineerName || '',
+          lightingTechName: localData.lightingTechName || ''
+        });
+      }, 500); // Debounce by 500ms to avoid saving on every keystroke
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [localData.soundEngineerName, localData.lightingTechName]);
 
   const handleChange = (field, value) => {
     setLocalData(prev => ({
@@ -37,7 +68,7 @@ function TontechnikerForm({ formData, onDataChange }) {
         {/* Sound Engineer Section */}
         <div className="form-row form-row-tech-info">
           <div className="form-group form-group-tech-name">
-            <label htmlFor="soundEngineerName">Tontechniker Name *</label>
+            <label htmlFor="soundEngineerName">Tontechnik Name *</label>
             <input
               type="text"
               id="soundEngineerName"
@@ -73,7 +104,7 @@ function TontechnikerForm({ formData, onDataChange }) {
         {/* Lighting Tech Section (Optional) */}
         <div className="form-row form-row-tech-info">
           <div className="form-group form-group-tech-name">
-            <label htmlFor="lightingTechName">Lichttechniker Name</label>
+            <label htmlFor="lightingTechName">Lichttechnik Name</label>
             <input
               type="text"
               id="lightingTechName"

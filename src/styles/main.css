@@ -293,6 +293,246 @@ body {
   gap: 12px;
 }
 
+/* Get In Catering Section */
+.get-in-catering-section {
+  padding: 15px;
+  background-color: #fff5e6;
+  border-radius: 6px;
+  border: 1px solid #ffd699;
+  margin-bottom: 20px;
+}
+
+.catering-header-row {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 20px;
+}
+
+.catering-checkboxes-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.standardbestueckung-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 15px;
+  background-color: #f0f7ff;
+  border-radius: 6px;
+  border: 1px solid #b3d9ff;
+  flex-shrink: 0;
+}
+
+.standardbestueckung-label {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 13px;
+}
+
+.standardbestueckung-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background-color: white;
+  cursor: pointer;
+  min-width: 200px;
+}
+
+.standardbestueckung-select:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.get-in-catering-checkbox {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.get-in-catering-checkbox:checked + .checkbox-custom {
+  background-color: #3498db;
+  border-color: #3498db;
+}
+
+.get-in-catering-checkbox:checked + .checkbox-custom::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.checkbox-text {
+  margin-left: 8px;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.catering-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 100%;
+}
+
+.checkbox-label.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.checkbox-label.disabled .checkbox-text {
+  color: #999;
+}
+
+.dinner-checkbox,
+.buyout-checkbox {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.dinner-checkbox:disabled + .checkbox-custom,
+.buyout-checkbox:disabled + .checkbox-custom {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dinner-checkbox:checked + .checkbox-custom,
+.buyout-checkbox:checked + .checkbox-custom {
+  background-color: #3498db;
+  border-color: #3498db;
+}
+
+.dinner-checkbox:checked + .checkbox-custom::after,
+.buyout-checkbox:checked + .checkbox-custom::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.buyout-details {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #ffd699;
+  transition: opacity 0.2s ease;
+}
+
+.buyout-details-row {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.buyout-details.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.buyout-provider-section {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.buyout-provider-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background-color: white;
+  cursor: pointer;
+  min-width: 200px;
+}
+
+.buyout-provider-select:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.buyout-provider-select:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.buyout-fields {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.buyout-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.buyout-field input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background-color: white;
+  width: 150px;
+}
+
+.buyout-field input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.buyout-field input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.buyout-total {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  background-color: #e8f5e9;
+  border-radius: 6px;
+  border: 1px solid #c8e6c9;
+}
+
+.buyout-total-label {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.buyout-total-amount {
+  font-size: 18px;
+  font-weight: 700;
+  color: #27ae60;
+}
+
 .standardbestueckung-section {
   display: flex;
   align-items: center;
