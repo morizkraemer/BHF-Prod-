@@ -8,6 +8,10 @@ function SettingsForm() {
   const [editingItem, setEditingItem] = useState(null);
   const [editItemName, setEditItemName] = useState('');
   const [editItemPrice, setEditItemPrice] = useState('');
+  const [nightLeads, setNightLeads] = useState([]);
+  const [newLeadName, setNewLeadName] = useState('');
+  const [editingLead, setEditingLead] = useState(null);
+  const [editLeadName, setEditLeadName] = useState('');
   const [scanners, setScanners] = useState([]);
   const [selectedScanner, setSelectedScanner] = useState(null);
   const [loadingScanners, setLoadingScanners] = useState(false);
@@ -15,6 +19,7 @@ function SettingsForm() {
 
   useEffect(() => {
     loadItems();
+    loadNightLeads();
     loadScanners();
     loadSelectedScanner();
     loadScanFolder();
@@ -72,6 +77,13 @@ function SettingsForm() {
     if (window.electronAPI && window.electronAPI.getRiderItems) {
       const items = await window.electronAPI.getRiderItems();
       setCatalogItems(items || []);
+    }
+  };
+
+  const loadNightLeads = async () => {
+    if (window.electronAPI && window.electronAPI.getNightLeads) {
+      const leads = await window.electronAPI.getNightLeads();
+      setNightLeads(leads || []);
     }
   };
 
@@ -139,6 +151,57 @@ function SettingsForm() {
       if (window.electronAPI && window.electronAPI.deleteRiderItem) {
         await window.electronAPI.deleteRiderItem(itemId);
         loadItems();
+      }
+    }
+  };
+
+  // Night Leads handlers
+  const handleAddLead = async () => {
+    if (!newLeadName.trim()) {
+      alert('Bitte Name eingeben');
+      return;
+    }
+
+    if (window.electronAPI && window.electronAPI.addNightLead) {
+      await window.electronAPI.addNightLead({
+        name: newLeadName.trim()
+      });
+      setNewLeadName('');
+      loadNightLeads();
+    }
+  };
+
+  const handleStartEditLead = (lead) => {
+    setEditingLead(lead.id);
+    setEditLeadName(lead.name);
+  };
+
+  const handleSaveEditLead = async () => {
+    if (!editLeadName.trim()) {
+      alert('Bitte Name eingeben');
+      return;
+    }
+
+    if (window.electronAPI && window.electronAPI.updateNightLead) {
+      await window.electronAPI.updateNightLead(editingLead, {
+        name: editLeadName.trim()
+      });
+      setEditingLead(null);
+      setEditLeadName('');
+      loadNightLeads();
+    }
+  };
+
+  const handleCancelEditLead = () => {
+    setEditingLead(null);
+    setEditLeadName('');
+  };
+
+  const handleDeleteLead = async (leadId) => {
+    if (window.confirm('Möchten Sie diesen Night Lead wirklich löschen?')) {
+      if (window.electronAPI && window.electronAPI.deleteNightLead) {
+        await window.electronAPI.deleteNightLead(leadId);
+        loadNightLeads();
       }
     }
   };
@@ -258,6 +321,100 @@ function SettingsForm() {
     </>
   );
 
+  const renderNightLeadsSection = () => (
+    <>
+      <h2>Night Leads Katalog</h2>
+      <p className="settings-description">
+        Verwalten Sie die verfügbaren Night Leads. Diese können dann im Uebersicht-Formular ausgewählt werden.
+      </p>
+
+      {/* Add New Lead */}
+      <div className="settings-add-section">
+        <h3>Neuer Night Lead hinzufügen</h3>
+        <div className="settings-add-form">
+          <input
+            type="text"
+            value={newLeadName}
+            onChange={(e) => setNewLeadName(e.target.value)}
+            className="settings-input"
+            placeholder="Night Lead Name"
+            style={{ flex: 1 }}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleAddLead();
+              }
+            }}
+          />
+          <button
+            type="button"
+            onClick={handleAddLead}
+            className="settings-add-button"
+          >
+            Hinzufügen
+          </button>
+        </div>
+      </div>
+
+      {/* Leads List */}
+      <div className="settings-items-section">
+        <h3>Vorhandene Night Leads ({nightLeads.length})</h3>
+        {nightLeads.length === 0 ? (
+          <p className="settings-empty">Keine Night Leads vorhanden. Fügen Sie den ersten Night Lead hinzu.</p>
+        ) : (
+          <div className="settings-items-list">
+            {nightLeads.map((lead) => (
+              <div key={lead.id} className="settings-item-row">
+                {editingLead === lead.id ? (
+                  <>
+                    <input
+                      type="text"
+                      value={editLeadName}
+                      onChange={(e) => setEditLeadName(e.target.value)}
+                      className="settings-edit-input"
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSaveEditLead}
+                      className="settings-save-button"
+                    >
+                      Speichern
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelEditLead}
+                      className="settings-cancel-button"
+                    >
+                      Abbrechen
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="settings-item-name" style={{ flex: 1 }}>{lead.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleStartEditLead(lead)}
+                      className="settings-edit-button"
+                    >
+                      Bearbeiten
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteLead(lead.id)}
+                      className="settings-delete-button"
+                    >
+                      Löschen
+                    </button>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  );
+
   const renderScannerSection = () => (
     <>
       <h2>Printer / Scanner</h2>
@@ -336,6 +493,12 @@ function SettingsForm() {
               Rider
             </button>
             <button
+              className={`settings-sidebar-item ${activeSettingsSection === 'night-leads' ? 'active' : ''}`}
+              onClick={() => setActiveSettingsSection('night-leads')}
+            >
+              Night Leads
+            </button>
+            <button
               className={`settings-sidebar-item ${activeSettingsSection === 'scanner' ? 'active' : ''}`}
               onClick={() => setActiveSettingsSection('scanner')}
             >
@@ -347,7 +510,9 @@ function SettingsForm() {
         {/* Settings Content */}
         <div className="settings-content">
           <div className="settings-form">
-            {activeSettingsSection === 'rider' ? renderRiderSection() : renderScannerSection()}
+            {activeSettingsSection === 'rider' ? renderRiderSection() : 
+             activeSettingsSection === 'night-leads' ? renderNightLeadsSection() : 
+             renderScannerSection()}
           </div>
         </div>
       </div>

@@ -12,7 +12,7 @@ function App() {
   const sections = [
     { id: 'uebersicht', name: 'Uebersicht' },
     { id: 'rider-extras', name: 'Rider / Backstage' },
-    { id: 'tontechniker', name: 'Tontechniker' },
+    { id: 'tontechniker', name: 'Ton/Lichttechnik' },
     { id: 'kassenbelege', name: 'Kassenbelege' }
   ];
 
@@ -56,7 +56,12 @@ function App() {
           />
         );
       case 'kassenbelege':
-        return <p>Kassenbelege form will be implemented soon</p>;
+        return (
+          <KassenbelegeForm
+            formData={formData.kassenbelege}
+            onDataChange={(data) => handleFormDataChange('kassenbelege', data)}
+          />
+        );
       case 'settings':
         return <SettingsForm />;
       default:

@@ -6,47 +6,56 @@ An Electron desktop application for gathering end-of-shift information at a nigh
 ## Current Status
 - ✅ **Phase 1 Complete** - Basic setup and UI structure working
 - ✅ **Phase 2 Complete** - UI layout, sidebar, navigation, and Close Shift button in sidebar
-- ✅ **Phase 3 In Progress** - Forms implementation
-  - ✅ Uebersicht form complete
+- ✅ **Phase 3 Complete** - All forms implemented
+  - ✅ Uebersicht form complete with event type selection and improved layout
   - ✅ Rider Extras form complete with item catalog integration
-  - ✅ Tontechniker form complete with scanner integration
-  - ✅ Settings page for managing catalog items and scanner settings
-  - ⏳ Kassenbelege form pending
-- ✅ **Item Catalog System** - Implemented with electron-store
+  - ✅ Ton/Lichttechnik form complete with scanner integration and tech info fields
+  - ✅ Kassenbelege form complete with scanner integration
+  - ✅ Settings page for managing catalog items (Rider Extras & Night Leads) and scanner settings
+- ✅ **Item Catalog Systems** - Implemented with electron-store
+  - ✅ Rider Extras catalog
+  - ✅ Night Leads catalog
 - ✅ **Hot Reload** - Development setup with electron-reload
 - ✅ **Scanner Integration** - Complete with NAPS2 CLI
   - ✅ Scanner detection and selection
-  - ✅ Scan from glass (flatbed) or feeder
+  - ✅ Scanner status display (green/red indicator)
+  - ✅ Scan source selection (Glas/Oben) with page-specific defaults
   - ✅ PDF preview with PDF.js
   - ✅ Document management with filename list and preview popup
-  - ✅ NAPS2 installation check
-- 🔄 **Next**: Complete Kassenbelege form or proceed to Phase 4
+  - ✅ NAPS2 installation check on startup
+  - ✅ Reusable DocumentScanner component
+- 🔄 **Next**: Phase 4 - Validation & Close Shift Logic
 
 ## Core Features
 
 ### 1. Multi-Form Data Collection
 - **Sidebar Navigation** (Left side)
   - Uebersicht (Overview)
-  - Rider Extras
-  - Tontechniker (Sound Technician)
+  - Rider / Backstage
+  - Ton/Lichttechnik (Sound/Lighting Technician)
   - Kassenbelege (Cash Receipts)
 - **Form Sections**
-  - **Uebersicht** - Production overview
-    - Date picker
-    - Event name
-    - Number of attendees
-    - Additional production details
+  - **Uebersicht** - Production overview ✅
+    - Event name, event type (club/konzert/einmietung), date on same line
+    - Get In, Doors, Travel Party on same line
+    - Night Lead selector (from catalog)
   - **Rider / Backstage** - Artist rider and extras information
     - Backstage Kuehlschrank selector (Standard Konzert, Standard Tranzit, None)
     - Extras section with dynamic items
     - Item catalog integration with autocomplete
     - Amount, Name, Discount (50%, 75%, 100%), Price, Checkbox (eingebongt)
-  - **Tontechniker** - Sound technician details and notes ✅
-    - Document scanner integration
+  - **Ton/Lichttechnik** - Sound/Lighting technician details ✅
+    - Sound engineer name and start/end time
+    - Lighting tech name and start/end time (optional)
+    - Document scanner integration (defaults to feeder)
     - Scan documents (PDF/images)
     - Preview scanned documents
     - Remove documents
-  - **Kassenbelege** - Cash register receipts and financial information
+  - **Kassenbelege** - Cash register receipts ✅
+    - Document scanner integration (defaults to glass)
+    - Scan receipts (PDF/images)
+    - Preview scanned receipts
+    - Remove receipts
 - **Close Shift Button** (Bottom of sidebar)
   - Positioned at bottom of sidebar for easy access
   - Validates all required information across all sections
@@ -150,9 +159,12 @@ Produktionstool/
 - [x] Settings page added to sidebar bottom
 - [ ] Add visual indicators for active/completed sections (enhancement)
 
-### Phase 3: Form System 🔄 IN PROGRESS
+### Phase 3: Form System ✅ COMPLETE
 - [x] Create Uebersicht form component ✅
 - [x] Implement form fields for Uebersicht section ✅
+  - [x] Event name, event type (club/konzert/einmietung), and date on same line
+  - [x] Get In, Doors, and Travel Party on same line
+  - [x] Night Lead dropdown (integrated with catalog)
 - [x] Set up centralized form state management ✅
 - [x] Create Rider Extras form component ✅
 - [x] Implement form fields for Rider Extras section ✅
@@ -161,12 +173,21 @@ Produktionstool/
   - [x] Column headers for better organization
   - [x] Item catalog integration with autocomplete
 - [x] Create Settings page for catalog management ✅
+  - [x] Rider Extras catalog management
+  - [x] Night Leads catalog management
+  - [x] Scanner settings
 - [x] Create Tontechniker form component ✅
-  - [x] Document scanner integration
+  - [x] Renamed to "Ton/Lichttechnik"
+  - [x] Sound engineer name and start/end time fields
+  - [x] Lighting tech name and start/end time fields (optional)
+  - [x] Document scanner integration in box
+  - [x] Scanner defaults to feeder source
   - [x] Reusable DocumentScanner component
   - [x] PDF preview functionality
-- [ ] Create Kassenbelege form component
-- [ ] Implement form fields for remaining sections
+- [x] Create Kassenbelege form component ✅
+  - [x] Document scanner integration (defaults to glass source)
+  - [x] Receipt scanning functionality
+  - [x] Document list with preview
 - [ ] Add form validation for each section
 
 ### Phase 4: Validation & Close Shift Logic
@@ -193,18 +214,26 @@ Produktionstool/
 ### Phase 7: Scanner Integration ✅ COMPLETE
 - [x] Research scanner compatibility ✅ (NAPS2 CLI chosen)
 - [x] Set up scanner library ✅ (NAPS2 CLI integration)
-- [x] Create scanner UI component ✅ (DocumentScanner component)
+- [x] Create scanner UI component ✅ (DocumentScanner reusable component)
 - [x] Implement scan-to-PDF functionality ✅
 - [x] Scanner detection and selection ✅
-- [x] Scan source selection (glass/feeder) ✅
+- [x] Scanner status display (green/red indicator) ✅
+- [x] Scan source selection (Glas/Oben) ✅
+- [x] Default source configuration per page ✅
+  - [x] Ton/Lichttechnik: defaults to feeder
+  - [x] Kassenbelege: defaults to glass
 - [x] PDF preview with PDF.js ✅
 - [x] Document preview popup ✅
+- [x] Filename-based document list ✅
 - [x] NAPS2 installation check ✅
 - [ ] Integrate scanner with file management (pending Phase 6)
 
 ### Phase 8: Data Persistence 🔄 PARTIALLY COMPLETE
 - [x] Set up electron-store ✅
 - [x] Implement item catalog persistence (Rider Extras items) ✅
+- [x] Implement Night Leads catalog persistence ✅
+- [x] Scanner selection persistence ✅
+- [x] Scan folder selection persistence ✅
 - [ ] Implement form data saving (session persistence)
 - [ ] Add session resume functionality
 - [ ] Create data export/import
@@ -220,19 +249,25 @@ Produktionstool/
 
 ### Uebersicht (Overview) ✅ IMPLEMENTED
 #### Implemented Fields
-- **Date** (date picker, preselected to current date) *
-- **Event Name** (text input) *
-- **Get In Zeit** (time selector) *
-- **Doors Zeit** (time selector) *
-- **Travel Party Anzahl** (number input)
-- **Night Lead** (dropdown selector) *
+- **Event Name** (text input) * - Left side of header row
+- **Event Type** (dropdown: Club, Konzert, Einmietung) - Middle of header row
+- **Date** (date picker, preselected to current date) * - Right side, small
+- **Get In Zeit** (time selector) * - First of three columns
+- **Doors Zeit** (time selector) * - Second of three columns
+- **Travel Party Anzahl** (number input) - Third of three columns
+- **Night Lead** (dropdown selector) * - Integrated with catalog system
 
 \* Required fields
 
+#### Layout
+- Event name, event type, and date on same line (event name flexible width, type ~160px, date ~180px small)
+- Get In, Doors, and Travel Party on same line (three equal columns)
+- Responsive: stacks vertically on smaller screens
+
 #### Notes
-- Form component created: `src/components/UebersichtForm.jsx`
+- Form component: `src/components/UebersichtForm.jsx`
+- Night Lead dropdown loads from catalog (Settings → Night Leads)
 - Form state integrated with App component
-- Night Lead dropdown currently has placeholder options - needs actual names
 
 ### Rider / Backstage ✅ IMPLEMENTED
 #### Implemented Fields
@@ -251,19 +286,41 @@ Produktionstool/
 - Column headers for organization
 - Settings page for managing catalog items
 
-### Tontechniker (Sound Technician) ✅ IMPLEMENTED
+### Ton/Lichttechnik (Sound/Lighting Technician) ✅ IMPLEMENTED
+- **Sound Engineer Fields** ✅
+  - Name (required)
+  - Start time
+  - End time
+- **Lighting Tech Fields** ✅ (Optional)
+  - Name
+  - Start time
+  - End time
 - **Document Scanner** ✅
-  - Scan button (scans from selected source)
-  - File selection button
-  - Scan source selection (Glass/Feeder)
+  - Scanner in styled box
+  - Scanner status display (green if connected, red if not)
+  - Scan source selection (Glas/Oben) - defaults to "Oben" (feeder)
+  - Scan button
   - Scanned documents list (filename-based)
   - Document preview popup (click filename to preview)
   - Remove document functionality
-- **Notes**: Uses reusable DocumentScanner component
+- **Notes**: 
+  - Uses reusable DocumentScanner component
+  - Page renamed from "Tontechniker" to "Ton/Lichttechnik"
+  - Scanner defaults to feeder source for this page
 
-### Kassenbelege (Cash Receipts)
-- Fields to be defined
-- Scanner integration for receipt scanning
+### Kassenbelege (Cash Receipts) ✅ IMPLEMENTED
+- **Document Scanner** ✅
+  - Scanner in styled box
+  - Scanner status display (green if connected, red if not)
+  - Scan source selection (Glas/Oben) - defaults to "Glas" (glass/flatbed)
+  - Scan button
+  - Scanned documents list (filename-based)
+  - Document preview popup (click filename to preview)
+  - Remove document functionality
+- **Notes**: 
+  - Uses reusable DocumentScanner component
+  - Scanner defaults to glass source for receipts
+  - No manual file upload option (scanning only)
 
 ## File Organization Structure
 

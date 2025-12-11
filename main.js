@@ -22,6 +22,7 @@ const store = new Store({
   name: 'config',
   defaults: {
     riderExtrasItems: [],
+    nightLeads: [],
     selectedScanner: null,
     scanFolder: null // Will default to ~/Documents/NightclubScans if not set
   }
@@ -115,6 +116,41 @@ ipcMain.handle('delete-rider-item', (event, itemId) => {
   const items = store.get('riderExtrasItems', []);
   const filtered = items.filter(item => item.id !== itemId);
   store.set('riderExtrasItems', filtered);
+  return true;
+});
+
+// IPC Handlers for Night Leads Catalog
+ipcMain.handle('get-night-leads', () => {
+  return store.get('nightLeads', []);
+});
+
+ipcMain.handle('add-night-lead', (event, lead) => {
+  const leads = store.get('nightLeads', []);
+  const newLead = {
+    id: Date.now().toString(),
+    name: lead.name,
+    createdAt: new Date().toISOString()
+  };
+  leads.push(newLead);
+  store.set('nightLeads', leads);
+  return newLead;
+});
+
+ipcMain.handle('update-night-lead', (event, leadId, updates) => {
+  const leads = store.get('nightLeads', []);
+  const index = leads.findIndex(lead => lead.id === leadId);
+  if (index !== -1) {
+    leads[index] = { ...leads[index], ...updates };
+    store.set('nightLeads', leads);
+    return leads[index];
+  }
+  return null;
+});
+
+ipcMain.handle('delete-night-lead', (event, leadId) => {
+  const leads = store.get('nightLeads', []);
+  const filtered = leads.filter(lead => lead.id !== leadId);
+  store.set('nightLeads', filtered);
   return true;
 });
 

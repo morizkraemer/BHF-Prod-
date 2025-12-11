@@ -6,14 +6,41 @@ function DocumentScanner({
   onDocumentsChange,
   showFileSelect = true,
   showScannedList = true,
-  className = ''
+  className = '',
+  defaultSource = 'glass' // Default scan source
 }) {
   const [isScanning, setIsScanning] = useState(false);
   const [pendingScan, setPendingScan] = useState(null); // File waiting for confirmation
   const [previewDocument, setPreviewDocument] = useState(null); // Document to preview in popup
-  const [scanSource, setScanSource] = useState('glass'); // 'glass' or 'feeder'
+  const [scanSource, setScanSource] = useState(defaultSource); // 'glass' or 'feeder'
+  const [scannerName, setScannerName] = useState(null); // Scanner name
+  const [scannerConnected, setScannerConnected] = useState(false); // Scanner connection status
 
   useEffect(() => {
+    // Load scanner info
+    const loadScannerInfo = async () => {
+      if (window.electronAPI && window.electronAPI.getSelectedScannerInfo) {
+        try {
+          const scannerInfo = await window.electronAPI.getSelectedScannerInfo();
+          if (scannerInfo && scannerInfo.name) {
+            setScannerName(scannerInfo.name);
+            setScannerConnected(true);
+          } else {
+            setScannerName('Kein Scanner ausgewählt');
+            setScannerConnected(false);
+          }
+        } catch (error) {
+          setScannerName('Kein Scanner ausgewählt');
+          setScannerConnected(false);
+        }
+      } else {
+        setScannerName('Kein Scanner ausgewählt');
+        setScannerConnected(false);
+      }
+    };
+
+    loadScannerInfo();
+
     // Listen for auto-detected scan files
     if (window.electronAPI && window.electronAPI.onScanFileDetected) {
       const handleAutoDetected = (result) => {
@@ -173,6 +200,13 @@ function DocumentScanner({
       
       {/* Scan Controls */}
       <div className="scan-section">
+        {/* Scanner Status */}
+        <div className="scanner-status">
+          <span className={`scanner-status-name ${scannerConnected ? 'scanner-connected' : 'scanner-disconnected'}`}>
+            {scannerName || 'Kein Scanner ausgewählt'}
+          </span>
+        </div>
+        
         <div className="scan-controls-row">
           <div className="scan-source-select">
             <label htmlFor="scan-source" className="scan-source-label">
@@ -185,8 +219,8 @@ function DocumentScanner({
               className="scan-source-dropdown"
               disabled={isScanning || pendingScan}
             >
-              <option value="glass">Glas (Flachbett)</option>
-              <option value="feeder">Einzug (Automatik)</option>
+              <option value="glass">Glas</option>
+              <option value="feeder">Oben</option>
             </select>
           </div>
           <div className="scan-buttons">
