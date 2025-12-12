@@ -15,7 +15,8 @@ function UebersichtForm({ formData, onDataChange }) {
     konzertendeTatsachlich: formData?.konzertendeTatsachlich || '',
     backstageCurfew: formData?.backstageCurfew || '',
     backstageCurfewTatsachlich: formData?.backstageCurfewTatsachlich || '',
-    nightLead: formData?.nightLead || ''
+    nightLead: formData?.nightLead || '',
+    agentur: formData?.agentur || ''
   });
 
   const [nightLeadOptions, setNightLeadOptions] = useState(['']);
@@ -231,21 +232,35 @@ function UebersichtForm({ formData, onDataChange }) {
           </div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="nightLead">Night Lead *</label>
-          <select
-            id="nightLead"
-            value={localData.nightLead}
-            onChange={(e) => handleChange('nightLead', e.target.value)}
-            className="form-select"
-            required
-          >
-            {nightLeadOptions.map((option, index) => (
-              <option key={index} value={option}>
-                {option || '-- Bitte wählen --'}
-              </option>
-            ))}
-          </select>
+        <div className="form-row form-row-two-columns">
+          <div className="form-group">
+            <label htmlFor="nightLead">Night Lead *</label>
+            <select
+              id="nightLead"
+              value={localData.nightLead}
+              onChange={(e) => handleChange('nightLead', e.target.value)}
+              className="form-select"
+              required
+            >
+              {nightLeadOptions.map((option, index) => (
+                <option key={index} value={option}>
+                  {option || '-- Bitte wählen --'}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="agentur">Agentur</label>
+            <input
+              type="text"
+              id="agentur"
+              value={localData.agentur}
+              onChange={(e) => handleChange('agentur', e.target.value)}
+              className="form-input"
+              placeholder="Agentur Name"
+            />
+          </div>
         </div>
 
         {/* Konzertende and Backstage Curfew - each paired with their Tatsächlich */}
