@@ -11,7 +11,8 @@ function App() {
     secu: {
       securityPersonnel: [{ name: '', startTime: '', endTime: '' }],
       scannedDocuments: []
-    }
+    },
+    gaeste: {}
   });
 
   const sections = [
@@ -19,7 +20,8 @@ function App() {
     { id: 'rider-extras', name: 'Hospitality' },
     { id: 'tontechniker', name: 'Ton/Lichttechnik' },
     { id: 'secu', name: 'Secu' },
-    { id: 'kassenbelege', name: 'Kassenbelege' }
+    { id: 'kassenbelege', name: 'Kassenbelege' },
+    { id: 'gaeste', name: 'Gäste' }
   ];
 
   const settingsSection = { id: 'settings', name: 'Settings' };
@@ -369,6 +371,13 @@ function App() {
           <KassenbelegeForm
             formData={formData.kassenbelege}
             onDataChange={(data) => handleFormDataChange('kassenbelege', data)}
+          />
+        );
+      case 'gaeste':
+        return (
+          <GaesteForm
+            formData={formData.gaeste}
+            onDataChange={(data) => handleFormDataChange('gaeste', data)}
           />
         );
       case 'settings':
