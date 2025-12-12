@@ -1,6 +1,9 @@
 const { useState, useEffect } = React;
 
-function SecuForm({ formData, onDataChange }) {
+function SecuForm({ formData, onDataChange, highlightedFields = [] }) {
+  const shouldHighlight = (fieldName) => {
+    return highlightedFields.includes(fieldName);
+  };
   const [securityPersonnel, setSecurityPersonnel] = useState(
     formData?.securityPersonnel || [
       { name: '', startTime: '', endTime: '' }
@@ -66,7 +69,7 @@ function SecuForm({ formData, onDataChange }) {
                 type="text"
                 value={person.name}
                 onChange={(e) => handlePersonnelChange(index, 'name', e.target.value)}
-                className="secu-personnel-name"
+                className={`secu-personnel-name ${shouldHighlight(`Secu Person ${index + 1} Name`) ? 'field-highlighted' : ''}`}
                 placeholder="Name *"
                 required
               />
@@ -74,14 +77,14 @@ function SecuForm({ formData, onDataChange }) {
                 type="time"
                 value={person.startTime}
                 onChange={(e) => handlePersonnelChange(index, 'startTime', e.target.value)}
-                className="secu-personnel-time"
+                className={`secu-personnel-time ${shouldHighlight(`Secu Person ${index + 1} Start Zeit`) ? 'field-highlighted' : ''}`}
                 required
               />
               <input
                 type="time"
                 value={person.endTime}
                 onChange={(e) => handlePersonnelChange(index, 'endTime', e.target.value)}
-                className="secu-personnel-time"
+                className={`secu-personnel-time ${shouldHighlight(`Secu Person ${index + 1} End Zeit`) ? 'field-highlighted' : ''}`}
                 required
               />
               <div className="secu-personnel-controls">
@@ -108,7 +111,7 @@ function SecuForm({ formData, onDataChange }) {
         </div>
 
         {/* Scanner Section */}
-        <div className="scanner-box">
+        <div className={`scanner-box ${shouldHighlight('Gescannte Dokumente') ? 'field-highlighted-group' : ''}`}>
           <DocumentScanner
             scannedDocuments={scannedDocuments}
             onDocumentsChange={handleDocumentsChange}

@@ -1,6 +1,20 @@
 const { useState, useEffect } = React;
 
-function TontechnikerForm({ formData, onDataChange }) {
+function TontechnikerForm({ formData, onDataChange, highlightedFields = [] }) {
+  // Map display field names to field identifiers
+  const fieldNameMap = {
+    'Sound Engineer Name': 'soundEngineerName',
+    'Sound Engineer Start Zeit': 'soundEngineerStartTime',
+    'Sound Engineer End Zeit': 'soundEngineerEndTime',
+    'Lighting Tech Name': 'lightingTechName',
+    'Lighting Tech Start Zeit': 'lightingTechStartTime',
+    'Lighting Tech End Zeit': 'lightingTechEndTime',
+    'Gescannte Bilder': 'scannedImages'
+  };
+  
+  const shouldHighlight = (fieldName) => {
+    return highlightedFields.includes(fieldName);
+  };
   const [localData, setLocalData] = useState({
     soundEngineerEnabled: formData?.soundEngineerEnabled !== undefined ? formData.soundEngineerEnabled : true, // Default to checked
     soundEngineerName: formData?.soundEngineerName || '',
@@ -87,7 +101,7 @@ function TontechnikerForm({ formData, onDataChange }) {
               id="soundEngineerName"
               value={localData.soundEngineerName}
               onChange={(e) => handleChange('soundEngineerName', e.target.value)}
-              className="form-input"
+              className={`form-input ${shouldHighlight('Sound Engineer Name') ? 'field-highlighted' : ''}`}
               placeholder="Name"
               required={localData.soundEngineerEnabled}
               disabled={!localData.soundEngineerEnabled}
@@ -100,7 +114,7 @@ function TontechnikerForm({ formData, onDataChange }) {
               id="soundEngineerStartTime"
               value={localData.soundEngineerStartTime}
               onChange={(e) => handleChange('soundEngineerStartTime', e.target.value)}
-              className="form-input"
+              className={`form-input ${shouldHighlight('Sound Engineer Start Zeit') ? 'field-highlighted' : ''}`}
               required={localData.soundEngineerEnabled}
               disabled={!localData.soundEngineerEnabled}
             />
@@ -112,7 +126,7 @@ function TontechnikerForm({ formData, onDataChange }) {
               id="soundEngineerEndTime"
               value={localData.soundEngineerEndTime}
               onChange={(e) => handleChange('soundEngineerEndTime', e.target.value)}
-              className="form-input"
+              className={`form-input ${shouldHighlight('Sound Engineer End Zeit') ? 'field-highlighted' : ''}`}
               required={localData.soundEngineerEnabled}
               disabled={!localData.soundEngineerEnabled}
             />
@@ -139,7 +153,7 @@ function TontechnikerForm({ formData, onDataChange }) {
               id="lightingTechName"
               value={localData.lightingTechName}
               onChange={(e) => handleChange('lightingTechName', e.target.value)}
-              className="form-input"
+              className={`form-input ${shouldHighlight('Lighting Tech Name') ? 'field-highlighted' : ''}`}
               placeholder="Name"
               required={localData.lightingTechEnabled}
               disabled={!localData.lightingTechEnabled}
@@ -152,7 +166,7 @@ function TontechnikerForm({ formData, onDataChange }) {
               id="lightingTechStartTime"
               value={localData.lightingTechStartTime}
               onChange={(e) => handleChange('lightingTechStartTime', e.target.value)}
-              className="form-input"
+              className={`form-input ${shouldHighlight('Lighting Tech Start Zeit') ? 'field-highlighted' : ''}`}
               required={localData.lightingTechEnabled}
               disabled={!localData.lightingTechEnabled}
             />
@@ -164,7 +178,7 @@ function TontechnikerForm({ formData, onDataChange }) {
               id="lightingTechEndTime"
               value={localData.lightingTechEndTime}
               onChange={(e) => handleChange('lightingTechEndTime', e.target.value)}
-              className="form-input"
+              className={`form-input ${shouldHighlight('Lighting Tech End Zeit') ? 'field-highlighted' : ''}`}
               required={localData.lightingTechEnabled}
               disabled={!localData.lightingTechEnabled}
             />
@@ -172,7 +186,7 @@ function TontechnikerForm({ formData, onDataChange }) {
         </div>
 
         {/* Scanner Section in Box */}
-        <div className="scanner-box">
+        <div className={`scanner-box ${shouldHighlight('Gescannte Bilder') ? 'field-highlighted-group' : ''}`}>
           <DocumentScanner
             scannedDocuments={localData.scannedImages}
             onDocumentsChange={handleDocumentsChange}

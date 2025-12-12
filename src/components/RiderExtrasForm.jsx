@@ -1,6 +1,17 @@
 const { useState, useEffect } = React;
 
-function RiderExtrasForm({ formData, onDataChange }) {
+function RiderExtrasForm({ formData, onDataChange, highlightedFields = [] }) {
+  // Map display field names to field identifiers
+  const fieldNameMap = {
+    'Get In Catering': 'getInCatering',
+    'Dinner': 'dinner',
+    'Backstage Kühlschrank': 'standardbestueckung',
+    'Handtuchzettel Scan': 'handtuchzettel'
+  };
+  
+  const shouldHighlight = (fieldName) => {
+    return highlightedFields.includes(fieldName);
+  };
   const [items, setItems] = useState(formData?.items || [{ amount: '', text: '', price: '', discount: '', originalPrice: '', ekPrice: null, checked: false }]);
   const [standardbestueckung, setStandardbestueckung] = useState(formData?.standardbestueckung || '');
   const [getInCatering, setGetInCatering] = useState(formData?.getInCatering || '');
@@ -260,7 +271,7 @@ function RiderExtrasForm({ formData, onDataChange }) {
               <h3 className="catering-section-title">Catering</h3>
               <div className="catering-radio-wrapper">
                 <div className="catering-radio-group">
-                <div className="form-group form-group-catering-radio">
+                <div className={`form-group form-group-catering-radio ${shouldHighlight('Get In Catering') ? 'field-highlighted-group' : ''}`}>
                   <label className="catering-radio-label">Get In Catering *</label>
                   <div className="catering-radio-buttons">
                     <label className="radio-option-label">
@@ -316,7 +327,7 @@ function RiderExtrasForm({ formData, onDataChange }) {
                   </div>
                 </div>
 
-                <div className="form-group form-group-catering-radio">
+                <div className={`form-group form-group-catering-radio ${shouldHighlight('Dinner') ? 'field-highlighted-group' : ''}`}>
                   <label className="catering-radio-label">Dinner *</label>
                   <div className="catering-radio-buttons">
                     <label className="radio-option-label">
@@ -461,13 +472,13 @@ function RiderExtrasForm({ formData, onDataChange }) {
             </div>
 
             {/* Right Side: Fridge Select + Contents List */}
-            <div className="fridge-section">
+            <div className={`fridge-section ${shouldHighlight('Backstage Kühlschrank') ? 'field-highlighted-group' : ''}`}>
               <h3 className="fridge-section-title">Backstage Kühlschrank</h3>
               <select
                 id="standardbestueckung"
                 value={standardbestueckung}
                 onChange={(e) => setStandardbestueckung(e.target.value)}
-                className="standardbestueckung-select"
+                className={`standardbestueckung-select ${shouldHighlight('Backstage Kühlschrank') ? 'field-highlighted' : ''}`}
                 required
               >
                 {standardbestueckungOptions.map(option => (
@@ -652,7 +663,7 @@ function RiderExtrasForm({ formData, onDataChange }) {
 
         {/* Scanner Sections */}
         <div className="scanner-boxes-container">
-          <div className="scanner-box">
+          <div className={`scanner-box ${shouldHighlight('Handtuchzettel Scan') ? 'field-highlighted-group' : ''}`}>
             <DocumentScanner
               scannedDocuments={scannedDocuments}
               onDocumentsChange={handleDocumentsChange}

@@ -1,6 +1,25 @@
 const { useState, useEffect, useCallback } = React;
 
-function UebersichtForm({ formData, onDataChange }) {
+function UebersichtForm({ formData, onDataChange, highlightedFields = [] }) {
+  // Map display field names to field identifiers
+  const fieldNameMap = {
+    'Event Name': 'eventName',
+    'Datum': 'date',
+    'Event Typ': 'eventType',
+    'Get In Zeit': 'getInTime',
+    'Doors Zeit': 'doorsTime',
+    'Travel Party Get In': 'travelPartyGetIn',
+    'Night Lead': 'nightLead',
+    'Konzertende': 'konzertende',
+    'Backstage Curfew': 'backstageCurfew',
+    'Nightliner Parkplatz': 'nightlinerParkplatz',
+    'Agentur': 'agentur',
+    'Veranstalter Name': 'veranstalterName'
+  };
+  
+  const shouldHighlight = (fieldName) => {
+    return highlightedFields.includes(fieldName);
+  };
   const [localData, setLocalData] = useState({
     date: new Date().toISOString().split('T')[0], // Current date in YYYY-MM-DD format
     eventName: formData?.eventName || '',
@@ -124,7 +143,7 @@ function UebersichtForm({ formData, onDataChange }) {
               id="date"
               value={localData.date}
               onChange={(e) => handleChange('date', e.target.value)}
-              className="form-input form-input-small"
+              className={`form-input form-input-small ${shouldHighlight('Datum') ? 'field-highlighted' : ''}`}
               required
             />
           </div>
@@ -141,7 +160,7 @@ function UebersichtForm({ formData, onDataChange }) {
                 id="travelPartyGetIn"
                 value={localData.travelPartyGetIn}
                 onChange={(e) => handleChange('travelPartyGetIn', e.target.value)}
-                className="form-input"
+                className={`form-input ${shouldHighlight('Travel Party Get In') ? 'field-highlighted' : ''}`}
                 min="0"
                 placeholder="0"
                 required
@@ -168,7 +187,7 @@ function UebersichtForm({ formData, onDataChange }) {
                 id="eventType"
                 value={localData.eventType}
                 onChange={(e) => handleChange('eventType', e.target.value)}
-                className="form-select form-select-small"
+                className={`form-select form-select-small ${shouldHighlight('Event Typ') ? 'field-highlighted' : ''}`}
                 required
               >
                 <option value="">-- Bitte wählen --</option>
@@ -188,7 +207,7 @@ function UebersichtForm({ formData, onDataChange }) {
                     id="agentur"
                     value={localData.agentur}
                     onChange={(e) => handleChange('agentur', e.target.value)}
-                    className="form-input"
+                    className={`form-input ${shouldHighlight('Agentur') ? 'field-highlighted' : ''}`}
                     placeholder="Agentur Name"
                     required
                   />
@@ -215,7 +234,7 @@ function UebersichtForm({ formData, onDataChange }) {
                     id="veranstalterName"
                     value={localData.veranstalterName}
                     onChange={(e) => handleChange('veranstalterName', e.target.value)}
-                    className="form-input"
+                    className={`form-input ${shouldHighlight('Veranstalter Name') ? 'field-highlighted' : ''}`}
                     placeholder="Veranstalter Name"
                     required
                   />
@@ -264,7 +283,7 @@ function UebersichtForm({ formData, onDataChange }) {
           
           {/* Nightliner Parkplatz in its own box */}
           <div className="nightliner-parkplatz-box">
-            <div className="form-group form-group-nightliner-radio">
+            <div className={`form-group form-group-nightliner-radio ${shouldHighlight('Nightliner Parkplatz') ? 'field-highlighted-group' : ''}`}>
               <label className="nightliner-radio-label">Nightliner Parkplatz *</label>
               <div className="nightliner-radio-buttons">
                 <label className="radio-option-label">
@@ -307,7 +326,7 @@ function UebersichtForm({ formData, onDataChange }) {
               id="nightLead"
               value={localData.nightLead}
               onChange={(e) => handleChange('nightLead', e.target.value)}
-              className="form-input"
+              className={`form-input ${shouldHighlight('Night Lead') ? 'field-highlighted' : ''}`}
               placeholder="Night Lead"
               required
             />
@@ -337,7 +356,7 @@ function UebersichtForm({ formData, onDataChange }) {
                   id="getInTime"
                   value={localData.getInTime}
                   onChange={(e) => handleChange('getInTime', e.target.value)}
-                  className="form-input"
+                  className={`form-input ${shouldHighlight('Get In Zeit') ? 'field-highlighted' : ''}`}
                   required
                 />
               </div>
@@ -362,7 +381,7 @@ function UebersichtForm({ formData, onDataChange }) {
                   id="doorsTime"
                   value={localData.doorsTime}
                   onChange={(e) => handleChange('doorsTime', e.target.value)}
-                  className="form-input"
+                  className={`form-input ${shouldHighlight('Doors Zeit') ? 'field-highlighted' : ''}`}
                   required
                 />
               </div>
@@ -390,7 +409,7 @@ function UebersichtForm({ formData, onDataChange }) {
                   id="konzertende"
                   value={localData.konzertende}
                   onChange={(e) => handleChange('konzertende', e.target.value)}
-                  className="form-input"
+                  className={`form-input ${shouldHighlight('Konzertende') ? 'field-highlighted' : ''}`}
                   required
                 />
               </div>
@@ -415,7 +434,7 @@ function UebersichtForm({ formData, onDataChange }) {
                   id="backstageCurfew"
                   value={localData.backstageCurfew}
                   onChange={(e) => handleChange('backstageCurfew', e.target.value)}
-                  className="form-input"
+                  className={`form-input ${shouldHighlight('Backstage Curfew') ? 'field-highlighted' : ''}`}
                   required
                 />
               </div>

@@ -1,6 +1,6 @@
 const { useState, useEffect } = React;
 
-function VVAMissingFieldsDialog({ isOpen, onFinishAnyway, onCancel, missingFields }) {
+function VVAMissingFieldsDialog({ isOpen, onFinishAnyway, onCancel, missingFields, title = 'Fehlende VVA Felder' }) {
   const [note, setNote] = useState('');
 
   // Reset note when dialog opens/closes
@@ -24,7 +24,7 @@ function VVAMissingFieldsDialog({ isOpen, onFinishAnyway, onCancel, missingField
   return (
     <div className="vva-missing-fields-overlay">
       <div className="vva-missing-fields-dialog">
-        <h2 className="vva-missing-fields-title">Fehlende VVA Felder</h2>
+        <h2 className="vva-missing-fields-title">{title}</h2>
         
         <div className="vva-missing-fields-content">
           <p className="vva-missing-fields-description">
@@ -47,13 +47,14 @@ function VVAMissingFieldsDialog({ isOpen, onFinishAnyway, onCancel, missingField
           </div>
 
           <div className="vva-missing-fields-note">
-            <label className="vva-missing-fields-note-label">Notiz (optional):</label>
+            <label className="vva-missing-fields-note-label">Notiz *:</label>
             <textarea
               className="vva-missing-fields-note-textarea"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Geben Sie hier eine Notiz ein..."
+              placeholder="Bitte geben Sie eine Notiz ein..."
               rows={4}
+              required
             />
           </div>
         </div>
@@ -69,6 +70,7 @@ function VVAMissingFieldsDialog({ isOpen, onFinishAnyway, onCancel, missingField
           <button
             type="button"
             onClick={() => onFinishAnyway(note)}
+            disabled={!note || note.trim() === ''}
             className="vva-missing-fields-button vva-missing-fields-button-finish"
           >
             Trotzdem Beenden

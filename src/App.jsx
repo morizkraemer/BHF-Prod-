@@ -30,6 +30,9 @@ function App() {
   const [showVVAConfirmation, setShowVVAConfirmation] = useState(false);
   const [showVVAMissingFields, setShowVVAMissingFields] = useState(false);
   const [vvaMissingFields, setVvaMissingFields] = useState([]);
+  const [showSLMissingFields, setShowSLMissingFields] = useState(false);
+  const [slMissingFields, setSlMissingFields] = useState([]);
+  const [highlightedFields, setHighlightedFields] = useState({});
   
   // Global scanner availability state - can be accessed by child components
   window.scannerAvailability = {
@@ -138,6 +141,11 @@ function App() {
       errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Handtuchzettel Scan' });
     }
     
+    // Backstage Kühlschrank (standardbestueckung)
+    if (!riderExtrasData.standardbestueckung || riderExtrasData.standardbestueckung === '') {
+      errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Backstage Kühlschrank' });
+    }
+    
     return errors;
   };
 
@@ -163,6 +171,119 @@ function App() {
     return errors;
   };
 
+  // Validate all required fields with detailed field-level errors (for SL phase)
+  const validateAllSectionsDetailed = () => {
+    const errors = [];
+    const uebersichtData = formData.uebersicht || {};
+    const riderExtrasData = formData['rider-extras'] || {};
+    const tontechnikerData = formData.tontechniker || {};
+    const secuData = formData.secu || {};
+    const orderbirdData = formData.orderbird || {};
+    
+    // Übersicht section
+    const uebersichtRequired = ['eventName', 'date', 'eventType', 'getInTime', 'doorsTime', 'travelPartyGetIn', 'nightLead', 'konzertende', 'backstageCurfew', 'nightlinerParkplatz'];
+    if (uebersichtData.eventType === 'konzert') {
+      uebersichtRequired.push('agentur');
+    } else if (uebersichtData.eventType === 'club' || uebersichtData.eventType === 'andere') {
+      uebersichtRequired.push('veranstalterName');
+    }
+    
+    const fieldNameMap = {
+      'eventName': 'Event Name',
+      'date': 'Datum',
+      'eventType': 'Event Typ',
+      'getInTime': 'Get In Zeit',
+      'doorsTime': 'Doors Zeit',
+      'travelPartyGetIn': 'Travel Party Get In',
+      'nightLead': 'Night Lead',
+      'konzertende': 'Konzertende',
+      'backstageCurfew': 'Backstage Curfew',
+      'nightlinerParkplatz': 'Nightliner Parkplatz',
+      'agentur': 'Agentur',
+      'veranstalterName': 'Veranstalter Name'
+    };
+    
+    uebersichtRequired.forEach(field => {
+      const value = uebersichtData[field];
+      if (value === undefined || value === null || value === '') {
+        errors.push({ section: 'Übersicht', sectionId: 'uebersicht', field: fieldNameMap[field] || field });
+      }
+    });
+    
+    // Hospitality section
+    if (!riderExtrasData.getInCatering || riderExtrasData.getInCatering === '') {
+      errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Get In Catering' });
+    }
+    if (!riderExtrasData.dinner || riderExtrasData.dinner === '') {
+      errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Dinner' });
+    }
+    if (!riderExtrasData.standardbestueckung || riderExtrasData.standardbestueckung === '') {
+      errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Backstage Kühlschrank' });
+    }
+    
+    // Ton/Lichttechnik section
+    if (tontechnikerData.soundEngineerEnabled !== false) {
+      if (!tontechnikerData.soundEngineerName || tontechnikerData.soundEngineerName === '') {
+        errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Sound Engineer Name' });
+      }
+      if (!tontechnikerData.soundEngineerStartTime || tontechnikerData.soundEngineerStartTime === '') {
+        errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Sound Engineer Start Zeit' });
+      }
+      if (!tontechnikerData.soundEngineerEndTime || tontechnikerData.soundEngineerEndTime === '') {
+        errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Sound Engineer End Zeit' });
+      }
+    }
+    if (tontechnikerData.lightingTechEnabled === true) {
+      if (!tontechnikerData.lightingTechName || tontechnikerData.lightingTechName === '') {
+        errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Lighting Tech Name' });
+      }
+      if (!tontechnikerData.lightingTechStartTime || tontechnikerData.lightingTechStartTime === '') {
+        errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Lighting Tech Start Zeit' });
+      }
+      if (!tontechnikerData.lightingTechEndTime || tontechnikerData.lightingTechEndTime === '') {
+        errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Lighting Tech End Zeit' });
+      }
+    }
+    const scannedImages = tontechnikerData.scannedImages || [];
+    if (scannedImages.length === 0) {
+      errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Gescannte Bilder' });
+    }
+    
+    // Secu section
+    const securityPersonnel = secuData.securityPersonnel || [];
+    if (securityPersonnel.length > 0) {
+      securityPersonnel.forEach((person, index) => {
+        if (!person.name || person.name.trim() === '') {
+          errors.push({ section: 'Secu', sectionId: 'secu', field: `Secu Person ${index + 1} Name` });
+        }
+        if (!person.startTime || person.startTime === '') {
+          errors.push({ section: 'Secu', sectionId: 'secu', field: `Secu Person ${index + 1} Start Zeit` });
+        }
+        if (!person.endTime || person.endTime === '') {
+          errors.push({ section: 'Secu', sectionId: 'secu', field: `Secu Person ${index + 1} End Zeit` });
+        }
+      });
+      const secuScannedDocuments = secuData.scannedDocuments || [];
+      if (secuScannedDocuments.length === 0) {
+        errors.push({ section: 'Secu', sectionId: 'secu', field: 'Gescannte Dokumente' });
+      }
+    }
+    
+    // Orderbird section
+    const hasScans = orderbirdData.receipts && orderbirdData.receipts.length > 0;
+    if (!hasScans) {
+      errors.push({ section: 'Orderbird', sectionId: 'orderbird', field: 'Belege Scans' });
+    }
+    if (orderbirdData.zBericht !== true) {
+      errors.push({ section: 'Orderbird', sectionId: 'orderbird', field: 'Z Bericht' });
+    }
+    if (orderbirdData.benutzerberichte !== true) {
+      errors.push({ section: 'Orderbird', sectionId: 'orderbird', field: 'Benutzerberichte' });
+    }
+    
+    return errors;
+  };
+
   // Check if there are extras in hospitality
   const hasHospitalityExtras = () => {
     const riderExtrasData = formData['rider-extras'] || {};
@@ -183,12 +304,62 @@ function App() {
 
   const handleVVAMissingFieldsFinishAnyway = (note) => {
     setShowVVAMissingFields(false);
-    // Proceed to VVA confirmation dialog
-    setShowVVAConfirmation(true);
+    // Clear highlights
+    setHighlightedFields({});
+    
+    // Since note is required, if we get here there's always a note - switch directly to SL phase
+    setCurrentPhase('SL');
+    alert('VVA Phase abgeschlossen. Sie können nun mit der SL Phase fortfahren.');
   };
 
   const handleVVAMissingFieldsCancel = () => {
     setShowVVAMissingFields(false);
+    // Create a map of highlighted fields by section
+    const highlightMap = {};
+    vvaMissingFields.forEach(err => {
+      if (!highlightMap[err.sectionId]) {
+        highlightMap[err.sectionId] = new Set();
+      }
+      highlightMap[err.sectionId].add(err.field);
+    });
+    // Convert Sets to Arrays for state
+    const highlightMapArrays = {};
+    Object.keys(highlightMap).forEach(sectionId => {
+      highlightMapArrays[sectionId] = Array.from(highlightMap[sectionId]);
+    });
+    setHighlightedFields(highlightMapArrays);
+  };
+
+  const handleSLMissingFieldsFinishAnyway = (note) => {
+    setShowSLMissingFields(false);
+    // Clear highlights
+    setHighlightedFields({});
+    
+    // Since note is required, proceed with saving
+    console.log('Close Shift clicked - All validations passed (with note)');
+    console.log('Form Data:', formData);
+    console.log('Note:', note);
+    
+    // TODO: Phase 4 - Generate PDFs and save files
+    alert('Shift beendet. Die Speicherfunktion wird in Phase 4 implementiert.');
+  };
+
+  const handleSLMissingFieldsCancel = () => {
+    setShowSLMissingFields(false);
+    // Create a map of highlighted fields by section
+    const highlightMap = {};
+    slMissingFields.forEach(err => {
+      if (!highlightMap[err.sectionId]) {
+        highlightMap[err.sectionId] = new Set();
+      }
+      highlightMap[err.sectionId].add(err.field);
+    });
+    // Convert Sets to Arrays for state
+    const highlightMapArrays = {};
+    Object.keys(highlightMap).forEach(sectionId => {
+      highlightMapArrays[sectionId] = Array.from(highlightMap[sectionId]);
+    });
+    setHighlightedFields(highlightMapArrays);
   };
 
   const handleCloseShift = () => {
@@ -200,6 +371,8 @@ function App() {
         // Show missing fields dialog instead of alert
         setVvaMissingFields(vvaErrors);
         setShowVVAMissingFields(true);
+        // Clear previous highlights when opening dialog
+        setHighlightedFields({});
         
         // Highlight the first section with errors
         if (vvaErrors.length > 0) {
@@ -209,24 +382,24 @@ function App() {
         return; // Stop execution if validation fails
       }
       
-      // All VVA validations passed - show confirmation dialog
+      // All VVA validations passed - clear highlights and show confirmation dialog
+      setHighlightedFields({});
       setShowVVAConfirmation(true);
       
     } else {
-      // SL phase - validate all required fields
-      const validationErrors = validateAllSections();
+      // SL phase - validate all required fields with detailed errors
+      const slErrors = validateAllSectionsDetailed();
       
-      if (validationErrors.length > 0) {
-        // Build error message
-        const errorMessages = validationErrors.map(err => 
-          `• ${err.section}: ${err.missing} von ${err.total} erforderlichen Feldern fehlen`
-        ).join('\n');
+      if (slErrors.length > 0) {
+        // Show missing fields dialog instead of alert
+        setSlMissingFields(slErrors);
+        setShowSLMissingFields(true);
+        // Clear previous highlights when opening dialog
+        setHighlightedFields({});
         
-        alert(`Bitte füllen Sie alle erforderlichen Felder aus:\n\n${errorMessages}\n\nBitte überprüfen Sie die markierten Abschnitte in der Sidebar.`);
-        
-        // Optionally highlight the first section with errors
-        if (validationErrors.length > 0) {
-          setActiveSection(validationErrors[0].sectionId);
+        // Highlight the first section with errors
+        if (slErrors.length > 0) {
+          setActiveSection(slErrors[0].sectionId);
         }
         
         return; // Stop execution if validation fails
@@ -364,6 +537,7 @@ function App() {
           <UebersichtForm
             formData={formData.uebersicht}
             onDataChange={(data) => handleFormDataChange('uebersicht', data)}
+            highlightedFields={highlightedFields.uebersicht || []}
           />
         );
       case 'rider-extras':
@@ -371,6 +545,7 @@ function App() {
           <RiderExtrasForm
             formData={formData['rider-extras']}
             onDataChange={(data) => handleFormDataChange('rider-extras', data)}
+            highlightedFields={highlightedFields['rider-extras'] || []}
           />
         );
       case 'tontechniker':
@@ -378,6 +553,7 @@ function App() {
           <TontechnikerForm
             formData={formData.tontechniker}
             onDataChange={(data) => handleFormDataChange('tontechniker', data)}
+            highlightedFields={highlightedFields.tontechniker || []}
           />
         );
       case 'secu':
@@ -385,6 +561,7 @@ function App() {
           <SecuForm
             formData={formData.secu}
             onDataChange={(data) => handleFormDataChange('secu', data)}
+            highlightedFields={highlightedFields.secu || []}
           />
         );
       case 'gaeste':
@@ -399,6 +576,7 @@ function App() {
           <OrderbirdForm
             formData={formData.orderbird}
             onDataChange={(data) => handleFormDataChange('orderbird', data)}
+            highlightedFields={highlightedFields.orderbird || []}
           />
         );
       case 'settings':
@@ -483,6 +661,15 @@ function App() {
         onFinishAnyway={handleVVAMissingFieldsFinishAnyway}
         onCancel={handleVVAMissingFieldsCancel}
         missingFields={vvaMissingFields}
+      />
+
+      {/* SL Missing Fields Dialog */}
+      <VVAMissingFieldsDialog
+        isOpen={showSLMissingFields}
+        onFinishAnyway={handleSLMissingFieldsFinishAnyway}
+        onCancel={handleSLMissingFieldsCancel}
+        missingFields={slMissingFields}
+        title="Fehlende Felder"
       />
 
       {/* VVA Confirmation Dialog */}

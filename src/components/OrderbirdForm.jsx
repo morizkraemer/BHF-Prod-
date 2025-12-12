@@ -1,6 +1,9 @@
 const { useState, useEffect } = React;
 
-function OrderbirdForm({ formData, onDataChange }) {
+function OrderbirdForm({ formData, onDataChange, highlightedFields = [] }) {
+  const shouldHighlight = (fieldName) => {
+    return highlightedFields.includes(fieldName);
+  };
   const [receipts, setReceipts] = useState(formData?.receipts || []);
   const [zBericht, setZBericht] = useState(formData?.zBericht || false);
   const [benutzerberichte, setBenutzerberichte] = useState(formData?.benutzerberichte || false);
@@ -35,7 +38,7 @@ function OrderbirdForm({ formData, onDataChange }) {
     <div className="form-container">
       <div className="orderbird-form">
         {/* Scanner Section in Box */}
-        <div className="scanner-box">
+        <div className={`scanner-box ${shouldHighlight('Belege Scans') ? 'field-highlighted-group' : ''}`}>
           <DocumentScanner
             scannedDocuments={receipts}
             onDocumentsChange={handleDocumentsChange}
@@ -52,7 +55,7 @@ function OrderbirdForm({ formData, onDataChange }) {
         <div className="orderbird-checkboxes">
           <h3>Belegarten</h3>
           <div className="checkbox-grid">
-            <label className="checkbox-label">
+            <label className={`checkbox-label ${shouldHighlight('Z Bericht') ? 'field-highlighted-group' : ''}`}>
               <input
                 type="checkbox"
                 checked={zBericht}
@@ -62,7 +65,7 @@ function OrderbirdForm({ formData, onDataChange }) {
               />
               <span className="checkbox-text">Z Bericht *</span>
             </label>
-            <label className="checkbox-label">
+            <label className={`checkbox-label ${shouldHighlight('Benutzerberichte') ? 'field-highlighted-group' : ''}`}>
               <input
                 type="checkbox"
                 checked={benutzerberichte}
