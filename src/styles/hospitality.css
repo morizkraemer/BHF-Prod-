@@ -63,8 +63,8 @@
 
 .catering-radio-buttons {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  flex-direction: row;
+  gap: 16px;
 }
 
 .radio-option-label {
@@ -349,9 +349,9 @@
 
 .buyout-fields {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 12px;
-  align-items: stretch;
+  align-items: flex-end;
 }
 
 .buyout-field {
