@@ -25,6 +25,16 @@ function SettingsForm() {
     technikzettel: null,
     uebersichtzettel: null
   });
+  const [bestueckungLists, setBestueckungLists] = useState({
+    'standard-konzert': [],
+    'standard-tranzit': []
+  });
+  const [selectedBestueckung, setSelectedBestueckung] = useState('standard-konzert');
+  const [selectedRiderItemId, setSelectedRiderItemId] = useState('');
+  const [selectedItemAmount, setSelectedItemAmount] = useState('1');
+  const [editingBestueckungItem, setEditingBestueckungItem] = useState(null);
+  const [editSelectedRiderItemId, setEditSelectedRiderItemId] = useState('');
+  const [editItemAmount, setEditItemAmount] = useState('1');
 
   const checkScannerAvailability = async () => {
     if (window.electronAPI && window.electronAPI.checkScannerAvailability) {
@@ -44,6 +54,7 @@ function SettingsForm() {
     loadSelectedScanner();
     loadScanFolder();
     loadTemplates();
+    loadBestueckungLists();
     checkScannerAvailability();
     
     // Check scanner availability periodically
@@ -144,6 +155,16 @@ function SettingsForm() {
     if (window.electronAPI && window.electronAPI.getNightLeads) {
       const leads = await window.electronAPI.getNightLeads();
       setNightLeads(leads || []);
+    }
+  };
+
+  const loadBestueckungLists = async () => {
+    if (window.electronAPI && window.electronAPI.getBestueckungLists) {
+      const lists = await window.electronAPI.getBestueckungLists();
+      setBestueckungLists(lists || {
+        'standard-konzert': [],
+        'standard-tranzit': []
+      });
     }
   };
 
@@ -268,6 +289,76 @@ function SettingsForm() {
       if (window.electronAPI && window.electronAPI.deleteNightLead) {
         await window.electronAPI.deleteNightLead(leadId);
         loadNightLeads();
+      }
+    }
+  };
+
+  // Bestückung handlers
+  const handleAddBestueckungItem = async () => {
+    if (!selectedRiderItemId) {
+      alert('Bitte ein Item auswählen');
+      return;
+    }
+
+    const amount = parseFloat(selectedItemAmount) || 1;
+    if (amount <= 0) {
+      alert('Die Menge muss größer als 0 sein');
+      return;
+    }
+
+    if (window.electronAPI && window.electronAPI.addBestueckungItem) {
+      const result = await window.electronAPI.addBestueckungItem(selectedBestueckung, selectedRiderItemId, amount);
+      if (result) {
+        setSelectedRiderItemId('');
+        setSelectedItemAmount('1');
+        loadBestueckungLists();
+      } else {
+        alert('Dieses Item ist bereits in der Liste');
+      }
+    }
+  };
+
+  const handleStartEditBestueckungItem = (riderItemId, amount) => {
+    setEditingBestueckungItem(riderItemId);
+    setEditSelectedRiderItemId(riderItemId);
+    setEditItemAmount(amount.toString());
+  };
+
+  const handleSaveEditBestueckungItem = async () => {
+    if (!editSelectedRiderItemId) {
+      alert('Bitte ein Item auswählen');
+      return;
+    }
+
+    const amount = parseFloat(editItemAmount) || 1;
+    if (amount <= 0) {
+      alert('Die Menge muss größer als 0 sein');
+      return;
+    }
+
+    if (window.electronAPI && window.electronAPI.updateBestueckungItem) {
+      await window.electronAPI.updateBestueckungItem(selectedBestueckung, editingBestueckungItem, {
+        riderItemId: editSelectedRiderItemId,
+        amount: amount
+      });
+      setEditingBestueckungItem(null);
+      setEditSelectedRiderItemId('');
+      setEditItemAmount('1');
+      loadBestueckungLists();
+    }
+  };
+
+  const handleCancelEditBestueckungItem = () => {
+    setEditingBestueckungItem(null);
+    setEditSelectedRiderItemId('');
+    setEditItemAmount('1');
+  };
+
+  const handleDeleteBestueckungItem = async (itemId) => {
+    if (window.confirm('Möchten Sie dieses Item wirklich löschen?')) {
+      if (window.electronAPI && window.electronAPI.deleteBestueckungItem) {
+        await window.electronAPI.deleteBestueckungItem(selectedBestueckung, itemId);
+        loadBestueckungLists();
       }
     }
   };
@@ -577,6 +668,177 @@ function SettingsForm() {
     </>
   );
 
+  const renderBestueckungSection = () => {
+    const bestueckungOptions = [
+      { value: 'standard-konzert', label: 'Standard Konzert' },
+      { value: 'standard-tranzit', label: 'Standard Tranzit' }
+    ];
+    const currentList = bestueckungLists[selectedBestueckung] || [];
+
+    return (
+      <>
+        <h2>Backstage Kühlschrank Bestückung</h2>
+        <p className="settings-description">
+          Verwalten Sie die Items für jede Bestückungsoption. Diese werden im Hospitality-Formular angezeigt, wenn die entsprechende Option ausgewählt wird.
+        </p>
+
+        {/* Select Bestückung */}
+        <div className="settings-add-section">
+          <h3>Bestückung auswählen</h3>
+          <select
+            value={selectedBestueckung}
+            onChange={(e) => {
+              setSelectedBestueckung(e.target.value);
+              setEditingBestueckungItem(null);
+              setEditSelectedRiderItemId('');
+              setEditItemAmount('1');
+            }}
+            className="settings-select"
+            style={{ marginBottom: '20px' }}
+          >
+            {bestueckungOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Add New Item */}
+        <div className="settings-add-section">
+          <h3>Neues Item hinzufügen</h3>
+          <div className="settings-add-form">
+            <select
+              value={selectedRiderItemId}
+              onChange={(e) => setSelectedRiderItemId(e.target.value)}
+              className="settings-select"
+              style={{ flex: 1 }}
+            >
+              <option value="">-- Item auswählen --</option>
+              {catalogItems
+                .filter(item => {
+                  // Filter out items that are already in the current list
+                  const currentList = bestueckungLists[selectedBestueckung] || [];
+                  return !currentList.some(listItem => listItem.riderItemId === item.id);
+                })
+                .map(item => (
+                  <option key={item.id} value={item.id}>
+                    {item.name} (€{item.price.toFixed(2)})
+                  </option>
+                ))}
+            </select>
+            <input
+              type="number"
+              value={selectedItemAmount}
+              onChange={(e) => setSelectedItemAmount(e.target.value)}
+              className="settings-input"
+              placeholder="Menge"
+              min="1"
+              step="1"
+              style={{ width: '100px' }}
+            />
+            <button
+              type="button"
+              onClick={handleAddBestueckungItem}
+              className="settings-add-button"
+              disabled={!selectedRiderItemId}
+            >
+              Hinzufügen
+            </button>
+          </div>
+        </div>
+
+        {/* Items List */}
+        <div className="settings-items-section">
+          <h3>Items für {bestueckungOptions.find(o => o.value === selectedBestueckung)?.label}</h3>
+          {currentList.length === 0 ? (
+            <p className="settings-empty-message">Keine Items hinzugefügt</p>
+          ) : (
+            <div className="settings-items-list">
+              {currentList.map((listItem) => {
+                const riderItem = catalogItems.find(item => item.id === listItem.riderItemId);
+                if (!riderItem) return null; // Skip if item not found
+                
+                return (
+                  <div key={listItem.riderItemId} className="settings-item">
+                    {editingBestueckungItem === listItem.riderItemId ? (
+                      <div className="settings-edit-form">
+                        <select
+                          value={editSelectedRiderItemId}
+                          onChange={(e) => setEditSelectedRiderItemId(e.target.value)}
+                          className="settings-select"
+                          style={{ flex: 1 }}
+                        >
+                          <option value="">-- Item auswählen --</option>
+                          {catalogItems
+                            .filter(item => {
+                              // Show current item and items not in the list
+                              const currentList = bestueckungLists[selectedBestueckung] || [];
+                              return item.id === listItem.riderItemId || !currentList.some(li => li.riderItemId === item.id);
+                            })
+                            .map(item => (
+                              <option key={item.id} value={item.id}>
+                                {item.name} (€{item.price.toFixed(2)})
+                              </option>
+                            ))}
+                        </select>
+                        <input
+                          type="number"
+                          value={editItemAmount}
+                          onChange={(e) => setEditItemAmount(e.target.value)}
+                          className="settings-input"
+                          placeholder="Menge"
+                          min="1"
+                          step="1"
+                          style={{ width: '100px' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSaveEditBestueckungItem}
+                          className="settings-save-button"
+                          disabled={!editSelectedRiderItemId}
+                        >
+                          Speichern
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCancelEditBestueckungItem}
+                          className="settings-cancel-button"
+                        >
+                          Abbrechen
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="settings-item-name">{riderItem.name} (€{riderItem.price.toFixed(2)}) x {listItem.amount}</span>
+                        <div className="settings-item-actions">
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditBestueckungItem(listItem.riderItemId, listItem.amount)}
+                            className="settings-edit-button"
+                          >
+                            Bearbeiten
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteBestueckungItem(listItem.riderItemId)}
+                            className="settings-delete-button"
+                          >
+                            Löschen
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </>
+    );
+  };
+
   const renderTemplatesSection = () => (
     <>
       <div className="settings-section">
@@ -701,6 +963,12 @@ function SettingsForm() {
               Printer / Scanner
             </button>
             <button
+              className={`settings-sidebar-item ${activeSettingsSection === 'bestueckung' ? 'active' : ''}`}
+              onClick={() => setActiveSettingsSection('bestueckung')}
+            >
+              Bestückung
+            </button>
+            <button
               className={`settings-sidebar-item ${activeSettingsSection === 'templates' ? 'active' : ''}`}
               onClick={() => setActiveSettingsSection('templates')}
             >
@@ -714,6 +982,7 @@ function SettingsForm() {
           <div className="settings-form">
             {activeSettingsSection === 'rider' ? renderRiderSection() : 
              activeSettingsSection === 'night-leads' ? renderNightLeadsSection() : 
+             activeSettingsSection === 'bestueckung' ? renderBestueckungSection() :
              activeSettingsSection === 'templates' ? renderTemplatesSection() :
              renderScannerSection()}
           </div>

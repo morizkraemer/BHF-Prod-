@@ -11,6 +11,10 @@ function UebersichtForm({ formData, onDataChange }) {
     doorsTatsachlich: formData?.doorsTatsachlich || '',
     travelPartyGetIn: formData?.travelPartyGetIn || '',
     travelPartyTatsachlich: formData?.travelPartyTatsachlich || '',
+    konzertende: formData?.konzertende || '',
+    konzertendeTatsachlich: formData?.konzertendeTatsachlich || '',
+    backstageCurfew: formData?.backstageCurfew || '',
+    backstageCurfewTatsachlich: formData?.backstageCurfewTatsachlich || '',
     nightLead: formData?.nightLead || ''
   });
 
@@ -78,6 +82,10 @@ function UebersichtForm({ formData, onDataChange }) {
         newData.doorsTatsachlich = value;
       } else if (field === 'travelPartyGetIn' && value) {
         newData.travelPartyTatsachlich = value;
+      } else if (field === 'konzertende' && value) {
+        newData.konzertendeTatsachlich = value;
+      } else if (field === 'backstageCurfew' && value) {
+        newData.backstageCurfewTatsachlich = value;
       }
       
       return newData;
@@ -114,12 +122,13 @@ function UebersichtForm({ formData, onDataChange }) {
             />
           </div>
           <div className="form-group form-group-event-type">
-            <label htmlFor="eventType">Event Typ</label>
+            <label htmlFor="eventType">Event Typ *</label>
             <select
               id="eventType"
               value={localData.eventType}
               onChange={(e) => handleChange('eventType', e.target.value)}
               className="form-select form-select-small"
+              required
             >
               <option value="">-- Bitte wählen --</option>
               <option value="club">Club</option>
@@ -195,7 +204,7 @@ function UebersichtForm({ formData, onDataChange }) {
           {/* Travel Party Get In paired with Travel Party Tatsächlich */}
           <div className="form-group-paired-container">
             <div className="form-group form-group-paired-left">
-              <label htmlFor="travelPartyGetIn">Travel Party Get In</label>
+              <label htmlFor="travelPartyGetIn">Travel Party Get In *</label>
               <input
                 type="number"
                 id="travelPartyGetIn"
@@ -204,6 +213,7 @@ function UebersichtForm({ formData, onDataChange }) {
                 className="form-input"
                 min="0"
                 placeholder="0"
+                required
               />
             </div>
             <div className="form-group form-group-paired-right">
@@ -236,6 +246,59 @@ function UebersichtForm({ formData, onDataChange }) {
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Konzertende and Backstage Curfew - each paired with their Tatsächlich */}
+        <div className="form-row form-row-two-columns">
+          {/* Konzertende paired with Konzertende Tatsächlich */}
+          <div className="form-group-paired-container">
+            <div className="form-group form-group-paired-left">
+              <label htmlFor="konzertende">Konzertende *</label>
+              <input
+                type="time"
+                id="konzertende"
+                value={localData.konzertende}
+                onChange={(e) => handleChange('konzertende', e.target.value)}
+                className="form-input"
+                required
+              />
+            </div>
+            <div className="form-group form-group-paired-right">
+              <label htmlFor="konzertendeTatsachlich">Tatsächlich</label>
+              <input
+                type="time"
+                id="konzertendeTatsachlich"
+                value={localData.konzertendeTatsachlich}
+                onChange={(e) => handleChange('konzertendeTatsachlich', e.target.value)}
+                className="form-input"
+              />
+            </div>
+          </div>
+
+          {/* Backstage Curfew paired with Backstage Curfew Tatsächlich */}
+          <div className="form-group-paired-container">
+            <div className="form-group form-group-paired-left">
+              <label htmlFor="backstageCurfew">Backstage Curfew *</label>
+              <input
+                type="time"
+                id="backstageCurfew"
+                value={localData.backstageCurfew}
+                onChange={(e) => handleChange('backstageCurfew', e.target.value)}
+                className="form-input"
+                required
+              />
+            </div>
+            <div className="form-group form-group-paired-right">
+              <label htmlFor="backstageCurfewTatsachlich">Tatsächlich</label>
+              <input
+                type="time"
+                id="backstageCurfewTatsachlich"
+                value={localData.backstageCurfewTatsachlich}
+                onChange={(e) => handleChange('backstageCurfewTatsachlich', e.target.value)}
+                className="form-input"
+              />
+            </div>
+          </div>
         </div>
       </form>
     </div>

@@ -61,6 +61,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   uploadTemplate: (templateKey) => ipcRenderer.invoke('upload-template', templateKey),
   printTemplate: (templateKey) => ipcRenderer.invoke('print-template', templateKey),
   
+  // Bestückung Lists
+  getBestueckungLists: () => ipcRenderer.invoke('get-bestueckung-lists'),
+  getBestueckungList: (bestueckungKey) => ipcRenderer.invoke('get-bestueckung-list', bestueckungKey),
+  saveBestueckungList: (bestueckungKey, items) => ipcRenderer.invoke('save-bestueckung-list', bestueckungKey, items),
+  addBestueckungItem: (bestueckungKey, riderItemId, amount) => ipcRenderer.invoke('add-bestueckung-item', bestueckungKey, riderItemId, amount),
+  updateBestueckungItem: (bestueckungKey, itemId, updates) => ipcRenderer.invoke('update-bestueckung-item', bestueckungKey, itemId, updates),
+  deleteBestueckungItem: (bestueckungKey, itemId) => ipcRenderer.invoke('delete-bestueckung-item', bestueckungKey, itemId),
+  
   // Dialog operations
   showMessageBox: (options) => ipcRenderer.invoke('show-message-box', options),
   showErrorBox: (title, content) => ipcRenderer.invoke('show-error-box', title, content)

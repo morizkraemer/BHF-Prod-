@@ -2,9 +2,11 @@ const { useState, useEffect } = React;
 
 function TontechnikerForm({ formData, onDataChange }) {
   const [localData, setLocalData] = useState({
+    soundEngineerEnabled: formData?.soundEngineerEnabled !== undefined ? formData.soundEngineerEnabled : true, // Default to checked
     soundEngineerName: formData?.soundEngineerName || '',
     soundEngineerStartTime: formData?.soundEngineerStartTime || '',
     soundEngineerEndTime: formData?.soundEngineerEndTime || '',
+    lightingTechEnabled: formData?.lightingTechEnabled !== undefined ? formData.lightingTechEnabled : false,
     lightingTechName: formData?.lightingTechName || '',
     lightingTechStartTime: formData?.lightingTechStartTime || '',
     lightingTechEndTime: formData?.lightingTechEndTime || '',
@@ -67,8 +69,19 @@ function TontechnikerForm({ formData, onDataChange }) {
       <div className="tontechniker-form">
         {/* Sound Engineer Section */}
         <div className="form-row form-row-tech-info">
+          <div className="form-group-tech-checkbox-wrapper">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={localData.soundEngineerEnabled}
+                onChange={(e) => handleChange('soundEngineerEnabled', e.target.checked)}
+                className="tech-checkbox"
+              />
+              <span className="checkbox-custom"></span>
+            </label>
+          </div>
           <div className="form-group form-group-tech-name">
-            <label htmlFor="soundEngineerName">Tontechnik Name *</label>
+            <label htmlFor="soundEngineerName">Tontechnik Name{localData.soundEngineerEnabled ? ' *' : ''}</label>
             <input
               type="text"
               id="soundEngineerName"
@@ -76,62 +89,84 @@ function TontechnikerForm({ formData, onDataChange }) {
               onChange={(e) => handleChange('soundEngineerName', e.target.value)}
               className="form-input"
               placeholder="Name"
-              required
+              required={localData.soundEngineerEnabled}
+              disabled={!localData.soundEngineerEnabled}
             />
           </div>
           <div className="form-group form-group-time">
-            <label htmlFor="soundEngineerStartTime">Start</label>
+            <label htmlFor="soundEngineerStartTime">Start{localData.soundEngineerEnabled ? ' *' : ''}</label>
             <input
               type="time"
               id="soundEngineerStartTime"
               value={localData.soundEngineerStartTime}
               onChange={(e) => handleChange('soundEngineerStartTime', e.target.value)}
               className="form-input"
+              required={localData.soundEngineerEnabled}
+              disabled={!localData.soundEngineerEnabled}
             />
           </div>
           <div className="form-group form-group-time">
-            <label htmlFor="soundEngineerEndTime">Ende</label>
+            <label htmlFor="soundEngineerEndTime">Ende{localData.soundEngineerEnabled ? ' *' : ''}</label>
             <input
               type="time"
               id="soundEngineerEndTime"
               value={localData.soundEngineerEndTime}
               onChange={(e) => handleChange('soundEngineerEndTime', e.target.value)}
               className="form-input"
+              required={localData.soundEngineerEnabled}
+              disabled={!localData.soundEngineerEnabled}
             />
           </div>
         </div>
 
-        {/* Lighting Tech Section (Optional) */}
+        {/* Lighting Tech Section */}
         <div className="form-row form-row-tech-info">
+          <div className="form-group-tech-checkbox-wrapper">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={localData.lightingTechEnabled}
+                onChange={(e) => handleChange('lightingTechEnabled', e.target.checked)}
+                className="tech-checkbox"
+              />
+              <span className="checkbox-custom"></span>
+            </label>
+          </div>
           <div className="form-group form-group-tech-name">
-            <label htmlFor="lightingTechName">Lichttechnik Name</label>
+            <label htmlFor="lightingTechName">Lichttechnik Name{localData.lightingTechEnabled ? ' *' : ''}</label>
             <input
               type="text"
               id="lightingTechName"
               value={localData.lightingTechName}
               onChange={(e) => handleChange('lightingTechName', e.target.value)}
               className="form-input"
-              placeholder="Name (optional)"
+              placeholder="Name"
+              required={localData.lightingTechEnabled}
+              disabled={!localData.lightingTechEnabled}
             />
           </div>
           <div className="form-group form-group-time">
-            <label htmlFor="lightingTechStartTime">Start</label>
+            <label htmlFor="lightingTechStartTime">Start{localData.lightingTechEnabled ? ' *' : ''}</label>
             <input
               type="time"
               id="lightingTechStartTime"
               value={localData.lightingTechStartTime}
               onChange={(e) => handleChange('lightingTechStartTime', e.target.value)}
               className="form-input"
+              required={localData.lightingTechEnabled}
+              disabled={!localData.lightingTechEnabled}
             />
           </div>
           <div className="form-group form-group-time">
-            <label htmlFor="lightingTechEndTime">Ende</label>
+            <label htmlFor="lightingTechEndTime">Ende{localData.lightingTechEnabled ? ' *' : ''}</label>
             <input
               type="time"
               id="lightingTechEndTime"
               value={localData.lightingTechEndTime}
               onChange={(e) => handleChange('lightingTechEndTime', e.target.value)}
               className="form-input"
+              required={localData.lightingTechEnabled}
+              disabled={!localData.lightingTechEnabled}
             />
           </div>
         </div>

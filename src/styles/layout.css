@@ -1,0 +1,129 @@
+/* Main Content */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.content-area {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+  background-color: white;
+  margin: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.content-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.content-title-row h1 {
+  font-size: 24px;
+  margin: 0;
+  color: #2c3e50;
+}
+
+.content-title-row-with-button {
+  margin-bottom: 20px;
+}
+
+/* Close Shift and Settings Buttons - Sidebar */
+.sidebar-bottom-buttons {
+  display: flex;
+  width: 100%;
+  gap: 0;
+}
+
+.close-shift-button-sidebar {
+  flex: 1;
+  padding: 14px 20px;
+  background-color: #27ae60;
+  color: white;
+  border: none;
+  border-radius: 0 6px 6px 0;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+}
+
+.close-shift-button-sidebar:hover {
+  background-color: #229954;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.close-shift-button-sidebar:active {
+  transform: translateY(0);
+}
+
+.settings-button-sidebar {
+  width: 48px;
+  padding: 14px;
+  background-color: #34495e;
+  color: white;
+  border: none;
+  border-radius: 6px 0 0 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  height: 48px;
+}
+
+.settings-button-sidebar:hover {
+  background-color: #2c3e50;
+}
+
+.settings-button-sidebar.active {
+  background-color: #3498db;
+}
+
+.settings-button-sidebar i {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scan-print-icon-button i,
+.remove-scan-button i,
+.document-icon i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Scrollbar styling */
+.content-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.content-area::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.content-area::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.content-area::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+

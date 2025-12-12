@@ -3,17 +3,19 @@ const { useState, useEffect } = React;
 function RiderExtrasForm({ formData, onDataChange }) {
   const [items, setItems] = useState(formData?.items || [{ amount: '', text: '', price: '', discount: '', originalPrice: '', ekPrice: null, checked: false }]);
   const [standardbestueckung, setStandardbestueckung] = useState(formData?.standardbestueckung || '');
-  const [getInCatering, setGetInCatering] = useState(formData?.getInCatering || false);
-  const [dinner, setDinner] = useState(formData?.dinner || false);
-  const [buyout, setBuyout] = useState(formData?.buyout || false);
+  const [getInCatering, setGetInCatering] = useState(formData?.getInCatering || '');
+  const [dinner, setDinner] = useState(formData?.dinner || ''); // Can be 'no', 'warm', or 'buyout'
   const [buyoutProvider, setBuyoutProvider] = useState(formData?.buyoutProvider || '');
-  const [buyoutPeople, setBuyoutPeople] = useState(formData?.buyoutPeople || '');
-  const [buyoutPerPerson, setBuyoutPerPerson] = useState(formData?.buyoutPerPerson || '');
+  const [buyoutGroups, setBuyoutGroups] = useState(formData?.buyoutGroups || [
+    { people: '', perPerson: '' }
+  ]);
   const [scannedDocuments, setScannedDocuments] = useState(formData?.scannedDocuments || []);
   const [purchaseReceipts, setPurchaseReceipts] = useState(formData?.purchaseReceipts || []);
+  const [notes, setNotes] = useState(formData?.notes || '');
   const [catalogItems, setCatalogItems] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState({});
   const [filteredSuggestions, setFilteredSuggestions] = useState({});
+  const [bestueckungItems, setBestueckungItems] = useState([]);
 
   const discountOptions = [
     { value: '50', label: '50%' },
@@ -23,7 +25,9 @@ function RiderExtrasForm({ formData, onDataChange }) {
   ];
 
   const standardbestueckungOptions = [
-    { value: '', label: 'None' },
+    { value: '', label: '-- Bitte wählen --' },
+    { value: 'leer', label: 'Leer' },
+    { value: 'abgeschlossen', label: 'Abgeschlossen' },
     { value: 'standard-konzert', label: 'Standard Konzert' },
     { value: 'standard-tranzit', label: 'Standard Tranzit' }
   ];
@@ -37,6 +41,25 @@ function RiderExtrasForm({ formData, onDataChange }) {
     }
   }, []);
 
+  // Load bestueckung items when standardbestueckung changes
+  useEffect(() => {
+    if (standardbestueckung && (standardbestueckung === 'standard-konzert' || standardbestueckung === 'standard-tranzit') && window.electronAPI && window.electronAPI.getBestueckungList) {
+      window.electronAPI.getBestueckungList(standardbestueckung).then(listItems => {
+        // Look up the actual rider items from the catalog and include amounts
+        const items = (listItems || [])
+          .map(listItem => {
+            const riderItem = catalogItems.find(item => item.id === listItem.riderItemId);
+            if (!riderItem) return null;
+            return { ...riderItem, amount: listItem.amount || 1 };
+          })
+          .filter(item => item !== null); // Remove any items not found in catalog
+        setBestueckungItems(items);
+      });
+    } else {
+      setBestueckungItems([]);
+    }
+  }, [standardbestueckung, catalogItems]);
+
   useEffect(() => {
     if (onDataChange) {
       onDataChange({ 
@@ -44,15 +67,14 @@ function RiderExtrasForm({ formData, onDataChange }) {
         standardbestueckung,
         getInCatering,
         dinner,
-        buyout,
         buyoutProvider,
-        buyoutPeople,
-        buyoutPerPerson,
+        buyoutGroups,
         scannedDocuments,
-        purchaseReceipts
+        purchaseReceipts,
+        notes
       });
     }
-  }, [items, standardbestueckung, getInCatering, dinner, buyout, buyoutProvider, buyoutPeople, buyoutPerPerson, scannedDocuments, purchaseReceipts]);
+  }, [items, standardbestueckung, getInCatering, dinner, buyoutProvider, buyoutGroups, scannedDocuments, purchaseReceipts, notes]);
 
   useEffect(() => {
     if (window.lucide) {
@@ -60,24 +82,28 @@ function RiderExtrasForm({ formData, onDataChange }) {
     }
   }, [items]); // Re-initialize icons when items change
 
-  // Calculate buyout total
-  const buyoutTotal = buyoutPeople && buyoutPerPerson 
-    ? (parseFloat(buyoutPeople) * parseFloat(buyoutPerPerson)).toFixed(2)
-    : '0.00';
-
-  // Handle buyout checkbox - disable dinner when buyout is checked
-  const handleBuyoutChange = (checked) => {
-    setBuyout(checked);
-    if (checked) {
-      setDinner(false); // Uncheck dinner when buyout is checked
+  // Calculate buyout total for all groups
+  const buyoutTotal = buyoutGroups.reduce((total, group) => {
+    if (group.people && group.perPerson) {
+      return total + (parseFloat(group.people) * parseFloat(group.perPerson));
     }
+    return total;
+  }, 0).toFixed(2);
+
+  const handleBuyoutGroupChange = (index, field, value) => {
+    const newGroups = [...buyoutGroups];
+    newGroups[index][field] = value;
+    setBuyoutGroups(newGroups);
   };
 
-  // Handle dinner checkbox - disable buyout when dinner is checked
-  const handleDinnerChange = (checked) => {
-    setDinner(checked);
-    if (checked) {
-      setBuyout(false); // Uncheck buyout when dinner is checked
+  const handleAddBuyoutGroup = () => {
+    setBuyoutGroups([...buyoutGroups, { people: '', perPerson: '' }]);
+  };
+
+  const handleRemoveBuyoutGroup = (index) => {
+    if (buyoutGroups.length > 1) {
+      const newGroups = buyoutGroups.filter((_, i) => i !== index);
+      setBuyoutGroups(newGroups);
     }
   };
 
@@ -214,63 +240,215 @@ function RiderExtrasForm({ formData, onDataChange }) {
       <div className="rider-extras-form">
         {/* Get In Catering Section */}
         <div className="get-in-catering-section">
-          <div className="catering-header-row">
-            <div className="catering-checkboxes-wrapper">
-              <div className="catering-checkboxes">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={getInCatering}
-                    onChange={(e) => {
-                      setGetInCatering(e.target.checked);
-                      if (!e.target.checked) {
-                        // Reset dinner and buyout when unchecked
-                        setDinner(false);
-                        setBuyout(false);
-                      }
-                    }}
-                    className="get-in-catering-checkbox"
-                  />
-                  <span className="checkbox-custom"></span>
-                  <span className="checkbox-text">Get In Catering</span>
-                </label>
+          <div className="catering-main-layout">
+            {/* Left Side: Catering Options (Radio Buttons + Buyout Details) */}
+            <div className="catering-options-section">
+              <h3 className="catering-section-title">Catering</h3>
+              <div className="catering-radio-wrapper">
+                <div className="catering-radio-group">
+                <div className="form-group form-group-catering-radio">
+                  <label className="catering-radio-label">Get In Catering *</label>
+                  <div className="catering-radio-buttons">
+                    <label className="radio-option-label">
+                      <input
+                        type="radio"
+                        name="getInCatering"
+                        value="no"
+                        checked={getInCatering === 'no'}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setGetInCatering(value);
+                          if (value === 'no') {
+                            // Reset dinner when set to no
+                            setDinner('');
+                          }
+                        }}
+                        className="catering-radio"
+                        required
+                      />
+                      <span className="radio-custom"></span>
+                      <span className="radio-text">Nein</span>
+                    </label>
+                    <label className="radio-option-label">
+                      <input
+                        type="radio"
+                        name="getInCatering"
+                        value="kalt"
+                        checked={getInCatering === 'kalt'}
+                        onChange={(e) => {
+                          setGetInCatering(e.target.value);
+                        }}
+                        className="catering-radio"
+                        required
+                      />
+                      <span className="radio-custom"></span>
+                      <span className="radio-text">Kalt</span>
+                    </label>
+                    <label className="radio-option-label">
+                      <input
+                        type="radio"
+                        name="getInCatering"
+                        value="nur-snacks"
+                        checked={getInCatering === 'nur-snacks'}
+                        onChange={(e) => {
+                          setGetInCatering(e.target.value);
+                        }}
+                        className="catering-radio"
+                        required
+                      />
+                      <span className="radio-custom"></span>
+                      <span className="radio-text">Nur Snacks</span>
+                    </label>
+                  </div>
+                </div>
 
-                <label className={`checkbox-label ${buyout ? 'disabled' : ''}`}>
-                  <input
-                    type="checkbox"
-                    checked={dinner}
-                    onChange={(e) => handleDinnerChange(e.target.checked)}
-                    disabled={buyout}
-                    className="dinner-checkbox"
-                  />
-                  <span className="checkbox-custom"></span>
-                  <span className="checkbox-text">Dinner</span>
-                </label>
+                <div className="form-group form-group-catering-radio">
+                  <label className="catering-radio-label">Dinner *</label>
+                  <div className="catering-radio-buttons">
+                    <label className="radio-option-label">
+                      <input
+                        type="radio"
+                        name="dinner"
+                        value="no"
+                        checked={dinner === 'no'}
+                        onChange={(e) => setDinner(e.target.value)}
+                        className="catering-radio"
+                        required
+                      />
+                      <span className="radio-custom"></span>
+                      <span className="radio-text">Nein</span>
+                    </label>
+                    <label className="radio-option-label">
+                      <input
+                        type="radio"
+                        name="dinner"
+                        value="warm"
+                        checked={dinner === 'warm'}
+                        onChange={(e) => setDinner(e.target.value)}
+                        className="catering-radio"
+                        required
+                      />
+                      <span className="radio-custom"></span>
+                      <span className="radio-text">Warm</span>
+                    </label>
+                    <label className="radio-option-label">
+                      <input
+                        type="radio"
+                        name="dinner"
+                        value="buyout"
+                        checked={dinner === 'buyout'}
+                        onChange={(e) => setDinner(e.target.value)}
+                        className="catering-radio"
+                        required
+                      />
+                      <span className="radio-custom"></span>
+                      <span className="radio-text">Buyout</span>
+                    </label>
+                    <label className="radio-option-label">
+                      <input
+                        type="radio"
+                        name="dinner"
+                        value="caterer"
+                        checked={dinner === 'caterer'}
+                        onChange={(e) => setDinner(e.target.value)}
+                        className="catering-radio"
+                        required
+                      />
+                      <span className="radio-custom"></span>
+                      <span className="radio-text">Caterer</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              </div>
 
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={buyout}
-                    onChange={(e) => handleBuyoutChange(e.target.checked)}
-                    disabled={dinner}
-                    className="buyout-checkbox"
-                  />
-                  <span className="checkbox-custom"></span>
-                  <span className="checkbox-text">Buyout</span>
-                </label>
+              <div className={`buyout-details ${dinner !== 'buyout' ? 'disabled' : ''}`}>
+                <div className="buyout-provider-section">
+                  <select
+                    id="buyoutProvider"
+                    value={buyoutProvider}
+                    onChange={(e) => setBuyoutProvider(e.target.value)}
+                    disabled={dinner !== 'buyout'}
+                    className="buyout-provider-select"
+                  >
+                    <option value="">-- Buyout Über --</option>
+                    <option value="uber-bahnhof-pauli">Uber Bahnhof Pauli</option>
+                    <option value="uber-agentur">Uber Agentur</option>
+                  </select>
+                </div>
+                {buyoutGroups.map((group, index) => (
+                  <div key={index} className="buyout-group">
+                    <div className="buyout-container">
+                      <div className="buyout-fields">
+                        <div className="buyout-field">
+                          <input
+                            type="number"
+                            id={`buyoutPeople-${index}`}
+                            value={group.people}
+                            onChange={(e) => handleBuyoutGroupChange(index, 'people', e.target.value)}
+                            disabled={dinner !== 'buyout'}
+                            min="0"
+                            placeholder="Anzahl Personen"
+                          />
+                        </div>
+                        <div className="buyout-field">
+                          <input
+                            type="number"
+                            id={`buyoutPerPerson-${index}`}
+                            value={group.perPerson}
+                            onChange={(e) => handleBuyoutGroupChange(index, 'perPerson', e.target.value)}
+                            disabled={dinner !== 'buyout'}
+                            min="0"
+                            step="0.01"
+                            placeholder="Buyout pro Person"
+                          />
+                        </div>
+                      </div>
+                      <div className="buyout-total">
+                        <span className="buyout-total-amount">
+                          €{group.people && group.perPerson 
+                            ? (parseFloat(group.people) * parseFloat(group.perPerson)).toFixed(2)
+                            : '0.00'}
+                        </span>
+                      </div>
+                      {buyoutGroups.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveBuyoutGroup(index)}
+                          className="remove-line-button"
+                          title="Entfernen"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {buyoutGroups.length > 1 && (
+                  <div className="buyout-grand-total">
+                    <span className="buyout-grand-total-amount">€{buyoutTotal}</span>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={handleAddBuyoutGroup}
+                  className="add-line-button"
+                  disabled={dinner !== 'buyout'}
+                >
+                  + Add Buyout Group
+                </button>
               </div>
             </div>
 
-            {/* Backstage Kuehlschrank Select */}
-            <div className="standardbestueckung-section">
-              <label htmlFor="standardbestueckung" className="standardbestueckung-label">
-                Backstage Kühlschrank
-              </label>
+            {/* Right Side: Fridge Select + Contents List */}
+            <div className="fridge-section">
+              <h3 className="fridge-section-title">Backstage Kühlschrank</h3>
               <select
                 id="standardbestueckung"
                 value={standardbestueckung}
                 onChange={(e) => setStandardbestueckung(e.target.value)}
                 className="standardbestueckung-select"
+                required
               >
                 {standardbestueckungOptions.map(option => (
                   <option key={option.value} value={option.value}>
@@ -278,53 +456,17 @@ function RiderExtrasForm({ formData, onDataChange }) {
                   </option>
                 ))}
               </select>
-            </div>
-          </div>
-
-          <div className={`buyout-details ${!buyout ? 'disabled' : ''}`}>
-            <div className="buyout-details-row">
-              <div className="buyout-provider-section">
-                <select
-                  id="buyoutProvider"
-                  value={buyoutProvider}
-                  onChange={(e) => setBuyoutProvider(e.target.value)}
-                  disabled={!buyout}
-                  className="buyout-provider-select"
-                >
-                  <option value="">Provider</option>
-                  <option value="uber-bahnhof-pauli">Uber Bahnhof Pauli</option>
-                  <option value="uber-agentur">Uber Agentur</option>
-                </select>
-              </div>
-              <div className="buyout-fields">
-                <div className="buyout-field">
-                  <input
-                    type="number"
-                    id="buyoutPeople"
-                    value={buyoutPeople}
-                    onChange={(e) => setBuyoutPeople(e.target.value)}
-                    disabled={!buyout}
-                    min="0"
-                    placeholder="Anzahl Personen"
-                  />
+              {bestueckungItems.length > 0 && (
+                <div className="fridge-contents-list">
+                  <ul className="fridge-contents-items">
+                    {bestueckungItems.map((item) => (
+                      <li key={item.id} className="fridge-contents-item">
+                        {item.amount}x {item.name} {item.price ? `(€${item.price.toFixed(2)})` : ''}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <div className="buyout-field">
-                  <input
-                    type="number"
-                    id="buyoutPerPerson"
-                    value={buyoutPerPerson}
-                    onChange={(e) => setBuyoutPerPerson(e.target.value)}
-                    disabled={!buyout}
-                    min="0"
-                    step="0.01"
-                    placeholder="Buyout pro Person"
-                  />
-                </div>
-                <div className="buyout-total">
-                  <span className="buyout-total-label">Total:</span>
-                  <span className="buyout-total-amount">€{buyoutTotal}</span>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -461,6 +603,19 @@ function RiderExtrasForm({ formData, onDataChange }) {
           >
             + Add Item
           </button>
+        </div>
+
+        {/* Notes Section */}
+        <div className="rider-extras-notes-section">
+          <label htmlFor="riderExtrasNotes">Notizen</label>
+          <textarea
+            id="riderExtrasNotes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="rider-extras-notes-input"
+            placeholder="Zusätzliche Notizen oder Bemerkungen..."
+            rows="4"
+          />
         </div>
 
         {/* Scanner Sections */}

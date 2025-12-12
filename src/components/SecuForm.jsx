@@ -10,6 +10,7 @@ function SecuForm({ formData, onDataChange }) {
     formData?.scannedDocuments || []
   );
 
+  // Call onDataChange on mount and whenever data changes
   useEffect(() => {
     if (onDataChange) {
       onDataChange({
@@ -17,7 +18,7 @@ function SecuForm({ formData, onDataChange }) {
         scannedDocuments
       });
     }
-  }, [securityPersonnel, scannedDocuments]);
+  }, [securityPersonnel, scannedDocuments, onDataChange]);
 
   const handlePersonnelChange = (index, field, value) => {
     const newPersonnel = [...securityPersonnel];
@@ -33,10 +34,9 @@ function SecuForm({ formData, onDataChange }) {
   };
 
   const handleRemovePersonnel = (index) => {
-    if (securityPersonnel.length > 1) {
-      const newPersonnel = securityPersonnel.filter((_, i) => i !== index);
-      setSecurityPersonnel(newPersonnel);
-    }
+    const newPersonnel = securityPersonnel.filter((_, i) => i !== index);
+    // Allow removing all persons (empty array is valid)
+    setSecurityPersonnel(newPersonnel.length > 0 ? newPersonnel : []);
   };
 
   const handleDocumentsChange = (updatedDocuments) => {
@@ -57,41 +57,46 @@ function SecuForm({ formData, onDataChange }) {
           </div>
 
           {/* Personnel List */}
-          {securityPersonnel.map((person, index) => (
+          {securityPersonnel.length === 0 ? (
+            <div className="secu-personnel-empty">Kein Sicherheitspersonal hinzugefügt</div>
+          ) : (
+            securityPersonnel.map((person, index) => (
             <div key={index} className="secu-personnel-line">
               <input
                 type="text"
                 value={person.name}
                 onChange={(e) => handlePersonnelChange(index, 'name', e.target.value)}
                 className="secu-personnel-name"
-                placeholder="Name"
+                placeholder="Name *"
+                required
               />
               <input
                 type="time"
                 value={person.startTime}
                 onChange={(e) => handlePersonnelChange(index, 'startTime', e.target.value)}
                 className="secu-personnel-time"
+                required
               />
               <input
                 type="time"
                 value={person.endTime}
                 onChange={(e) => handlePersonnelChange(index, 'endTime', e.target.value)}
                 className="secu-personnel-time"
+                required
               />
               <div className="secu-personnel-controls">
-                {securityPersonnel.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemovePersonnel(index)}
-                    className="remove-line-button"
-                    title="Remove"
-                  >
-                    ×
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => handleRemovePersonnel(index)}
+                  className="remove-line-button"
+                  title="Remove"
+                >
+                  ×
+                </button>
               </div>
             </div>
-          ))}
+            ))
+          )}
           
           <button
             type="button"

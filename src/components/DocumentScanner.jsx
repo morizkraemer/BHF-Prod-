@@ -47,21 +47,22 @@ function DocumentScanner({
   }, [scanName]); // Include scanName in dependencies
   
   const handleConfirmScan = () => {
-    if (pendingScan) {
-      const newScan = {
-        id: Date.now().toString(),
-        timestamp: new Date().toISOString(),
-        filePath: pendingScan.filePath,
-        preview: pendingScan.base64 || `file://${pendingScan.filePath}`,
-        type: pendingScan.type || 'image',
-        filename: pendingScan.filename
-      };
-      const updatedDocuments = [...scannedDocuments, newScan];
-      if (onDocumentsChange) {
-        onDocumentsChange(updatedDocuments);
-      }
-      setPendingScan(null);
+    if (!pendingScan) return;
+    
+    const newScan = {
+      id: Date.now().toString(),
+      timestamp: new Date().toISOString(),
+      filePath: pendingScan.filePath,
+      preview: pendingScan.base64 || `file://${pendingScan.filePath}`,
+      type: pendingScan.type || 'image',
+      filename: pendingScan.filename || pendingScan.filePath.split('/').pop(),
+      scanName: scanName // Store the scanName with the document
+    };
+    const updatedDocuments = [...scannedDocuments, newScan];
+    if (onDocumentsChange) {
+      onDocumentsChange(updatedDocuments);
     }
+    setPendingScan(null);
   };
   
   const handleRejectScan = () => {
@@ -107,7 +108,8 @@ function DocumentScanner({
             filePath: result.filePath,
             preview: result.base64 || `file://${result.filePath}`,
             type: result.type || 'image',
-            filename: result.filename || result.filePath.split('/').pop()
+            filename: result.filename || result.filePath.split('/').pop(),
+            scanName: scanName // Store the scanName with the document
           };
           const updatedDocuments = [...scannedDocuments, newScan];
           if (onDocumentsChange) {

@@ -2,12 +2,16 @@ const { useState, useEffect } = React;
 
 function App() {
   const [activeSection, setActiveSection] = useState('uebersicht');
+  const [currentPhase, setCurrentPhase] = useState('VVA'); // 'VVA' or 'SL'
   const [formData, setFormData] = useState({
     uebersicht: {},
     'rider-extras': {},
     tontechniker: {},
     kassenbelege: {},
-    secu: {}
+    secu: {
+      securityPersonnel: [{ name: '', startTime: '', endTime: '' }],
+      scannedDocuments: []
+    }
   });
 
   const sections = [
@@ -21,6 +25,7 @@ function App() {
   const settingsSection = { id: 'settings', name: 'Settings' };
   const [scannerName, setScannerName] = useState(null);
   const [scannerAvailable, setScannerAvailable] = useState(false);
+  const [showVVAConfirmation, setShowVVAConfirmation] = useState(false);
   
   // Global scanner availability state - can be accessed by child components
   window.scannerAvailability = {
@@ -92,11 +97,241 @@ function App() {
     }));
   };
 
+  // Validate VVA -> SL transition (specific fields required)
+  const validateVVAtoSL = () => {
+    const errors = [];
+    const uebersichtData = formData.uebersicht || {};
+    const riderExtrasData = formData['rider-extras'] || {};
+    
+    // Get in Zeit
+    if (!uebersichtData.getInTime || uebersichtData.getInTime === '') {
+      errors.push({ section: 'Übersicht', sectionId: 'uebersicht', field: 'Get In Zeit' });
+    }
+    
+    // Doors Zeit
+    if (!uebersichtData.doorsTime || uebersichtData.doorsTime === '') {
+      errors.push({ section: 'Übersicht', sectionId: 'uebersicht', field: 'Doors Zeit' });
+    }
+    
+    // Travel Party Get In
+    if (!uebersichtData.travelPartyGetIn || uebersichtData.travelPartyGetIn === '') {
+      errors.push({ section: 'Übersicht', sectionId: 'uebersicht', field: 'Travel Party Get In' });
+    }
+    
+    // Catering options (getInCatering and dinner)
+    if (!riderExtrasData.getInCatering || riderExtrasData.getInCatering === '') {
+      errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Get In Catering' });
+    }
+    
+    if (!riderExtrasData.dinner || riderExtrasData.dinner === '') {
+      errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Dinner' });
+    }
+    
+    // Handtuchzettel scan (scannedDocuments with scanName="Handtuchzettel")
+    const scannedDocuments = riderExtrasData.scannedDocuments || [];
+    const handtuchzettelScans = scannedDocuments.filter(doc => doc.scanName === 'Handtuchzettel');
+    if (handtuchzettelScans.length === 0) {
+      errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Handtuchzettel Scan' });
+    }
+    
+    return errors;
+  };
+
+  // Validate all required fields across all sections (for SL phase)
+  const validateAllSections = () => {
+    const errors = [];
+    const sectionsToValidate = ['uebersicht', 'rider-extras', 'tontechniker', 'secu', 'kassenbelege'];
+    
+    sectionsToValidate.forEach(sectionId => {
+      const count = getRequiredFieldsCount(sectionId);
+      if (count.total > 0 && count.filled < count.total) {
+        const sectionName = sections.find(s => s.id === sectionId)?.name || sectionId;
+        errors.push({
+          section: sectionName,
+          sectionId: sectionId,
+          missing: count.total - count.filled,
+          total: count.total,
+          filled: count.filled
+        });
+      }
+    });
+    
+    return errors;
+  };
+
+  // Check if there are extras in hospitality
+  const hasHospitalityExtras = () => {
+    const riderExtrasData = formData['rider-extras'] || {};
+    const items = riderExtrasData.items || [];
+    // Check if there are any items with text/name filled
+    return items.some(item => item.text && item.text.trim() !== '');
+  };
+
+  const handleVVAConfirm = () => {
+    setCurrentPhase('SL');
+    setShowVVAConfirmation(false);
+    alert('VVA Phase abgeschlossen. Sie können nun mit der SL Phase fortfahren.');
+  };
+
+  const handleVVACancel = () => {
+    setShowVVAConfirmation(false);
+  };
+
   const handleCloseShift = () => {
-    // Validation and save logic will be implemented in Phase 4
-    console.log('Close Shift clicked');
-    console.log('Form Data:', formData);
-    alert('Close Shift functionality will be implemented in Phase 4');
+    if (currentPhase === 'VVA') {
+      // Validate VVA -> SL transition
+      const vvaErrors = validateVVAtoSL();
+      
+      if (vvaErrors.length > 0) {
+        // Group errors by section
+        const errorsBySection = {};
+        vvaErrors.forEach(err => {
+          if (!errorsBySection[err.section]) {
+            errorsBySection[err.section] = [];
+          }
+          errorsBySection[err.section].push(err.field);
+        });
+        
+        // Build error message
+        const errorMessages = Object.entries(errorsBySection).map(([section, fields]) => 
+          `• ${section}: ${fields.join(', ')}`
+        ).join('\n');
+        
+        alert(`Bitte füllen Sie alle erforderlichen Felder für VVA aus:\n\n${errorMessages}\n\nBitte überprüfen Sie die markierten Abschnitte in der Sidebar.`);
+        
+        // Highlight the first section with errors
+        if (vvaErrors.length > 0) {
+          setActiveSection(vvaErrors[0].sectionId);
+        }
+        
+        return; // Stop execution if validation fails
+      }
+      
+      // All VVA validations passed - show confirmation dialog
+      setShowVVAConfirmation(true);
+      
+    } else {
+      // SL phase - validate all required fields
+      const validationErrors = validateAllSections();
+      
+      if (validationErrors.length > 0) {
+        // Build error message
+        const errorMessages = validationErrors.map(err => 
+          `• ${err.section}: ${err.missing} von ${err.total} erforderlichen Feldern fehlen`
+        ).join('\n');
+        
+        alert(`Bitte füllen Sie alle erforderlichen Felder aus:\n\n${errorMessages}\n\nBitte überprüfen Sie die markierten Abschnitte in der Sidebar.`);
+        
+        // Optionally highlight the first section with errors
+        if (validationErrors.length > 0) {
+          setActiveSection(validationErrors[0].sectionId);
+        }
+        
+        return; // Stop execution if validation fails
+      }
+      
+      // All validation passed - proceed with saving
+      console.log('Close Shift clicked - All validations passed');
+      console.log('Form Data:', formData);
+      
+      // TODO: Phase 4 - Generate PDFs and save files
+      alert('Alle erforderlichen Felder sind ausgefüllt. Die Speicherfunktion wird in Phase 4 implementiert.');
+    }
+  };
+
+  // Function to count filled required fields for each section
+  const getRequiredFieldsCount = (sectionId) => {
+    const data = formData[sectionId] || {};
+    
+    switch (sectionId) {
+      case 'uebersicht':
+        const uebersichtRequired = ['eventName', 'date', 'eventType', 'getInTime', 'doorsTime', 'travelPartyGetIn', 'nightLead', 'konzertende', 'backstageCurfew'];
+        const uebersichtFilled = uebersichtRequired.filter(field => {
+          const value = data[field];
+          return value !== undefined && value !== null && value !== '';
+        }).length;
+        return { filled: uebersichtFilled, total: uebersichtRequired.length };
+      
+      case 'tontechniker':
+        // Count required fields based on enabled checkboxes
+        let tontechnikerRequired = [];
+        let tontechnikerFilled = 0;
+        
+        // Sound engineer fields are required if enabled (default true)
+        if (data.soundEngineerEnabled !== false) {
+          const soundFields = ['soundEngineerName', 'soundEngineerStartTime', 'soundEngineerEndTime'];
+          tontechnikerRequired = tontechnikerRequired.concat(soundFields);
+          soundFields.forEach(field => {
+            const value = data[field];
+            if (value !== undefined && value !== null && value !== '') {
+              tontechnikerFilled++;
+            }
+          });
+        }
+        
+        // Lighting tech fields are required if enabled
+        if (data.lightingTechEnabled === true) {
+          const lightingFields = ['lightingTechName', 'lightingTechStartTime', 'lightingTechEndTime'];
+          tontechnikerRequired = tontechnikerRequired.concat(lightingFields);
+          lightingFields.forEach(field => {
+            const value = data[field];
+            if (value !== undefined && value !== null && value !== '') {
+              tontechnikerFilled++;
+            }
+          });
+        }
+        
+        // Scanned images are always required
+        const scannedImages = data.scannedImages || [];
+        tontechnikerRequired.push('scannedImages');
+        if (scannedImages.length > 0) {
+          tontechnikerFilled++;
+        }
+        
+        return { filled: tontechnikerFilled, total: tontechnikerRequired.length };
+      
+      case 'rider-extras':
+        const hospitalityRequired = ['getInCatering', 'dinner', 'standardbestueckung'];
+        const hospitalityFilled = hospitalityRequired.filter(field => {
+          const value = data[field];
+          return value !== undefined && value !== null && value !== '';
+        }).length;
+        return { filled: hospitalityFilled, total: hospitalityRequired.length };
+      
+      case 'secu':
+        // Each security person's fields are required if there are any personnel entries
+        const securityPersonnel = data.securityPersonnel || [];
+        if (securityPersonnel.length === 0) {
+          // No personnel = no required fields
+          return { filled: 0, total: 0 };
+        }
+        
+        // For each person, name, startTime, and endTime are required
+        let secuRequired = securityPersonnel.length * 3; // 3 fields per person
+        let secuFilled = 0;
+        
+        securityPersonnel.forEach(person => {
+          if (person.name && person.name.trim() !== '') secuFilled++;
+          if (person.startTime && person.startTime !== '') secuFilled++;
+          if (person.endTime && person.endTime !== '') secuFilled++;
+        });
+        
+        // Scanned documents are also required if there are personnel
+        const scannedDocuments = data.scannedDocuments || [];
+        secuRequired += 1; // Add 1 for scanned documents
+        if (scannedDocuments.length > 0) {
+          secuFilled++;
+        }
+        
+        return { filled: secuFilled, total: secuRequired };
+      
+      case 'kassenbelege':
+        // No required fields for Kassenbelege
+        return { filled: 0, total: 0 };
+      
+      default:
+        return { filled: 0, total: 0 };
+    }
   };
 
   const renderActiveSection = () => {
@@ -147,17 +382,30 @@ function App() {
     <div className="app-container">
       {/* Sidebar */}
       <aside className="sidebar">
-        <h2 className="sidebar-title">Sections</h2>
+        <h2 className="sidebar-title">
+          Sections
+          <span className="sidebar-phase-badge">{currentPhase}</span>
+        </h2>
         <nav className="sidebar-nav">
-          {sections.map(section => (
-            <button
-              key={section.id}
-              className={`sidebar-item ${activeSection === section.id ? 'active' : ''}`}
-              onClick={() => setActiveSection(section.id)}
-            >
-              {section.name}
-            </button>
-          ))}
+          {sections.map(section => {
+            const count = getRequiredFieldsCount(section.id);
+            const isComplete = count.total > 0 && count.filled === count.total;
+            
+            return (
+              <button
+                key={section.id}
+                className={`sidebar-item ${activeSection === section.id ? 'active' : ''}`}
+                onClick={() => setActiveSection(section.id)}
+              >
+                <span className="sidebar-item-name">{section.name}</span>
+                {count.total > 0 && (
+                  <span className={`sidebar-item-counter ${isComplete ? 'sidebar-item-counter-complete' : ''}`}>
+                    {count.filled}/{count.total}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </nav>
         <div className="sidebar-bottom-section">
           {/* Printer Status */}
@@ -180,7 +428,7 @@ function App() {
               <i data-lucide="settings"></i>
             </button>
             <button className="close-shift-button-sidebar" onClick={handleCloseShift}>
-              Close Shift
+              {currentPhase === 'VVA' ? 'FINISH VVA' : 'Close Shift'}
             </button>
           </div>
         </div>
@@ -198,6 +446,14 @@ function App() {
           {renderActiveSection()}
         </div>
       </main>
+
+      {/* VVA Confirmation Dialog */}
+      <VVAConfirmationDialog
+        isOpen={showVVAConfirmation}
+        onConfirm={handleVVAConfirm}
+        onCancel={handleVVACancel}
+        hasExtras={hasHospitalityExtras()}
+      />
     </div>
   );
 }

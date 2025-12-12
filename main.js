@@ -34,6 +34,10 @@ const store = new Store({
       handtuchzettel: null,
       technikzettel: null,
       uebersichtzettel: null
+    },
+    bestueckungLists: {
+      'standard-konzert': [], // List of items for "Standard Konzert" - each item: {riderItemId, amount}
+      'standard-tranzit': [] // List of items for "Standard Tranzit" - each item: {riderItemId, amount}
     }
   }
 });
@@ -162,6 +166,79 @@ ipcMain.handle('delete-night-lead', (event, leadId) => {
   const leads = store.get('nightLeads', []);
   const filtered = leads.filter(lead => lead.id !== leadId);
   store.set('nightLeads', filtered);
+  return true;
+});
+
+// IPC Handlers for Bestückung Lists
+ipcMain.handle('get-bestueckung-lists', () => {
+  return store.get('bestueckungLists', {
+    'standard-konzert': [],
+    'standard-tranzit': []
+  });
+});
+
+ipcMain.handle('get-bestueckung-list', (event, bestueckungKey) => {
+  const lists = store.get('bestueckungLists', {
+    'standard-konzert': [],
+    'standard-tranzit': []
+  });
+  return lists[bestueckungKey] || [];
+});
+
+ipcMain.handle('save-bestueckung-list', (event, bestueckungKey, items) => {
+  const lists = store.get('bestueckungLists', {
+    'standard-konzert': [],
+    'standard-tranzit': []
+  });
+  lists[bestueckungKey] = items;
+  store.set('bestueckungLists', lists);
+  return true;
+});
+
+ipcMain.handle('add-bestueckung-item', (event, bestueckungKey, riderItemId, amount) => {
+  const lists = store.get('bestueckungLists', {
+    'standard-konzert': [],
+    'standard-tranzit': []
+  });
+  if (!lists[bestueckungKey]) {
+    lists[bestueckungKey] = [];
+  }
+  // Check if item already exists
+  if (lists[bestueckungKey].some(item => item.riderItemId === riderItemId)) {
+    return false; // Item already in list
+  }
+  lists[bestueckungKey].push({ riderItemId, amount: parseFloat(amount) || 1 });
+  store.set('bestueckungLists', lists);
+  return true;
+});
+
+ipcMain.handle('update-bestueckung-item', (event, bestueckungKey, oldRiderItemId, updates) => {
+  const lists = store.get('bestueckungLists', {
+    'standard-konzert': [],
+    'standard-tranzit': []
+  });
+  if (!lists[bestueckungKey]) {
+    return false;
+  }
+  const itemIndex = lists[bestueckungKey].findIndex(item => item.riderItemId === oldRiderItemId);
+  if (itemIndex === -1) {
+    return false;
+  }
+  lists[bestueckungKey][itemIndex] = { ...lists[bestueckungKey][itemIndex], ...updates };
+  store.set('bestueckungLists', lists);
+  return true;
+});
+
+ipcMain.handle('delete-bestueckung-item', (event, bestueckungKey, riderItemId) => {
+  const lists = store.get('bestueckungLists', {
+    'standard-konzert': [],
+    'standard-tranzit': []
+  });
+  if (!lists[bestueckungKey]) {
+    return false;
+  }
+  lists[bestueckungKey] = lists[bestueckungKey].filter(item => item.riderItemId !== riderItemId);
+  store.set('bestueckungLists', lists);
   return true;
 });
 
