@@ -220,8 +220,75 @@
 }
 
 .form-row-tech-info {
-  grid-template-columns: 2fr 1fr 1fr;
+  display: grid;
+  grid-template-columns: 60px 2fr 1fr 1fr;
   gap: 15px;
+  align-items: end;
+}
+
+.form-group-tech-checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 24px; /* Align with label height */
+}
+
+.tech-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+}
+
+.tech-checkbox:checked + .checkbox-custom {
+  background-color: #3498db;
+  border-color: #3498db;
+}
+
+.tech-checkbox:checked + .checkbox-custom::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.tech-info-checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tech-info-checkbox-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+}
+
+/* Checkbox styles for tech forms - using same as hospitality */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+}
+
+.checkbox-custom {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #3498db;
+  border-radius: 4px;
+  background-color: white;
+  display: inline-block;
+  position: relative;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .form-group-tech-name {
