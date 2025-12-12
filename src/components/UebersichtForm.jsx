@@ -16,10 +16,15 @@ function UebersichtForm({ formData, onDataChange }) {
     backstageCurfew: formData?.backstageCurfew || '',
     backstageCurfewTatsachlich: formData?.backstageCurfewTatsachlich || '',
     nightLead: formData?.nightLead || '',
-    agentur: formData?.agentur || ''
+    agentur: formData?.agentur || '',
+    agenturAPName: formData?.agenturAPName || '',
+    veranstalterName: formData?.veranstalterName || '',
+    veranstalterAPName: formData?.veranstalterAPName || '',
+    vva: formData?.vva || '',
+    companyName: formData?.companyName || '',
+    nightlinerParkplatz: formData?.nightlinerParkplatz || ''
   });
 
-  const [nightLeadOptions, setNightLeadOptions] = useState(['']);
   const [zettelPrinted, setZettelPrinted] = useState(false);
 
   useEffect(() => {
@@ -47,21 +52,6 @@ function UebersichtForm({ formData, onDataChange }) {
     }
   }, [zettelPrinted, handlePrintZettel]);
 
-  useEffect(() => {
-    // Load night leads from catalog
-    const loadNightLeads = async () => {
-      if (window.electronAPI && window.electronAPI.getNightLeads) {
-        try {
-          const leads = await window.electronAPI.getNightLeads();
-          const leadNames = leads.map(lead => lead.name);
-          setNightLeadOptions(['', ...leadNames]);
-        } catch (error) {
-          console.error('Error loading night leads:', error);
-        }
-      }
-    };
-    loadNightLeads();
-  }, []);
 
   useEffect(() => {
     if (onDataChange) {
@@ -89,6 +79,11 @@ function UebersichtForm({ formData, onDataChange }) {
         newData.backstageCurfewTatsachlich = value;
       }
       
+      // Auto-fill Veranstalter AP Name when Veranstalter Name changes (for Club events)
+      if (field === 'veranstalterName' && value && newData.eventType === 'club') {
+        newData.veranstalterAPName = value;
+      }
+      
       return newData;
     });
   };
@@ -108,8 +103,8 @@ function UebersichtForm({ formData, onDataChange }) {
   return (
     <div className="form-container">
       <form className="uebersicht-form">
-        {/* Event Name, Event Type, and Date on same line */}
-        <div className="form-row form-row-event-header">
+        {/* Event Name and Date on top row */}
+        <div className="form-row form-row-top-header">
           <div className="form-group form-group-event-name">
             <label htmlFor="eventName">Event Name *</label>
             <input
@@ -121,21 +116,6 @@ function UebersichtForm({ formData, onDataChange }) {
               placeholder="z.B. Club Night, Special Event..."
               required
             />
-          </div>
-          <div className="form-group form-group-event-type">
-            <label htmlFor="eventType">Event Typ *</label>
-            <select
-              id="eventType"
-              value={localData.eventType}
-              onChange={(e) => handleChange('eventType', e.target.value)}
-              className="form-select form-select-small"
-              required
-            >
-              <option value="">-- Bitte wählen --</option>
-              <option value="club">Club</option>
-              <option value="konzert">Konzert</option>
-              <option value="einmietung">Einmietung</option>
-            </select>
           </div>
           <div className="form-group form-group-date-small">
             <label htmlFor="date">Datum *</label>
@@ -150,58 +130,8 @@ function UebersichtForm({ formData, onDataChange }) {
           </div>
         </div>
 
-        {/* Get In, Doors, and Travel Party - each paired with their Tatsächlich */}
-        <div className="form-row form-row-three-columns">
-          {/* Get In Zeit paired with Get In Tatsächlich */}
-          <div className="form-group-paired-container">
-            <div className="form-group form-group-paired-left">
-              <label htmlFor="getInTime">Get In Zeit *</label>
-              <input
-                type="time"
-                id="getInTime"
-                value={localData.getInTime}
-                onChange={(e) => handleChange('getInTime', e.target.value)}
-                className="form-input"
-                required
-              />
-            </div>
-            <div className="form-group form-group-paired-right">
-              <label htmlFor="getInTatsachlich">Tatsächlich</label>
-              <input
-                type="time"
-                id="getInTatsachlich"
-                value={localData.getInTatsachlich}
-                onChange={(e) => handleChange('getInTatsachlich', e.target.value)}
-                className="form-input"
-              />
-            </div>
-          </div>
-
-          {/* Doors Zeit paired with Doors Tatsächlich */}
-          <div className="form-group-paired-container">
-            <div className="form-group form-group-paired-left">
-              <label htmlFor="doorsTime">Doors Zeit *</label>
-              <input
-                type="time"
-                id="doorsTime"
-                value={localData.doorsTime}
-                onChange={(e) => handleChange('doorsTime', e.target.value)}
-                className="form-input"
-                required
-              />
-            </div>
-            <div className="form-group form-group-paired-right">
-              <label htmlFor="doorsTatsachlich">Tatsächlich</label>
-              <input
-                type="time"
-                id="doorsTatsachlich"
-                value={localData.doorsTatsachlich}
-                onChange={(e) => handleChange('doorsTatsachlich', e.target.value)}
-                className="form-input"
-              />
-            </div>
-          </div>
-
+        {/* Travel Party, Event Type, and Nightliner boxes on the same line */}
+        <div className="form-row form-row-event-details">
           {/* Travel Party Get In paired with Travel Party Tatsächlich */}
           <div className="form-group-paired-container">
             <div className="form-group form-group-paired-left">
@@ -230,88 +160,275 @@ function UebersichtForm({ formData, onDataChange }) {
               />
             </div>
           </div>
+          {/* Event Type and conditional fields in a box */}
+          <div className="event-type-fields-box">
+            <div className="form-group form-group-event-type">
+              <label htmlFor="eventType">Event Typ *</label>
+              <select
+                id="eventType"
+                value={localData.eventType}
+                onChange={(e) => handleChange('eventType', e.target.value)}
+                className="form-select form-select-small"
+                required
+              >
+                <option value="">-- Bitte wählen --</option>
+                <option value="andere">Andere</option>
+                <option value="club">Club</option>
+                <option value="konzert">Konzert</option>
+                <option value="einmietung">Einmietung</option>
+              </select>
+            </div>
+            {/* Conditional fields based on event type */}
+            {localData.eventType === 'konzert' && (
+              <>
+                <div className="form-group">
+                  <label htmlFor="agentur">Agentur Name *</label>
+                  <input
+                    type="text"
+                    id="agentur"
+                    value={localData.agentur}
+                    onChange={(e) => handleChange('agentur', e.target.value)}
+                    className="form-input"
+                    placeholder="Agentur Name"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="agenturAPName">Agentur AP Name</label>
+                  <input
+                    type="text"
+                    id="agenturAPName"
+                    value={localData.agenturAPName}
+                    onChange={(e) => handleChange('agenturAPName', e.target.value)}
+                    className="form-input"
+                    placeholder="Agentur AP Name"
+                  />
+                </div>
+              </>
+            )}
+            {localData.eventType === 'club' && (
+              <>
+                <div className="form-group">
+                  <label htmlFor="veranstalterName">Veranstalter Name *</label>
+                  <input
+                    type="text"
+                    id="veranstalterName"
+                    value={localData.veranstalterName}
+                    onChange={(e) => handleChange('veranstalterName', e.target.value)}
+                    className="form-input"
+                    placeholder="Veranstalter Name"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="veranstalterAPName">Veranstalter AP Name</label>
+                  <input
+                    type="text"
+                    id="veranstalterAPName"
+                    value={localData.veranstalterAPName}
+                    onChange={(e) => handleChange('veranstalterAPName', e.target.value)}
+                    className="form-input"
+                    placeholder="Veranstalter AP Name"
+                  />
+                </div>
+              </>
+            )}
+            {localData.eventType === 'andere' && (
+              <div className="form-group">
+                <label htmlFor="veranstalterName">Veranstalter Name *</label>
+                <input
+                  type="text"
+                  id="veranstalterName"
+                  value={localData.veranstalterName}
+                  onChange={(e) => handleChange('veranstalterName', e.target.value)}
+                  className="form-input"
+                  placeholder="Veranstalter Name"
+                  required
+                />
+              </div>
+            )}
+            {localData.eventType === 'einmietung' && (
+              <div className="form-group">
+                <label htmlFor="companyName">Company Name</label>
+                <input
+                  type="text"
+                  id="companyName"
+                  value={localData.companyName}
+                  onChange={(e) => handleChange('companyName', e.target.value)}
+                  className="form-input"
+                  placeholder="Company Name"
+                />
+              </div>
+            )}
+          </div>
+          
+          {/* Nightliner Parkplatz in its own box */}
+          <div className="nightliner-parkplatz-box">
+            <div className="form-group form-group-nightliner-radio">
+              <label className="nightliner-radio-label">Nightliner Parkplatz *</label>
+              <div className="nightliner-radio-buttons">
+                <label className="radio-option-label">
+                  <input
+                    type="radio"
+                    name="nightlinerParkplatz"
+                    value="yes"
+                    checked={localData.nightlinerParkplatz === 'yes'}
+                    onChange={(e) => handleChange('nightlinerParkplatz', e.target.value)}
+                    className="nightliner-radio"
+                    required
+                  />
+                  <span className="radio-custom"></span>
+                  <span className="radio-text">Ja</span>
+                </label>
+                <label className="radio-option-label">
+                  <input
+                    type="radio"
+                    name="nightlinerParkplatz"
+                    value="no"
+                    checked={localData.nightlinerParkplatz === 'no'}
+                    onChange={(e) => handleChange('nightlinerParkplatz', e.target.value)}
+                    className="nightliner-radio"
+                    required
+                  />
+                  <span className="radio-custom"></span>
+                  <span className="radio-text">Nein</span>
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="form-row form-row-two-columns">
+        {/* Night Lead and VVA fields in a box */}
+        <div className="night-lead-vva-box">
           <div className="form-group">
             <label htmlFor="nightLead">Night Lead *</label>
-            <select
+            <input
+              type="text"
               id="nightLead"
               value={localData.nightLead}
               onChange={(e) => handleChange('nightLead', e.target.value)}
-              className="form-select"
+              className="form-input"
+              placeholder="Night Lead"
               required
-            >
-              {nightLeadOptions.map((option, index) => (
-                <option key={index} value={option}>
-                  {option || '-- Bitte wählen --'}
-                </option>
-              ))}
-            </select>
+            />
           </div>
-
           <div className="form-group">
-            <label htmlFor="agentur">Agentur</label>
+            <label htmlFor="vva">VVA</label>
             <input
               type="text"
-              id="agentur"
-              value={localData.agentur}
-              onChange={(e) => handleChange('agentur', e.target.value)}
+              id="vva"
+              value={localData.vva}
+              onChange={(e) => handleChange('vva', e.target.value)}
               className="form-input"
-              placeholder="Agentur Name"
+              placeholder="VVA"
             />
           </div>
         </div>
 
-        {/* Konzertende and Backstage Curfew - each paired with their Tatsächlich */}
-        <div className="form-row form-row-two-columns">
-          {/* Konzertende paired with Konzertende Tatsächlich */}
-          <div className="form-group-paired-container">
-            <div className="form-group form-group-paired-left">
-              <label htmlFor="konzertende">Konzertende *</label>
-              <input
-                type="time"
-                id="konzertende"
-                value={localData.konzertende}
-                onChange={(e) => handleChange('konzertende', e.target.value)}
-                className="form-input"
-                required
-              />
+        {/* Get In/Doors and End/Curfew boxes on the same line */}
+        <div className="form-row form-row-time-boxes">
+          <div className="get-in-doors-box">
+            {/* Get In Zeit paired with Get In Tatsächlich */}
+            <div className="form-group-paired-container">
+              <div className="form-group form-group-paired-left">
+                <label htmlFor="getInTime">Get In Zeit *</label>
+                <input
+                  type="time"
+                  id="getInTime"
+                  value={localData.getInTime}
+                  onChange={(e) => handleChange('getInTime', e.target.value)}
+                  className="form-input"
+                  required
+                />
+              </div>
+              <div className="form-group form-group-paired-right">
+                <label htmlFor="getInTatsachlich">Tatsächlich</label>
+                <input
+                  type="time"
+                  id="getInTatsachlich"
+                  value={localData.getInTatsachlich}
+                  onChange={(e) => handleChange('getInTatsachlich', e.target.value)}
+                  className="form-input"
+                />
+              </div>
             </div>
-            <div className="form-group form-group-paired-right">
-              <label htmlFor="konzertendeTatsachlich">Tatsächlich</label>
-              <input
-                type="time"
-                id="konzertendeTatsachlich"
-                value={localData.konzertendeTatsachlich}
-                onChange={(e) => handleChange('konzertendeTatsachlich', e.target.value)}
-                className="form-input"
-              />
+
+            {/* Doors Zeit paired with Doors Tatsächlich */}
+            <div className="form-group-paired-container">
+              <div className="form-group form-group-paired-left">
+                <label htmlFor="doorsTime">Doors Zeit *</label>
+                <input
+                  type="time"
+                  id="doorsTime"
+                  value={localData.doorsTime}
+                  onChange={(e) => handleChange('doorsTime', e.target.value)}
+                  className="form-input"
+                  required
+                />
+              </div>
+              <div className="form-group form-group-paired-right">
+                <label htmlFor="doorsTatsachlich">Tatsächlich</label>
+                <input
+                  type="time"
+                  id="doorsTatsachlich"
+                  value={localData.doorsTatsachlich}
+                  onChange={(e) => handleChange('doorsTatsachlich', e.target.value)}
+                  className="form-input"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Backstage Curfew paired with Backstage Curfew Tatsächlich */}
-          <div className="form-group-paired-container">
-            <div className="form-group form-group-paired-left">
-              <label htmlFor="backstageCurfew">Backstage Curfew *</label>
-              <input
-                type="time"
-                id="backstageCurfew"
-                value={localData.backstageCurfew}
-                onChange={(e) => handleChange('backstageCurfew', e.target.value)}
-                className="form-input"
-                required
-              />
+          {/* Konzertende and Backstage Curfew in a box */}
+          <div className="end-curfew-box">
+            {/* Konzertende paired with Konzertende Tatsächlich */}
+            <div className="form-group-paired-container">
+              <div className="form-group form-group-paired-left">
+                <label htmlFor="konzertende">Konzertende *</label>
+                <input
+                  type="time"
+                  id="konzertende"
+                  value={localData.konzertende}
+                  onChange={(e) => handleChange('konzertende', e.target.value)}
+                  className="form-input"
+                  required
+                />
+              </div>
+              <div className="form-group form-group-paired-right">
+                <label htmlFor="konzertendeTatsachlich">Tatsächlich</label>
+                <input
+                  type="time"
+                  id="konzertendeTatsachlich"
+                  value={localData.konzertendeTatsachlich}
+                  onChange={(e) => handleChange('konzertendeTatsachlich', e.target.value)}
+                  className="form-input"
+                />
+              </div>
             </div>
-            <div className="form-group form-group-paired-right">
-              <label htmlFor="backstageCurfewTatsachlich">Tatsächlich</label>
-              <input
-                type="time"
-                id="backstageCurfewTatsachlich"
-                value={localData.backstageCurfewTatsachlich}
-                onChange={(e) => handleChange('backstageCurfewTatsachlich', e.target.value)}
-                className="form-input"
-              />
+
+            {/* Backstage Curfew paired with Backstage Curfew Tatsächlich */}
+            <div className="form-group-paired-container">
+              <div className="form-group form-group-paired-left">
+                <label htmlFor="backstageCurfew">Backstage Curfew *</label>
+                <input
+                  type="time"
+                  id="backstageCurfew"
+                  value={localData.backstageCurfew}
+                  onChange={(e) => handleChange('backstageCurfew', e.target.value)}
+                  className="form-input"
+                  required
+                />
+              </div>
+              <div className="form-group form-group-paired-right">
+                <label htmlFor="backstageCurfewTatsachlich">Tatsächlich</label>
+                <input
+                  type="time"
+                  id="backstageCurfewTatsachlich"
+                  value={localData.backstageCurfewTatsachlich}
+                  onChange={(e) => handleChange('backstageCurfewTatsachlich', e.target.value)}
+                  className="form-input"
+                />
+              </div>
             </div>
           </div>
         </div>

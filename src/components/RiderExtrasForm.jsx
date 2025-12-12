@@ -16,6 +16,7 @@ function RiderExtrasForm({ formData, onDataChange }) {
   const [showSuggestions, setShowSuggestions] = useState({});
   const [filteredSuggestions, setFilteredSuggestions] = useState({});
   const [bestueckungItems, setBestueckungItems] = useState([]);
+  const [customizedFridgeItems, setCustomizedFridgeItems] = useState(formData?.customizedFridgeItems || []);
 
   const discountOptions = [
     { value: '50', label: '50%' },
@@ -54,9 +55,16 @@ function RiderExtrasForm({ formData, onDataChange }) {
           })
           .filter(item => item !== null); // Remove any items not found in catalog
         setBestueckungItems(items);
+        // Initialize customized items with the loaded items if not already set
+        if (formData?.customizedFridgeItems && formData.customizedFridgeItems.length > 0) {
+          setCustomizedFridgeItems(formData.customizedFridgeItems);
+        } else {
+          setCustomizedFridgeItems(items);
+        }
       });
     } else {
       setBestueckungItems([]);
+      setCustomizedFridgeItems([]);
     }
   }, [standardbestueckung, catalogItems]);
 
@@ -71,10 +79,11 @@ function RiderExtrasForm({ formData, onDataChange }) {
         buyoutGroups,
         scannedDocuments,
         purchaseReceipts,
-        notes
+        notes,
+        customizedFridgeItems
       });
     }
-  }, [items, standardbestueckung, getInCatering, dinner, buyoutProvider, buyoutGroups, scannedDocuments, purchaseReceipts, notes]);
+  }, [items, standardbestueckung, getInCatering, dinner, buyoutProvider, buyoutGroups, scannedDocuments, purchaseReceipts, notes, customizedFridgeItems]);
 
   useEffect(() => {
     if (window.lucide) {
@@ -105,6 +114,11 @@ function RiderExtrasForm({ formData, onDataChange }) {
       const newGroups = buyoutGroups.filter((_, i) => i !== index);
       setBuyoutGroups(newGroups);
     }
+  };
+
+  const handleRemoveFridgeItem = (itemId) => {
+    const updatedItems = customizedFridgeItems.filter(item => item.id !== itemId);
+    setCustomizedFridgeItems(updatedItems);
   };
 
   const handleAmountChange = (index, value) => {
@@ -380,28 +394,34 @@ function RiderExtrasForm({ formData, onDataChange }) {
                   <div key={index} className="buyout-group">
                     <div className="buyout-container">
                       <div className="buyout-fields">
-                        <div className="buyout-field">
-                          <input
-                            type="number"
-                            id={`buyoutPeople-${index}`}
-                            value={group.people}
-                            onChange={(e) => handleBuyoutGroupChange(index, 'people', e.target.value)}
-                            disabled={dinner !== 'buyout'}
-                            min="0"
-                            placeholder="Anzahl Personen"
-                          />
-                        </div>
-                        <div className="buyout-field">
-                          <input
-                            type="number"
-                            id={`buyoutPerPerson-${index}`}
-                            value={group.perPerson}
-                            onChange={(e) => handleBuyoutGroupChange(index, 'perPerson', e.target.value)}
-                            disabled={dinner !== 'buyout'}
-                            min="0"
-                            step="0.01"
-                            placeholder="Buyout pro Person"
-                          />
+                        <div className="form-group-paired-container">
+                          <div className="form-group form-group-paired-left">
+                            <label htmlFor={`buyoutPeople-${index}`}>Anzahl Personen</label>
+                            <input
+                              type="number"
+                              id={`buyoutPeople-${index}`}
+                              value={group.people}
+                              onChange={(e) => handleBuyoutGroupChange(index, 'people', e.target.value)}
+                              disabled={dinner !== 'buyout'}
+                              className="form-input"
+                              min="0"
+                              placeholder="0"
+                            />
+                          </div>
+                          <div className="form-group form-group-paired-right">
+                            <label htmlFor={`buyoutPerPerson-${index}`}>Buyout pro Person</label>
+                            <input
+                              type="number"
+                              id={`buyoutPerPerson-${index}`}
+                              value={group.perPerson}
+                              onChange={(e) => handleBuyoutGroupChange(index, 'perPerson', e.target.value)}
+                              disabled={dinner !== 'buyout'}
+                              className="form-input"
+                              min="0"
+                              step="0.01"
+                              placeholder="0.00"
+                            />
+                          </div>
                         </div>
                       </div>
                       <div className="buyout-total">
@@ -456,17 +476,29 @@ function RiderExtrasForm({ formData, onDataChange }) {
                   </option>
                 ))}
               </select>
-              {bestueckungItems.length > 0 && (
-                <div className="fridge-contents-list">
+              <div className="fridge-contents-list">
+                {customizedFridgeItems.length > 0 ? (
                   <ul className="fridge-contents-items">
-                    {bestueckungItems.map((item) => (
+                    {customizedFridgeItems.map((item) => (
                       <li key={item.id} className="fridge-contents-item">
-                        {item.amount}x {item.name} {item.price ? `(€${item.price.toFixed(2)})` : ''}
+                        <span className="fridge-item-text">
+                          {item.amount}x {item.name} {item.price ? `(€${item.price.toFixed(2)})` : ''}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFridgeItem(item.id)}
+                          className="remove-fridge-item-button"
+                          title="Item entfernen"
+                        >
+                          ×
+                        </button>
                       </li>
                     ))}
                   </ul>
-                </div>
-              )}
+                ) : (
+                  <p className="fridge-contents-empty">Keine Items</p>
+                )}
+              </div>
             </div>
           </div>
         </div>

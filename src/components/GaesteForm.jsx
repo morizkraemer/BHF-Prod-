@@ -34,6 +34,13 @@ function GaesteForm({ formData, onDataChange }) {
     }));
   };
 
+  // Calculate total
+  const calculateTotal = () => {
+    const betrag = parseFloat(localData.betragAbendkasse || 0);
+    const anzahl = parseFloat(localData.anzahlAbendkasse || 0);
+    return (betrag * anzahl).toFixed(2);
+  };
+
   const handleDocumentsChange = (updatedDocuments) => {
     setLocalData(prev => ({
       ...prev,
@@ -123,42 +130,55 @@ function GaesteForm({ formData, onDataChange }) {
         </div>
 
         {/* Guest Count Fields */}
-        <div className="form-row form-row-three-columns">
-          <div className="form-group">
-            <label htmlFor="anzahlAbendkasse">Anzahl Abendkasse</label>
-            <input
-              type="number"
-              id="anzahlAbendkasse"
-              value={localData.anzahlAbendkasse}
-              onChange={(e) => handleChange('anzahlAbendkasse', e.target.value)}
-              className="form-input"
-              min="0"
-              placeholder="0"
-            />
+        <div className="form-row form-row-abendkasse">
+          {/* Anzahl and Betrag Abendkasse paired together */}
+          <div className="form-group-paired-container">
+            <div className="form-group form-group-paired-left">
+              <label htmlFor="anzahlAbendkasse">Anzahl Abendkasse</label>
+              <input
+                type="number"
+                id="anzahlAbendkasse"
+                value={localData.anzahlAbendkasse}
+                onChange={(e) => handleChange('anzahlAbendkasse', e.target.value)}
+                className="form-input"
+                min="0"
+                placeholder="0"
+              />
+            </div>
+            <div className="form-group form-group-paired-right">
+              <label htmlFor="betragAbendkasse">Betrag Abendkasse</label>
+              <input
+                type="number"
+                id="betragAbendkasse"
+                value={localData.betragAbendkasse}
+                onChange={(e) => handleChange('betragAbendkasse', e.target.value)}
+                className="form-input"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+              />
+            </div>
           </div>
-          <div className="form-group">
-            <label htmlFor="betragAbendkasse">Betrag Abendkasse</label>
-            <input
-              type="number"
-              id="betragAbendkasse"
-              value={localData.betragAbendkasse}
-              onChange={(e) => handleChange('betragAbendkasse', e.target.value)}
-              className="form-input"
-              min="0"
-              step="0.01"
-              placeholder="0.00"
-            />
+
+          {/* Total */}
+          <div className="form-group form-group-total">
+            <label>Total</label>
+            <div className="total-display">
+              €{calculateTotal()}
+            </div>
           </div>
+
+          {/* Gäste Gesamt */}
           <div className="form-group">
-            <label htmlFor="gaesteGesamt">Gäste Gesamt (GL + VVK + AK)</label>
+            <label htmlFor="gaesteGesamt">Gäste Gesamt (GL + VVK + AK) *</label>
             <input
-              type="number"
+              type="text"
               id="gaesteGesamt"
               value={localData.gaesteGesamt}
               onChange={(e) => handleChange('gaesteGesamt', e.target.value)}
               className="form-input"
-              min="0"
-              placeholder="0"
+              placeholder="Gäste Gesamt"
+              required
             />
           </div>
         </div>

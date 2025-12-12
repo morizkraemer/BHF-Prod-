@@ -178,6 +178,9 @@
 }
 
 .fridge-contents-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 8px 12px;
   margin-bottom: 6px;
   background-color: white;
@@ -185,6 +188,30 @@
   border-radius: 4px;
   font-size: 14px;
   color: #2c3e50;
+}
+
+.fridge-item-text {
+  flex: 1;
+}
+
+.remove-fridge-item-button {
+  background: none;
+  border: none;
+  color: #e74c3c;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.remove-fridge-item-button:hover {
+  background-color: rgba(231, 76, 60, 0.1);
 }
 
 .fridge-contents-item:last-child {
@@ -363,7 +390,7 @@
   display: flex;
   flex-direction: row;
   gap: 12px;
-  align-items: flex-start;
+  align-items: center;
 }
 
 .buyout-left-section {

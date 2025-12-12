@@ -7,7 +7,7 @@ function App() {
     uebersicht: {},
     'rider-extras': {},
     tontechniker: {},
-    kassenbelege: {},
+    orderbird: {},
     secu: {
       securityPersonnel: [{ name: '', startTime: '', endTime: '' }],
       scannedDocuments: []
@@ -20,8 +20,8 @@ function App() {
     { id: 'rider-extras', name: 'Hospitality' },
     { id: 'tontechniker', name: 'Ton/Lichttechnik' },
     { id: 'secu', name: 'Secu' },
-    { id: 'kassenbelege', name: 'Kassenbelege' },
-    { id: 'gaeste', name: 'Gäste' }
+    { id: 'gaeste', name: 'Gäste' },
+    { id: 'orderbird', name: 'Orderbird' }
   ];
 
   const settingsSection = { id: 'settings', name: 'Settings' };
@@ -142,7 +142,7 @@ function App() {
   // Validate all required fields across all sections (for SL phase)
   const validateAllSections = () => {
     const errors = [];
-    const sectionsToValidate = ['uebersicht', 'rider-extras', 'tontechniker', 'secu', 'kassenbelege'];
+    const sectionsToValidate = ['uebersicht', 'rider-extras', 'tontechniker', 'secu', 'orderbird'];
     
     sectionsToValidate.forEach(sectionId => {
       const count = getRequiredFieldsCount(sectionId);
@@ -247,7 +247,15 @@ function App() {
     
     switch (sectionId) {
       case 'uebersicht':
-        const uebersichtRequired = ['eventName', 'date', 'eventType', 'getInTime', 'doorsTime', 'travelPartyGetIn', 'nightLead', 'konzertende', 'backstageCurfew'];
+        let uebersichtRequired = ['eventName', 'date', 'eventType', 'getInTime', 'doorsTime', 'travelPartyGetIn', 'nightLead', 'konzertende', 'backstageCurfew', 'nightlinerParkplatz'];
+        
+        // Add conditional required fields based on event type
+        if (data.eventType === 'konzert') {
+          uebersichtRequired.push('agentur');
+        } else if (data.eventType === 'club' || data.eventType === 'andere') {
+          uebersichtRequired.push('veranstalterName');
+        }
+        
         const uebersichtFilled = uebersichtRequired.filter(field => {
           const value = data[field];
           return value !== undefined && value !== null && value !== '';
@@ -327,9 +335,22 @@ function App() {
         
         return { filled: secuFilled, total: secuRequired };
       
-      case 'kassenbelege':
-        // No required fields for Kassenbelege
-        return { filled: 0, total: 0 };
+      case 'orderbird':
+        // Required: at least one scan, Z Bericht, Benutzerberichte
+        const hasScans = formData.orderbird?.receipts && formData.orderbird.receipts.length > 0;
+        const hasZBericht = formData.orderbird?.zBericht === true;
+        const hasBenutzerberichte = formData.orderbird?.benutzerberichte === true;
+        const orderbirdFilled = (hasScans ? 1 : 0) + (hasZBericht ? 1 : 0) + (hasBenutzerberichte ? 1 : 0);
+        const orderbirdRequired = 3;
+        return { filled: orderbirdFilled, total: orderbirdRequired };
+      
+      case 'gaeste':
+        const gaesteRequired = ['gaesteGesamt'];
+        const gaesteFilled = gaesteRequired.filter(field => {
+          const value = formData.gaeste?.[field];
+          return value !== undefined && value !== null && value !== '';
+        }).length;
+        return { filled: gaesteFilled, total: gaesteRequired.length };
       
       default:
         return { filled: 0, total: 0 };
@@ -366,18 +387,18 @@ function App() {
             onDataChange={(data) => handleFormDataChange('secu', data)}
           />
         );
-      case 'kassenbelege':
-        return (
-          <KassenbelegeForm
-            formData={formData.kassenbelege}
-            onDataChange={(data) => handleFormDataChange('kassenbelege', data)}
-          />
-        );
       case 'gaeste':
         return (
           <GaesteForm
             formData={formData.gaeste}
             onDataChange={(data) => handleFormDataChange('gaeste', data)}
+          />
+        );
+      case 'orderbird':
+        return (
+          <OrderbirdForm
+            formData={formData.orderbird}
+            onDataChange={(data) => handleFormDataChange('orderbird', data)}
           />
         );
       case 'settings':

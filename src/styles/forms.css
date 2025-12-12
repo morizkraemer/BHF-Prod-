@@ -126,6 +126,19 @@
   gap: 15px;
 }
 
+.form-row-top-header {
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 20px;
+}
+
+.form-row-event-details {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 15px;
+  align-items: start;
+}
+
 .form-group-event-name {
   flex: 1;
 }
@@ -153,6 +166,10 @@
   font-weight: 500;
 }
 
+.form-group-night-lead-top {
+  min-width: 200px;
+}
+
 .form-input-small {
   font-size: 14px;
   padding: 8px 12px;
@@ -160,6 +177,27 @@
 
 .form-row-three-columns {
   grid-template-columns: 1fr 1fr 1fr;
+}
+
+.form-row-abendkasse {
+  grid-template-columns: auto auto 1fr;
+  gap: 15px;
+  align-items: end;
+}
+
+.form-group-total {
+  min-width: 120px;
+}
+
+.total-display {
+  padding: 10px 12px;
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  text-align: center;
 }
 
 .form-row-four-columns {
@@ -191,6 +229,140 @@
 .form-group-paired-right .form-input {
   border-radius: 0 6px 6px 0;
   border-left: 1px solid #ddd;
+}
+
+.form-row-time-boxes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  align-items: start;
+}
+
+.get-in-doors-box {
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 6px;
+  background-color: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.form-row-travel-party {
+  display: flex;
+  justify-content: center;
+}
+
+.form-group-travel-party-centered {
+  width: fit-content;
+}
+
+.end-curfew-box {
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 6px;
+  background-color: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.event-type-fields-box {
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px;
+  background-color: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nightliner-parkplatz-box {
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px;
+  background-color: #fafafa;
+  display: flex;
+  justify-content: center;
+  width: fit-content;
+}
+
+.form-group-nightliner-radio {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nightliner-radio-label {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.nightliner-radio-buttons {
+  display: flex;
+  gap: 15px;
+}
+
+.nightliner-radio {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.radio-custom {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #3498db;
+  border-radius: 50%;
+  background-color: white;
+  display: inline-block;
+  position: relative;
+  margin-right: 8px;
+  transition: all 0.2s ease;
+}
+
+.nightliner-radio:checked + .radio-custom {
+  background-color: #3498db;
+  border-color: #3498db;
+}
+
+.nightliner-radio:checked + .radio-custom::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: white;
+}
+
+.radio-option-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+  position: relative;
+}
+
+.radio-text {
+  color: #2c3e50;
+  user-select: none;
+}
+
+.night-lead-vva-box {
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px;
+  background-color: #fafafa;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  align-items: end;
 }
 
 .form-group-travel-party-container {
