@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // PDF operations
   generatePDF: (data) => ipcRenderer.invoke('generate-pdf', data),
+  closeShift: (formData) => ipcRenderer.invoke('close-shift', formData),
   
   // Scanner operations
   listScanners: () => ipcRenderer.invoke('list-scanners'),
@@ -18,6 +19,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   checkScannerAvailability: () => ipcRenderer.invoke('check-scanner-availability'),
   setScanFolder: () => ipcRenderer.invoke('set-scan-folder'),
   getScanFolder: () => ipcRenderer.invoke('get-scan-folder'),
+  setReportFolder: () => ipcRenderer.invoke('set-report-folder'),
+  getReportFolder: () => ipcRenderer.invoke('get-report-folder'),
   scanDocument: (source = 'glass', scanName = 'scan') => ipcRenderer.invoke('scan-document', source, scanName),
   selectScanFile: () => ipcRenderer.invoke('select-scan-file'),
   

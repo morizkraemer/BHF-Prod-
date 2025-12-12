@@ -18,6 +18,7 @@ function SettingsForm() {
   const [selectedScanner, setSelectedScanner] = useState(null);
   const [loadingScanners, setLoadingScanners] = useState(false);
   const [scanFolder, setScanFolder] = useState(null);
+  const [reportFolder, setReportFolder] = useState(null);
   const [scannerAvailable, setScannerAvailable] = useState(false);
   const [templates, setTemplates] = useState({
     securityzettel: null,
@@ -53,6 +54,7 @@ function SettingsForm() {
     loadScanners();
     loadSelectedScanner();
     loadScanFolder();
+    loadReportFolder();
     loadTemplates();
     loadBestueckungLists();
     checkScannerAvailability();
@@ -66,6 +68,13 @@ function SettingsForm() {
     if (window.electronAPI && window.electronAPI.getScanFolder) {
       const folder = await window.electronAPI.getScanFolder();
       setScanFolder(folder);
+    }
+  };
+
+  const loadReportFolder = async () => {
+    if (window.electronAPI && window.electronAPI.getReportFolder) {
+      const folder = await window.electronAPI.getReportFolder();
+      setReportFolder(folder);
     }
   };
 
@@ -106,6 +115,15 @@ function SettingsForm() {
       const folder = await window.electronAPI.setScanFolder();
       if (folder) {
         setScanFolder(folder);
+      }
+    }
+  };
+
+  const handleSelectReportFolder = async () => {
+    if (window.electronAPI && window.electronAPI.setReportFolder) {
+      const folder = await window.electronAPI.setReportFolder();
+      if (folder) {
+        setReportFolder(folder);
       }
     }
   };
@@ -663,6 +681,31 @@ function SettingsForm() {
         </div>
         {!scanFolder && (
           <p className="settings-empty">Bitte wählen Sie einen Ordner aus. Standardmäßig wird ~/Documents/NightclubScans verwendet.</p>
+        )}
+      </div>
+
+      {/* Report Folder Selection */}
+      <div className="settings-scanner-section">
+        <h3>Report-Ordner</h3>
+        <p className="settings-description">
+          Wählen Sie den Ordner aus, in dem die Shift-Reports und gescannten PDFs gespeichert werden sollen. Für jeden Shift wird ein Unterordner erstellt.
+        </p>
+        <div className="settings-scan-folder-form">
+          <div className="settings-scan-folder-display">
+            <span className="settings-scan-folder-path">
+              {reportFolder || 'Kein Ordner ausgewählt'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleSelectReportFolder}
+            className="settings-select-folder-button"
+          >
+            Ordner auswählen
+          </button>
+        </div>
+        {!reportFolder && (
+          <p className="settings-empty">Bitte wählen Sie einen Ordner aus. Standardmäßig wird ~/Documents/NightclubReports verwendet.</p>
         )}
       </div>
     </>

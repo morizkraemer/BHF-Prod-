@@ -330,18 +330,27 @@ function App() {
     setHighlightedFields(highlightMapArrays);
   };
 
-  const handleSLMissingFieldsFinishAnyway = (note) => {
+  const handleSLMissingFieldsFinishAnyway = async (note) => {
     setShowSLMissingFields(false);
     // Clear highlights
     setHighlightedFields({});
     
     // Since note is required, proceed with saving
-    console.log('Close Shift clicked - All validations passed (with note)');
-    console.log('Form Data:', formData);
-    console.log('Note:', note);
-    
-    // TODO: Phase 4 - Generate PDFs and save files
-    alert('Shift beendet. Die Speicherfunktion wird in Phase 4 implementiert.');
+    try {
+      if (window.electronAPI && window.electronAPI.closeShift) {
+        const result = await window.electronAPI.closeShift(formData);
+        if (result.success) {
+          alert(`Shift erfolgreich beendet!\n\nReport gespeichert in:\n${result.eventFolder}\n\nPDF: ${result.pdfPath.split('/').pop()}\nGescannte PDFs: ${result.scannedPDFsCount}`);
+        } else {
+          alert('Fehler beim Speichern des Shifts.');
+        }
+      } else {
+        alert('Fehler: Electron API nicht verfügbar.');
+      }
+    } catch (error) {
+      console.error('Error closing shift:', error);
+      alert('Fehler beim Schließen des Shifts: ' + error.message);
+    }
   };
 
   const handleSLMissingFieldsCancel = () => {
@@ -406,11 +415,25 @@ function App() {
       }
       
       // All validation passed - proceed with saving
-      console.log('Close Shift clicked - All validations passed');
-      console.log('Form Data:', formData);
-      
-      // TODO: Phase 4 - Generate PDFs and save files
-      alert('Alle erforderlichen Felder sind ausgefüllt. Die Speicherfunktion wird in Phase 4 implementiert.');
+      handleCloseShiftSave();
+    }
+  };
+
+  const handleCloseShiftSave = async () => {
+    try {
+      if (window.electronAPI && window.electronAPI.closeShift) {
+        const result = await window.electronAPI.closeShift(formData);
+        if (result.success) {
+          alert(`Shift erfolgreich beendet!\n\nReport gespeichert in:\n${result.eventFolder}\n\nPDF: ${result.pdfPath.split('/').pop()}\nGescannte PDFs: ${result.scannedPDFsCount}`);
+        } else {
+          alert('Fehler beim Speichern des Shifts.');
+        }
+      } else {
+        alert('Fehler: Electron API nicht verfügbar.');
+      }
+    } catch (error) {
+      console.error('Error closing shift:', error);
+      alert('Fehler beim Schließen des Shifts: ' + error.message);
     }
   };
 
