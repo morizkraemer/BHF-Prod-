@@ -42,6 +42,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Data persistence
   saveData: (key, data) => ipcRenderer.invoke('save-data', key, data),
   loadData: (key) => ipcRenderer.invoke('load-data', key),
+  clearShiftData: () => ipcRenderer.invoke('clear-shift-data'),
   
   // Item Catalog (Rider Extras)
   getRiderItems: () => ipcRenderer.invoke('get-rider-items'),

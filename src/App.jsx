@@ -42,6 +42,31 @@ function App() {
     setName: setScannerName
   };
 
+  // Load saved shift data on mount
+  useEffect(() => {
+    const loadShiftData = async () => {
+      if (window.electronAPI && window.electronAPI.loadData) {
+        try {
+          // Load form data
+          const formDataResult = await window.electronAPI.loadData('currentShiftData');
+          if (formDataResult.success && formDataResult.data) {
+            setFormData(formDataResult.data);
+          }
+          
+          // Load current phase
+          const phaseResult = await window.electronAPI.loadData('currentPhase');
+          if (phaseResult.success && phaseResult.data) {
+            setCurrentPhase(phaseResult.data);
+          }
+        } catch (error) {
+          console.error('Error loading shift data:', error);
+        }
+      }
+    };
+    
+    loadShiftData();
+  }, []);
+
   useEffect(() => {
     // Check scanner availability
     const checkScannerAvailability = async () => {
@@ -96,6 +121,28 @@ function App() {
       window.lucide.createIcons();
     }
   }, [activeSection]);
+
+  // Auto-save form data when it changes (debounced)
+  useEffect(() => {
+    if (window.electronAPI && window.electronAPI.saveData) {
+      const timeoutId = setTimeout(() => {
+        window.electronAPI.saveData('currentShiftData', formData).catch(error => {
+          console.error('Error saving form data:', error);
+        });
+      }, 1000); // Debounce by 1 second
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [formData]);
+
+  // Auto-save current phase when it changes
+  useEffect(() => {
+    if (window.electronAPI && window.electronAPI.saveData) {
+      window.electronAPI.saveData('currentPhase', currentPhase).catch(error => {
+        console.error('Error saving current phase:', error);
+      });
+    }
+  }, [currentPhase]);
 
   const handleFormDataChange = (sectionId, data) => {
     setFormData(prev => ({
@@ -281,6 +328,19 @@ function App() {
       errors.push({ section: 'Orderbird', sectionId: 'orderbird', field: 'Benutzerberichte' });
     }
     
+    // Gäste section - Agenturzettel required for Konzert events
+    const gaesteData = formData.gaeste || {};
+    if (uebersichtData.eventType === 'konzert') {
+      const agenturzettelScans = gaesteData.scannedDocuments || [];
+      const hasAgenturzettel = agenturzettelScans.some(doc => doc.scanName === 'Agenturzettel');
+      if (!hasAgenturzettel) {
+        errors.push({ section: 'Gäste', sectionId: 'gaeste', field: 'Agenturzettel Scan' });
+      }
+    }
+    if (!gaesteData.gaesteGesamt || gaesteData.gaesteGesamt === '') {
+      errors.push({ section: 'Gäste', sectionId: 'gaeste', field: 'Gäste Gesamt' });
+    }
+    
     return errors;
   };
 
@@ -340,6 +400,25 @@ function App() {
       if (window.electronAPI && window.electronAPI.closeShift) {
         const result = await window.electronAPI.closeShift(formData);
         if (result.success) {
+          // Clear shift data after successful close
+          if (window.electronAPI && window.electronAPI.clearShiftData) {
+            await window.electronAPI.clearShiftData();
+          }
+          
+          // Reset form data and phase
+          setFormData({
+            uebersicht: {},
+            'rider-extras': {},
+            tontechniker: {},
+            orderbird: {},
+            secu: {
+              securityPersonnel: [{ name: '', startTime: '', endTime: '' }],
+              scannedDocuments: []
+            },
+            gaeste: {}
+          });
+          setCurrentPhase('VVA');
+          
           alert(`Shift erfolgreich beendet!\n\nReport gespeichert in:\n${result.eventFolder}\n\nPDF: ${result.pdfPath.split('/').pop()}\nGescannte PDFs: ${result.scannedPDFsCount}`);
         } else {
           alert('Fehler beim Speichern des Shifts.');
@@ -424,6 +503,25 @@ function App() {
       if (window.electronAPI && window.electronAPI.closeShift) {
         const result = await window.electronAPI.closeShift(formData);
         if (result.success) {
+          // Clear shift data after successful close
+          if (window.electronAPI && window.electronAPI.clearShiftData) {
+            await window.electronAPI.clearShiftData();
+          }
+          
+          // Reset form data and phase
+          setFormData({
+            uebersicht: {},
+            'rider-extras': {},
+            tontechniker: {},
+            orderbird: {},
+            secu: {
+              securityPersonnel: [{ name: '', startTime: '', endTime: '' }],
+              scannedDocuments: []
+            },
+            gaeste: {}
+          });
+          setCurrentPhase('VVA');
+          
           alert(`Shift erfolgreich beendet!\n\nReport gespeichert in:\n${result.eventFolder}\n\nPDF: ${result.pdfPath.split('/').pop()}\nGescannte PDFs: ${result.scannedPDFsCount}`);
         } else {
           alert('Fehler beim Speichern des Shifts.');
@@ -435,6 +533,112 @@ function App() {
       console.error('Error closing shift:', error);
       alert('Fehler beim Schließen des Shifts: ' + error.message);
     }
+  };
+
+  const handleFillTestData = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const testData = {
+      uebersicht: {
+        eventName: 'Test Event 2025',
+        date: today,
+        eventType: 'konzert',
+        getInTime: '14:00',
+        getInTatsachlich: '14:15',
+        doorsTime: '19:00',
+        doorsTatsachlich: '19:05',
+        travelPartyGetIn: '25',
+        travelPartyTatsachlich: '27',
+        konzertende: '23:30',
+        konzertendeTatsachlich: '23:45',
+        backstageCurfew: '01:00',
+        backstageCurfewTatsachlich: '01:15',
+        nightLead: 'Max Mustermann',
+        nightlinerParkplatz: 'yes',
+        agentur: 'Test Agentur GmbH',
+        agenturAPName: 'Test Agentur AP',
+        vva: 'VVA-12345'
+      },
+      'rider-extras': {
+        getInCatering: 'kalt',
+        dinner: 'warm',
+        standardbestueckung: 'standard-konzert',
+        buyoutProvider: '',
+        buyoutGroups: [],
+        items: [
+          {
+            amount: '2',
+            text: 'Test Extra Item 1',
+            price: '15.50',
+            discount: '50',
+            originalPrice: '31.00',
+            ekPrice: null,
+            checked: true
+          },
+          {
+            amount: '1',
+            text: 'Test Extra Item 2',
+            price: '25.00',
+            discount: '',
+            originalPrice: '25.00',
+            ekPrice: null,
+            checked: false
+          }
+        ],
+        customizedFridgeItems: [
+          { name: 'Cola', amount: 12, price: 2.50 },
+          { name: 'Wasser', amount: 24, price: 1.50 },
+          { name: 'Bier', amount: 20, price: 3.00 }
+        ],
+        scannedDocuments: [],
+        purchaseReceipts: [],
+        notes: 'Test Notizen für Hospitality'
+      },
+      tontechniker: {
+        soundEngineerEnabled: true,
+        soundEngineerName: 'Hans Sound',
+        soundEngineerStartTime: '14:00',
+        soundEngineerEndTime: '00:00',
+        lightingTechEnabled: true,
+        lightingTechName: 'Lisa Light',
+        lightingTechStartTime: '15:00',
+        lightingTechEndTime: '23:30',
+        scannedImages: []
+      },
+      secu: {
+        securityPersonnel: [
+          { name: 'Security Person 1', startTime: '18:00', endTime: '02:00' },
+          { name: 'Security Person 2', startTime: '19:00', endTime: '01:00' }
+        ],
+        scannedDocuments: []
+      },
+      orderbird: {
+        receipts: [],
+        zBericht: true,
+        benutzerberichte: true,
+        veranstalter1: true,
+        veranstalter2: false,
+        veranstalter3: false,
+        agentur: true,
+        persoBeleg: false,
+        sonstige: false
+      },
+      gaeste: {
+        paymentType: 'selbstzahler',
+        pauschaleOptions: {
+          standard: false,
+          longdrinks: false,
+          sektCocktails: false,
+          shots: false
+        },
+        anzahlAbendkasse: '150',
+        betragAbendkasse: '15.00',
+        gaesteGesamt: '500',
+        scannedDocuments: []
+      }
+    };
+    
+    setFormData(testData);
+    alert('Test-Daten wurden eingefügt!');
   };
 
   // Function to count filled required fields for each section
@@ -541,11 +745,24 @@ function App() {
         return { filled: orderbirdFilled, total: orderbirdRequired };
       
       case 'gaeste':
-        const gaesteRequired = ['gaesteGesamt'];
-        const gaesteFilled = gaesteRequired.filter(field => {
-          const value = formData.gaeste?.[field];
+        const gaesteData = formData.gaeste || {};
+        let gaesteRequired = ['gaesteGesamt'];
+        let gaesteFilled = gaesteRequired.filter(field => {
+          const value = gaesteData[field];
           return value !== undefined && value !== null && value !== '';
         }).length;
+        
+        // Agenturzettel scan required for Konzert events
+        const uebersichtData = formData.uebersicht || {};
+        if (uebersichtData.eventType === 'konzert') {
+          gaesteRequired.push('agenturzettelScan');
+          const agenturzettelScans = gaesteData.scannedDocuments || [];
+          const hasAgenturzettel = agenturzettelScans.some(doc => doc.scanName === 'Agenturzettel');
+          if (hasAgenturzettel) {
+            gaesteFilled++;
+          }
+        }
+        
         return { filled: gaesteFilled, total: gaesteRequired.length };
       
       default:
@@ -592,6 +809,7 @@ function App() {
           <GaesteForm
             formData={formData.gaeste}
             onDataChange={(data) => handleFormDataChange('gaeste', data)}
+            highlightedFields={highlightedFields.gaeste || []}
           />
         );
       case 'orderbird':
@@ -647,6 +865,18 @@ function App() {
                 {scannerName || 'Kein Scanner ausgewählt'}
               </span>
             </div>
+          </div>
+          <div className="sidebar-divider"></div>
+          {/* Test Data Button */}
+          <div className="sidebar-test-button-container">
+            <button 
+              className="test-data-button-sidebar"
+              onClick={handleFillTestData}
+              title="Füllt alle Felder mit Test-Daten"
+            >
+              <i data-lucide="flask"></i>
+              <span>Test-Daten</span>
+            </button>
           </div>
           <div className="sidebar-divider"></div>
           {/* Close Shift and Settings Buttons */}

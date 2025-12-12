@@ -1,7 +1,7 @@
 const Store = require('electron-store');
 
-// Initialize electron-store
-const store = new Store({
+// Settings store - persistent data that should not be cleared
+const settingsStore = new Store({
   name: 'config',
   defaults: {
     riderExtrasItems: [],
@@ -26,5 +26,20 @@ const store = new Store({
   }
 });
 
-module.exports = store;
+// Shift data store - temporary data that gets cleared when shift closes
+const shiftDataStore = new Store({
+  name: 'shift-data',
+  defaults: {
+    currentShiftData: null, // Stores formData for current shift
+    currentPhase: 'VVA' // Current phase: 'VVA' or 'SL'
+  }
+});
+
+// Export both stores
+module.exports = {
+  settingsStore,
+  shiftDataStore,
+  // For backward compatibility, export settingsStore as default
+  default: settingsStore
+};
 

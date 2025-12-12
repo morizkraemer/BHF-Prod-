@@ -1,11 +1,12 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
-const store = require('./config/store');
+const { settingsStore, shiftDataStore } = require('./config/store');
 const { checkNAPS2Installed, showNAPS2Error } = require('./utils/scannerUtils');
 const { registerCatalogHandlers } = require('./handlers/catalogHandlers');
 const { registerSettingsHandlers } = require('./handlers/settingsHandlers');
 const { registerScannerHandlers } = require('./handlers/scannerHandlers');
 const { registerReportHandlers } = require('./handlers/reportHandlers');
+const { registerDataHandlers } = require('./handlers/dataHandlers');
 
 // Enable hot reload in development
 if (process.argv.includes('--dev')) {
@@ -26,7 +27,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true
     },
-    icon: path.join(__dirname, 'assets', 'icon.png')
+    icon: path.join(__dirname, 'assets', 'icons', 'icon.png')
   });
 
   mainWindow.loadFile('index.html');
@@ -40,10 +41,11 @@ app.whenReady().then(() => {
   createWindow();
   
   // Register all IPC handlers
-  registerCatalogHandlers(ipcMain, store);
-  registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell);
-  registerScannerHandlers(ipcMain, store, mainWindow, dialog);
-  registerReportHandlers(ipcMain, store);
+  registerCatalogHandlers(ipcMain, settingsStore);
+  registerSettingsHandlers(ipcMain, settingsStore, mainWindow, dialog, shell);
+  registerScannerHandlers(ipcMain, settingsStore, mainWindow, dialog);
+  registerReportHandlers(ipcMain, settingsStore);
+  registerDataHandlers(ipcMain, shiftDataStore);
   
   // Check if NAPS2 is installed (only on macOS)
   if (process.platform === 'darwin') {
@@ -59,10 +61,11 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
       // Re-register handlers for new window context
-      registerCatalogHandlers(ipcMain, store);
-      registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell);
-      registerScannerHandlers(ipcMain, store, mainWindow, dialog);
-      registerReportHandlers(ipcMain, store);
+      registerCatalogHandlers(ipcMain, settingsStore);
+      registerSettingsHandlers(ipcMain, settingsStore, mainWindow, dialog, shell);
+      registerScannerHandlers(ipcMain, settingsStore, mainWindow, dialog);
+      registerReportHandlers(ipcMain, settingsStore);
+      registerDataHandlers(ipcMain, shiftDataStore);
       // Check again when window is recreated
       if (process.platform === 'darwin') {
         setTimeout(() => {
