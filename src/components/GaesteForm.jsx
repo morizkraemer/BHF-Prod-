@@ -1,6 +1,9 @@
 const { useState, useEffect } = React;
 
-function GaesteForm({ formData, onDataChange }) {
+function GaesteForm({ formData, onDataChange, highlightedFields = [] }) {
+  const shouldHighlight = (fieldName) => {
+    return highlightedFields.includes(fieldName);
+  };
   const [localData, setLocalData] = useState({
     paymentType: formData?.paymentType || 'selbstzahler',
     pauschaleOptions: formData?.pauschaleOptions || {
@@ -176,7 +179,7 @@ function GaesteForm({ formData, onDataChange }) {
               id="gaesteGesamt"
               value={localData.gaesteGesamt}
               onChange={(e) => handleChange('gaesteGesamt', e.target.value)}
-              className="form-input"
+              className={`form-input ${shouldHighlight('Gäste Gesamt') ? 'field-highlighted' : ''}`}
               placeholder="Gäste Gesamt"
               required
             />
@@ -184,7 +187,7 @@ function GaesteForm({ formData, onDataChange }) {
         </div>
 
         {/* Scanner Section */}
-        <div className="scanner-box">
+        <div className={`scanner-box ${shouldHighlight('Agenturzettel Scan') ? 'field-highlighted-group' : ''}`}>
           <DocumentScanner
             scannedDocuments={localData.scannedDocuments}
             onDocumentsChange={handleDocumentsChange}

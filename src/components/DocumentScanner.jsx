@@ -82,16 +82,36 @@ function DocumentScanner({
       if (window.electronAPI && window.electronAPI.scanDocument) {
         const result = await window.electronAPI.scanDocument(scanSource, scanName);
         
-        if (result.success) {
+        if (result && result.success) {
           // Scan completed - file will be detected via scan-file-detected event
           // Keep isScanning true - will be set to false when confirmation popup appears
+        } else if (result && result.error) {
+          // Handle structured error response
+          setIsScanning(false);
+          const error = result.error;
+          
+          // Handle different error types with appropriate UI
+          // For empty feeder, show a more friendly informational message
+          if (error.type === 'empty_feeder') {
+            alert('ℹ️ ' + error.message);
+          } else if (error.type === 'paper_jam' || error.type === 'cover_open') {
+            // For recoverable errors, show with a helpful icon
+            alert('⚠️ ' + error.message);
+          } else {
+            // For other errors, show standard error alert
+            alert('❌ ' + error.message);
+          }
+          
+          console.error('Scan error:', error);
+          console.error('Error type:', error.type, 'Recoverable:', error.isRecoverable);
         } else {
           setIsScanning(false);
         }
       }
     } catch (error) {
+      // Fallback for unexpected errors (shouldn't happen with new structure, but keep for safety)
       setIsScanning(false);
-      alert('Fehler: ' + error.message);
+      alert('❌ Fehler: ' + (error.message || 'Unbekannter Fehler beim Scannen'));
       console.error('Scan error:', error);
     }
   };
@@ -252,6 +272,11 @@ function DocumentScanner({
             </div>
           </div>
         </div>
+        {scanSource === 'feeder' && !isScanning && !pendingScan && (
+          <div className="scan-feeder-warning">
+            <p>⚠️ Bitte stellen Sie sicher, dass sich Dokumente im Einzug befinden.</p>
+          </div>
+        )}
         {isScanning && (
           <div className="scan-status">
             <p>⏳ Scan läuft...</p>

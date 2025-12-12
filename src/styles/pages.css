@@ -372,6 +372,22 @@
   cursor: not-allowed;
 }
 
+.scan-feeder-warning {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background-color: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.scan-feeder-warning p {
+  margin: 0;
+  font-size: 13px;
+  color: #856404;
+  font-weight: 500;
+}
+
 .scan-status {
   margin-top: 12px;
   padding: 16px;
