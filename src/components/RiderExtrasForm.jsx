@@ -16,6 +16,13 @@ function RiderExtrasForm({ formData, onDataChange }) {
   const [showSuggestions, setShowSuggestions] = useState({});
   const [filteredSuggestions, setFilteredSuggestions] = useState({});
   const [bestueckungItems, setBestueckungItems] = useState([]);
+  const [paymentType, setPaymentType] = useState(formData?.paymentType || 'selbstzahler');
+  const [pauschaleOptions, setPauschaleOptions] = useState(formData?.pauschaleOptions || {
+    standard: true,
+    longdrinks: false,
+    sektCocktails: false,
+    shots: false
+  });
 
   const discountOptions = [
     { value: '50', label: '50%' },
@@ -71,10 +78,12 @@ function RiderExtrasForm({ formData, onDataChange }) {
         buyoutGroups,
         scannedDocuments,
         purchaseReceipts,
-        notes
+        notes,
+        paymentType,
+        pauschaleOptions
       });
     }
-  }, [items, standardbestueckung, getInCatering, dinner, buyoutProvider, buyoutGroups, scannedDocuments, purchaseReceipts, notes]);
+  }, [items, standardbestueckung, getInCatering, dinner, buyoutProvider, buyoutGroups, scannedDocuments, purchaseReceipts, notes, paymentType, pauschaleOptions]);
 
   useEffect(() => {
     if (window.lucide) {
@@ -468,6 +477,84 @@ function RiderExtrasForm({ formData, onDataChange }) {
                 </div>
               )}
             </div>
+
+            {/* Payment Type Section - Right Side */}
+            <div className="payment-type-section">
+              <div className="form-group form-group-catering-radio">
+                <label className="catering-radio-label">Zahlungsart</label>
+                <div className="catering-radio-buttons">
+                  <label className="radio-option-label">
+                    <input
+                      type="radio"
+                      name="paymentType"
+                      value="selbstzahler"
+                      checked={paymentType === 'selbstzahler'}
+                      onChange={(e) => setPaymentType(e.target.value)}
+                      className="catering-radio"
+                    />
+                    <span className="radio-custom"></span>
+                    <span className="radio-text">Selbstzahler</span>
+                  </label>
+                  <label className="radio-option-label">
+                    <input
+                      type="radio"
+                      name="paymentType"
+                      value="pauschale"
+                      checked={paymentType === 'pauschale'}
+                      onChange={(e) => setPaymentType(e.target.value)}
+                      className="catering-radio"
+                    />
+                    <span className="radio-custom"></span>
+                    <span className="radio-text">Pauschale</span>
+                  </label>
+                </div>
+              </div>
+
+              {paymentType === 'pauschale' && (
+                <div className="pauschale-options">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={pauschaleOptions.standard}
+                      onChange={(e) => setPauschaleOptions(prev => ({ ...prev, standard: e.target.checked }))}
+                      className="rider-extras-checkbox"
+                    />
+                    <span className="checkbox-custom"></span>
+                    <span className="checkbox-text">Standard</span>
+                  </label>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={pauschaleOptions.longdrinks}
+                      onChange={(e) => setPauschaleOptions(prev => ({ ...prev, longdrinks: e.target.checked }))}
+                      className="rider-extras-checkbox"
+                    />
+                    <span className="checkbox-custom"></span>
+                    <span className="checkbox-text">Longdrinks</span>
+                  </label>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={pauschaleOptions.sektCocktails}
+                      onChange={(e) => setPauschaleOptions(prev => ({ ...prev, sektCocktails: e.target.checked }))}
+                      className="rider-extras-checkbox"
+                    />
+                    <span className="checkbox-custom"></span>
+                    <span className="checkbox-text">Sekt-Cocktails</span>
+                  </label>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={pauschaleOptions.shots}
+                      onChange={(e) => setPauschaleOptions(prev => ({ ...prev, shots: e.target.checked }))}
+                      className="rider-extras-checkbox"
+                    />
+                    <span className="checkbox-custom"></span>
+                    <span className="checkbox-text">Shots</span>
+                  </label>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -606,13 +693,13 @@ function RiderExtrasForm({ formData, onDataChange }) {
         </div>
 
         {/* Notes Section */}
-        <div className="rider-extras-notes-section">
-          <label htmlFor="riderExtrasNotes">Notizen</label>
+        <div className="notes-section">
+          <label htmlFor="riderExtrasNotes" className="notes-label">Notizen</label>
           <textarea
             id="riderExtrasNotes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="rider-extras-notes-input"
+            className="form-textarea"
             placeholder="Zusätzliche Notizen oder Bemerkungen..."
             rows="4"
           />
