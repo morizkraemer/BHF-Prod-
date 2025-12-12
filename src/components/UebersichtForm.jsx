@@ -6,8 +6,11 @@ function UebersichtForm({ formData, onDataChange }) {
     eventName: formData?.eventName || '',
     eventType: formData?.eventType || '',
     getInTime: formData?.getInTime || '',
+    getInTatsachlich: formData?.getInTatsachlich || '',
     doorsTime: formData?.doorsTime || '',
-    travelParty: formData?.travelParty || '',
+    doorsTatsachlich: formData?.doorsTatsachlich || '',
+    travelPartyGetIn: formData?.travelPartyGetIn || '',
+    travelPartyTatsachlich: formData?.travelPartyTatsachlich || '',
     nightLead: formData?.nightLead || ''
   });
 
@@ -62,10 +65,23 @@ function UebersichtForm({ formData, onDataChange }) {
   }, [localData]);
 
   const handleChange = (field, value) => {
-    setLocalData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setLocalData(prev => {
+      const newData = {
+        ...prev,
+        [field]: value
+      };
+      
+      // Auto-copy to Tatsächlich fields when main fields change
+      if (field === 'getInTime' && value) {
+        newData.getInTatsachlich = value;
+      } else if (field === 'doorsTime' && value) {
+        newData.doorsTatsachlich = value;
+      } else if (field === 'travelPartyGetIn' && value) {
+        newData.travelPartyTatsachlich = value;
+      }
+      
+      return newData;
+    });
   };
 
   const handlePrintZettel = useCallback(async () => {
@@ -124,43 +140,84 @@ function UebersichtForm({ formData, onDataChange }) {
           </div>
         </div>
 
-        {/* Get In, Doors, and Travel Party on same line */}
+        {/* Get In, Doors, and Travel Party - each paired with their Tatsächlich */}
         <div className="form-row form-row-three-columns">
-          <div className="form-group">
-            <label htmlFor="getInTime">Get In Zeit *</label>
-            <input
-              type="time"
-              id="getInTime"
-              value={localData.getInTime}
-              onChange={(e) => handleChange('getInTime', e.target.value)}
-              className="form-input"
-              required
-            />
+          {/* Get In Zeit paired with Get In Tatsächlich */}
+          <div className="form-group-paired-container">
+            <div className="form-group form-group-paired-left">
+              <label htmlFor="getInTime">Get In Zeit *</label>
+              <input
+                type="time"
+                id="getInTime"
+                value={localData.getInTime}
+                onChange={(e) => handleChange('getInTime', e.target.value)}
+                className="form-input"
+                required
+              />
+            </div>
+            <div className="form-group form-group-paired-right">
+              <label htmlFor="getInTatsachlich">Tatsächlich</label>
+              <input
+                type="time"
+                id="getInTatsachlich"
+                value={localData.getInTatsachlich}
+                onChange={(e) => handleChange('getInTatsachlich', e.target.value)}
+                className="form-input"
+              />
+            </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="doorsTime">Doors Zeit *</label>
-            <input
-              type="time"
-              id="doorsTime"
-              value={localData.doorsTime}
-              onChange={(e) => handleChange('doorsTime', e.target.value)}
-              className="form-input"
-              required
-            />
+          {/* Doors Zeit paired with Doors Tatsächlich */}
+          <div className="form-group-paired-container">
+            <div className="form-group form-group-paired-left">
+              <label htmlFor="doorsTime">Doors Zeit *</label>
+              <input
+                type="time"
+                id="doorsTime"
+                value={localData.doorsTime}
+                onChange={(e) => handleChange('doorsTime', e.target.value)}
+                className="form-input"
+                required
+              />
+            </div>
+            <div className="form-group form-group-paired-right">
+              <label htmlFor="doorsTatsachlich">Tatsächlich</label>
+              <input
+                type="time"
+                id="doorsTatsachlich"
+                value={localData.doorsTatsachlich}
+                onChange={(e) => handleChange('doorsTatsachlich', e.target.value)}
+                className="form-input"
+              />
+            </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="travelParty">Travel Party Anzahl</label>
-            <input
-              type="number"
-              id="travelParty"
-              value={localData.travelParty}
-              onChange={(e) => handleChange('travelParty', e.target.value)}
-              className="form-input"
-              min="0"
-              placeholder="0"
-            />
+          {/* Travel Party Get In paired with Travel Party Tatsächlich */}
+          <div className="form-group-paired-container">
+            <div className="form-group form-group-paired-left">
+              <label htmlFor="travelPartyGetIn">Travel Party Get In</label>
+              <input
+                type="number"
+                id="travelPartyGetIn"
+                value={localData.travelPartyGetIn}
+                onChange={(e) => handleChange('travelPartyGetIn', e.target.value)}
+                className="form-input"
+                min="0"
+                placeholder="0"
+              />
+            </div>
+            <div className="form-group form-group-paired-right">
+              <label htmlFor="travelPartyTatsachlich">Tatsächlich</label>
+              <input
+                type="number"
+                id="travelPartyTatsachlich"
+                value={localData.travelPartyTatsachlich}
+                onChange={(e) => handleChange('travelPartyTatsachlich', e.target.value)}
+                className="form-input"
+                min="0"
+                placeholder="0"
+              />
+            </div>
           </div>
         </div>
 

@@ -369,6 +369,12 @@ body {
   gap: 20px;
 }
 
+.form-row-two-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
 .form-row-event-date {
   grid-template-columns: 1fr auto;
   align-items: end;
@@ -414,6 +420,63 @@ body {
 
 .form-row-three-columns {
   grid-template-columns: 1fr 1fr 1fr;
+}
+
+.form-row-four-columns {
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 20px;
+}
+
+.form-group-paired-container {
+  display: flex;
+  gap: 0;
+  width: 100%;
+}
+
+.form-group-paired-left {
+  flex: 1;
+  margin-right: 0;
+}
+
+.form-group-paired-left .form-input {
+  border-radius: 6px 0 0 6px;
+  border-right: none;
+}
+
+.form-group-paired-right {
+  flex: 1;
+  margin-left: 0;
+}
+
+.form-group-paired-right .form-input {
+  border-radius: 0 6px 6px 0;
+  border-left: 1px solid #ddd;
+}
+
+.form-group-travel-party-container {
+  display: flex;
+  gap: 0;
+  width: 100%;
+}
+
+.form-group-travel-party-left {
+  flex: 1;
+  margin-right: 0;
+}
+
+.form-group-travel-party-left .form-input {
+  border-radius: 6px 0 0 6px;
+  border-right: none;
+}
+
+.form-group-travel-party-right {
+  flex: 1;
+  margin-left: 0;
+}
+
+.form-group-travel-party-right .form-input {
+  border-radius: 0 6px 6px 0;
+  border-left: 1px solid #ddd;
 }
 
 .form-row-tech-info {
