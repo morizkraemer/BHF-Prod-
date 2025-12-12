@@ -28,6 +28,8 @@ function App() {
   const [scannerName, setScannerName] = useState(null);
   const [scannerAvailable, setScannerAvailable] = useState(false);
   const [showVVAConfirmation, setShowVVAConfirmation] = useState(false);
+  const [showVVAMissingFields, setShowVVAMissingFields] = useState(false);
+  const [vvaMissingFields, setVvaMissingFields] = useState([]);
   
   // Global scanner availability state - can be accessed by child components
   window.scannerAvailability = {
@@ -179,27 +181,25 @@ function App() {
     setShowVVAConfirmation(false);
   };
 
+  const handleVVAMissingFieldsFinishAnyway = (note) => {
+    setShowVVAMissingFields(false);
+    // Proceed to VVA confirmation dialog
+    setShowVVAConfirmation(true);
+  };
+
+  const handleVVAMissingFieldsCancel = () => {
+    setShowVVAMissingFields(false);
+  };
+
   const handleCloseShift = () => {
     if (currentPhase === 'VVA') {
       // Validate VVA -> SL transition
       const vvaErrors = validateVVAtoSL();
       
       if (vvaErrors.length > 0) {
-        // Group errors by section
-        const errorsBySection = {};
-        vvaErrors.forEach(err => {
-          if (!errorsBySection[err.section]) {
-            errorsBySection[err.section] = [];
-          }
-          errorsBySection[err.section].push(err.field);
-        });
-        
-        // Build error message
-        const errorMessages = Object.entries(errorsBySection).map(([section, fields]) => 
-          `• ${section}: ${fields.join(', ')}`
-        ).join('\n');
-        
-        alert(`Bitte füllen Sie alle erforderlichen Felder für VVA aus:\n\n${errorMessages}\n\nBitte überprüfen Sie die markierten Abschnitte in der Sidebar.`);
+        // Show missing fields dialog instead of alert
+        setVvaMissingFields(vvaErrors);
+        setShowVVAMissingFields(true);
         
         // Highlight the first section with errors
         if (vvaErrors.length > 0) {
@@ -476,6 +476,14 @@ function App() {
           {renderActiveSection()}
         </div>
       </main>
+
+      {/* VVA Missing Fields Dialog */}
+      <VVAMissingFieldsDialog
+        isOpen={showVVAMissingFields}
+        onFinishAnyway={handleVVAMissingFieldsFinishAnyway}
+        onCancel={handleVVAMissingFieldsCancel}
+        missingFields={vvaMissingFields}
+      />
 
       {/* VVA Confirmation Dialog */}
       <VVAConfirmationDialog

@@ -363,3 +363,157 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
+/* VVA Missing Fields Dialog */
+.vva-missing-fields-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.vva-missing-fields-dialog {
+  background-color: white;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: popupFadeIn 0.2s ease-out;
+  display: flex;
+  flex-direction: column;
+}
+
+.vva-missing-fields-title {
+  margin: 0 0 20px 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.vva-missing-fields-content {
+  margin-bottom: 24px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.vva-missing-fields-description {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: #7f8c8d;
+}
+
+.vva-missing-fields-list {
+  margin-bottom: 20px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.vva-missing-fields-section {
+  margin-bottom: 12px;
+}
+
+.vva-missing-fields-section:last-child {
+  margin-bottom: 0;
+}
+
+.vva-missing-fields-section-name {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.vva-missing-fields-section-fields {
+  margin-left: 16px;
+}
+
+.vva-missing-fields-item {
+  font-size: 14px;
+  color: #495057;
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+.vva-missing-fields-note {
+  margin-top: 20px;
+}
+
+.vva-missing-fields-note-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+
+.vva-missing-fields-note-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+  background-color: white;
+}
+
+.vva-missing-fields-note-textarea:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.vva-missing-fields-note-textarea::placeholder {
+  color: #adb5bd;
+}
+
+.vva-missing-fields-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  flex-shrink: 0;
+}
+
+.vva-missing-fields-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  color: white;
+}
+
+.vva-missing-fields-button-cancel {
+  background-color: #95a5a6;
+}
+
+.vva-missing-fields-button-cancel:hover {
+  background-color: #7f8c8d;
+}
+
+.vva-missing-fields-button-finish {
+  background-color: #e74c3c;
+}
+
+.vva-missing-fields-button-finish:hover {
+  background-color: #c0392b;
+}
+
