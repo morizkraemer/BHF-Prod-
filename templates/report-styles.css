@@ -1,0 +1,267 @@
+@page {
+    size: A4;
+    margin: 0;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Helvetica', 'Arial', sans-serif;
+    font-size: 10pt;
+    line-height: 1.4;
+    color: #1a1a1a;
+    background: white;
+}
+
+.page {
+    width: 100%;
+    min-height: 100%;
+    padding: 0;
+    margin: 0;
+    background: white;
+    page-break-after: always;
+}
+
+.page:last-child {
+    page-break-after: auto;
+}
+
+/* Header */
+.report-header {
+    background: #2c3e50;
+    color: white;
+    padding: 20px 30px;
+    margin: 0 0 20px 0;
+    text-align: center;
+}
+
+.report-header h1 {
+    font-size: 24pt;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.event-info h2 {
+    font-size: 16pt;
+    font-weight: normal;
+    color: #ecf0f1;
+    margin-bottom: 4px;
+}
+
+.event-info p {
+    font-size: 11pt;
+    color: #bdc3c7;
+}
+
+/* Sections */
+.section {
+    margin-bottom: 25px;
+    page-break-inside: avoid;
+}
+
+.section-header {
+    background: #34495e;
+    color: white;
+    padding: 8px 12px;
+    font-size: 13pt;
+    font-weight: bold;
+    margin-bottom: 12px;
+    border-radius: 3px;
+}
+
+.section-content {
+    padding: 0 5px;
+}
+
+/* Field Rows */
+.field-row {
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+}
+
+.field-label {
+    color: #555;
+    font-size: 9.5pt;
+    width: 160px;
+    flex-shrink: 0;
+    padding-right: 8px;
+}
+
+.field-value {
+    color: #1a1a1a;
+    font-size: 10pt;
+    font-weight: bold;
+    flex: 1;
+}
+
+/* Tables */
+.table-container {
+    margin: 15px 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 9pt;
+    page-break-inside: avoid;
+}
+
+table thead {
+    background: #34495e;
+    color: white;
+}
+
+table th {
+    padding: 8px;
+    text-align: left;
+    font-weight: bold;
+    font-size: 9.5pt;
+    border: 0.5px solid #d0d0d0;
+}
+
+table td {
+    padding: 8px;
+    border: 0.5px solid #d0d0d0;
+    background: white;
+}
+
+table tbody tr:nth-child(even) {
+    background: #f8f9fa;
+}
+
+table tbody tr:nth-child(odd) {
+    background: white;
+}
+
+/* Subsection Headers */
+.subsection-header {
+    font-size: 10pt;
+    font-weight: bold;
+    color: #2c3e50;
+    margin: 15px 0 8px 0;
+}
+
+/* Checkmark List */
+.checkmark-list {
+    list-style: none;
+    padding: 0;
+}
+
+.checkmark-list li {
+    margin-bottom: 8px;
+    font-size: 10pt;
+}
+
+.checkmark-list li::before {
+    content: '✓ ';
+    color: #27ae60;
+    font-weight: bold;
+    font-size: 11pt;
+    margin-right: 5px;
+}
+
+/* Notes */
+.notes-container {
+    margin-top: 15px;
+}
+
+.notes-label {
+    font-size: 10pt;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.notes-content {
+    font-size: 9.5pt;
+    color: #333;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+/* Total Row */
+.total-row {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #ddd;
+    font-weight: bold;
+    font-size: 10.5pt;
+    color: #2c3e50;
+}
+
+/* Empty State */
+.empty-state {
+    color: #999;
+    font-style: italic;
+    font-size: 9pt;
+    margin: 8px 0;
+}
+
+/* Shift Notes */
+.shift-note-item {
+    margin-bottom: 15px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-left: 3px solid #3498db;
+    border-radius: 3px;
+    page-break-inside: avoid;
+}
+
+.shift-note-title {
+    font-size: 10pt;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.shift-note-fields {
+    font-size: 9.5pt;
+    color: #e74c3c;
+    font-weight: 500;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    margin-bottom: 6px;
+}
+
+.shift-note-content {
+    font-size: 9.5pt;
+    color: #333;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Print specific styles */
+@media print {
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .page {
+        page-break-after: always;
+    }
+
+    .page:last-child {
+        page-break-after: auto;
+    }
+
+    .section {
+        page-break-inside: avoid;
+    }
+
+    table {
+        page-break-inside: avoid;
+    }
+}
+
+/* Footer is handled by Electron's printToPDF headerTemplate/footerTemplate */
+

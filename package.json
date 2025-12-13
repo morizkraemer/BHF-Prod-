@@ -6,7 +6,8 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "build": "electron-builder"
+    "build": "electron-builder",
+    "preview-report": "electron preview-report.js"
   },
   "keywords": [
     "electron",
@@ -29,7 +30,7 @@
   },
   "build": {
     "appId": "com.bhf.produktionstool",
-    "productName": "Nightclub Production Tool",
+    "productName": "Produktionsübersicht",
     "mac": {
       "icon": "assets/icons/icon.png"
     },

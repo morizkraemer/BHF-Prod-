@@ -3,18 +3,20 @@ const { useState, useEffect } = React;
 function VVAConfirmationDialog({ isOpen, onConfirm, onCancel, hasExtras }) {
   const [checklistChecked, setChecklistChecked] = useState(false);
   const [extrasConfirmed, setExtrasConfirmed] = useState(false);
+  const [note, setNote] = useState('');
 
   // Reset state when dialog opens/closes
   useEffect(() => {
     if (isOpen) {
       setChecklistChecked(false);
       setExtrasConfirmed(false); // Always start unchecked, needs manual confirmation if no extras
+      setNote('');
     }
   }, [isOpen, hasExtras]);
 
   const handleConfirm = () => {
     if (checklistChecked && (hasExtras || extrasConfirmed)) {
-      onConfirm();
+      onConfirm(note.trim() || null);
     }
   };
 
@@ -55,6 +57,17 @@ function VVAConfirmationDialog({ isOpen, onConfirm, onCancel, hasExtras }) {
               </label>
             </div>
           )}
+          
+          <div className="vva-confirmation-note">
+            <label className="vva-confirmation-note-label">Notiz (optional):</label>
+            <textarea
+              className="vva-confirmation-note-textarea"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Optionale Notiz hinzufügen..."
+              rows={3}
+            />
+          </div>
         </div>
 
         <div className="vva-confirmation-actions">

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shift Report</title>
+    <link rel="stylesheet" href="report-styles.css">
+</head>
+<body>
+    <div class="page">
+        <!-- Header -->
+        <header class="report-header">
+            <h1>SHIFT REPORT</h1>
+            <div class="event-info">
+                <h2 id="event-name"></h2>
+                <p id="event-date"></p>
+            </div>
+        </header>
+
+        <!-- Übersicht Section -->
+        <section class="section">
+            <h3 class="section-header">ÜBERSICHT</h3>
+            <div class="section-content">
+                <div class="field-row" id="field-event-name"></div>
+                <div class="field-row" id="field-date"></div>
+                <div class="field-row" id="field-event-type"></div>
+                <div class="field-row" id="field-night-lead"></div>
+                <div class="field-row" id="field-nightliner"></div>
+
+                <div class="field-row" id="field-getin-geplant"></div>
+                <div class="field-row" id="field-getin-tatsachlich"></div>
+                <div class="field-row" id="field-doors-geplant"></div>
+                <div class="field-row" id="field-doors-tatsachlich"></div>
+                <div class="field-row" id="field-konzertende-geplant"></div>
+                <div class="field-row" id="field-konzertende-tatsachlich"></div>
+                <div class="field-row" id="field-backstage-curfew-geplant"></div>
+                <div class="field-row" id="field-backstage-curfew-tatsachlich"></div>
+
+                <div class="field-row" id="field-travel-party-getin"></div>
+                <div class="field-row" id="field-travel-party-tatsachlich"></div>
+                <div class="field-row" id="field-agentur"></div>
+                <div class="field-row" id="field-agentur-ap"></div>
+                <div class="field-row" id="field-veranstalter-name"></div>
+                <div class="field-row" id="field-veranstalter-ap"></div>
+                <div class="field-row" id="field-company-name"></div>
+                <div class="field-row" id="field-vva"></div>
+            </div>
+        </section>
+
+        <!-- Hospitality Section -->
+        <section class="section">
+            <h3 class="section-header">HOSPITALITY</h3>
+            <div class="section-content">
+                <div class="field-row" id="field-getin-catering"></div>
+                <div class="field-row" id="field-dinner"></div>
+                <div class="field-row" id="field-buyout-provider"></div>
+
+                <!-- Buyout Groups Table -->
+                <div id="buyout-groups-container"></div>
+
+                <div class="field-row" id="field-backstage-kuehlschrank"></div>
+
+                <!-- Fridge Items Table -->
+                <div id="fridge-items-container"></div>
+
+                <!-- Extras Table -->
+                <div id="extras-container"></div>
+
+                <!-- Notes -->
+                <div id="notes-container"></div>
+            </div>
+        </section>
+
+        <!-- Ton/Lichttechnik Section -->
+        <section class="section">
+            <h3 class="section-header">TON/LICHTTECHNIK</h3>
+            <div class="section-content">
+                <div id="sound-engineer-container"></div>
+                <div id="lighting-tech-container"></div>
+            </div>
+        </section>
+
+        <!-- Secu Section -->
+        <section class="section" id="secu-section">
+            <h3 class="section-header">SECU</h3>
+            <div class="section-content">
+                <div id="secu-table-container"></div>
+            </div>
+        </section>
+
+        <!-- Orderbird Section -->
+        <section class="section">
+            <h3 class="section-header">ORDERBIRD</h3>
+            <div class="section-content">
+                <div id="orderbird-container"></div>
+            </div>
+        </section>
+
+        <!-- Gäste Section -->
+        <section class="section">
+            <h3 class="section-header">GÄSTE</h3>
+            <div class="section-content">
+                <div class="field-row" id="field-payment-type"></div>
+                <div class="field-row" id="field-pauschale-options"></div>
+                <div id="gaeste-table-container"></div>
+            </div>
+        </section>
+
+        <!-- Shift Notes Section -->
+        <section class="section" id="shift-notes-section">
+            <h3 class="section-header">FEHLENDE INFOS</h3>
+            <div class="section-content" id="shift-notes-container"></div>
+        </section>
+    </div>
+
+    <script>
+        window.reportData = null;
+    </script>
+    <script src="report-template.js"></script>
+</body>
+</html>
+

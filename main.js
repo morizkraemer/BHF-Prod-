@@ -22,6 +22,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    title: 'Produktionsübersicht',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -32,20 +33,33 @@ function createWindow() {
 
   mainWindow.loadFile('index.html');
 
+  // Open DevTools in development mode
+  if (process.argv.includes('--dev')) {
+    mainWindow.webContents.openDevTools();
+  }
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
 }
 
 app.whenReady().then(() => {
+  // Set app name for macOS (appears in menu bar and dock)
+  app.setName('Produktionsübersicht');
+  
   createWindow();
+  
+  // Set window title
+  if (mainWindow) {
+    mainWindow.setTitle('Produktionsübersicht');
+  }
   
   // Register all IPC handlers
   registerCatalogHandlers(ipcMain, settingsStore);
-  registerSettingsHandlers(ipcMain, settingsStore, mainWindow, dialog, shell);
+  registerSettingsHandlers(ipcMain, settingsStore, mainWindow, dialog, shell, shiftDataStore);
   registerScannerHandlers(ipcMain, settingsStore, mainWindow, dialog);
   registerReportHandlers(ipcMain, settingsStore);
-  registerDataHandlers(ipcMain, shiftDataStore);
+  registerDataHandlers(ipcMain, shiftDataStore, settingsStore);
   
   // Check if NAPS2 is installed (only on macOS)
   if (process.platform === 'darwin') {
@@ -60,12 +74,16 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
+      // Set window title
+      if (mainWindow) {
+        mainWindow.setTitle('Produktionsübersicht');
+      }
       // Re-register handlers for new window context
       registerCatalogHandlers(ipcMain, settingsStore);
-      registerSettingsHandlers(ipcMain, settingsStore, mainWindow, dialog, shell);
+      registerSettingsHandlers(ipcMain, settingsStore, mainWindow, dialog, shell, shiftDataStore);
       registerScannerHandlers(ipcMain, settingsStore, mainWindow, dialog);
       registerReportHandlers(ipcMain, settingsStore);
-      registerDataHandlers(ipcMain, shiftDataStore);
+      registerDataHandlers(ipcMain, shiftDataStore, settingsStore);
       // Check again when window is recreated
       if (process.platform === 'darwin') {
         setTimeout(() => {

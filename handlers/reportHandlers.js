@@ -83,27 +83,53 @@ function registerReportHandlers(ipcMain, store) {
         });
       }
       
-      // Copy all scanned PDFs to event folder
+      // Generate date/time string for file naming (YYYY-MM-DD_HH-MM format)
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const dateTimeStr = `${year}-${month}-${day}_${hours}-${minutes}`;
+      
+      // Copy all scanned PDFs to event folder with renamed files
       for (const pdfPath of scannedPDFs) {
         try {
           // Check if file exists
           await fs.access(pdfPath);
-          const fileName = path.basename(pdfPath);
-          const destPath = path.join(eventFolderPath, fileName);
+          const originalFileName = path.basename(pdfPath);
+          const ext = path.extname(originalFileName);
+          const originalBaseName = path.basename(originalFileName, ext);
           
-          // Copy file (if it doesn't already exist in destination)
+          // Create new filename: EventName_YYYY-MM-DD_HH-MM_originalname.pdf
+          const newFileName = `${sanitizedEventName}_${dateTimeStr}_${originalBaseName}${ext}`;
+          const destPath = path.join(eventFolderPath, newFileName);
+          
+          // Check if destination file already exists and create unique name if needed
+          let finalDestPath = destPath;
+          let counter = 1;
+          while (true) {
+            try {
+              await fs.access(finalDestPath);
+              // File exists, add counter
+              const nameWithoutExt = path.basename(newFileName, ext);
+              finalDestPath = path.join(eventFolderPath, `${nameWithoutExt}_${counter}${ext}`);
+              counter++;
+            } catch {
+              // File doesn't exist, use this path
+              break;
+            }
+          }
+          
+          // Copy file to destination
+          await fs.copyFile(pdfPath, finalDestPath);
+          
+          // Delete original file from temporary folder
           try {
-            await fs.access(destPath);
-            // File already exists, skip or create unique name
-            const ext = path.extname(fileName);
-            const baseName = path.basename(fileName, ext);
-            const timestamp = Date.now();
-            const uniqueFileName = `${baseName}_${timestamp}${ext}`;
-            const uniqueDestPath = path.join(eventFolderPath, uniqueFileName);
-            await fs.copyFile(pdfPath, uniqueDestPath);
-          } catch {
-            // File doesn't exist, copy it
-            await fs.copyFile(pdfPath, destPath);
+            await fs.unlink(pdfPath);
+          } catch (deleteError) {
+            console.warn(`Could not delete original file ${pdfPath}:`, deleteError.message);
+            // Continue even if deletion fails
           }
         } catch (error) {
           console.warn(`Could not copy scanned PDF ${pdfPath}:`, error.message);

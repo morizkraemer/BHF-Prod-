@@ -32,7 +32,16 @@ function App() {
   const [vvaMissingFields, setVvaMissingFields] = useState([]);
   const [showSLMissingFields, setShowSLMissingFields] = useState(false);
   const [slMissingFields, setSlMissingFields] = useState([]);
+  const [showCloseShiftConfirmation, setShowCloseShiftConfirmation] = useState(false);
   const [highlightedFields, setHighlightedFields] = useState({});
+  const [shiftNotes, setShiftNotes] = useState({
+    vvaConfirmationNote: null,
+    closeShiftConfirmationNote: null,
+    vvaMissingFieldsNote: null,
+    slMissingFieldsNote: null,
+    vvaMissingFields: null,
+    slMissingFields: null
+  });
   
   // Global scanner availability state - can be accessed by child components
   window.scannerAvailability = {
@@ -181,11 +190,13 @@ function App() {
       errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Dinner' });
     }
     
-    // Handtuchzettel scan (scannedDocuments with scanName="Handtuchzettel")
-    const scannedDocuments = riderExtrasData.scannedDocuments || [];
-    const handtuchzettelScans = scannedDocuments.filter(doc => doc.scanName === 'Handtuchzettel');
-    if (handtuchzettelScans.length === 0) {
-      errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Handtuchzettel Scan' });
+    // Handtuchzettel scan (scannedDocuments with scanName="Handtuchzettel") - only required for Konzert events
+    if (uebersichtData.eventType === 'konzert') {
+      const scannedDocuments = riderExtrasData.scannedDocuments || [];
+      const handtuchzettelScans = scannedDocuments.filter(doc => doc.scanName === 'Handtuchzettel');
+      if (handtuchzettelScans.length === 0) {
+        errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Handtuchzettel Scan' });
+      }
     }
     
     // Backstage Kühlschrank (standardbestueckung)
@@ -266,6 +277,15 @@ function App() {
     }
     if (!riderExtrasData.standardbestueckung || riderExtrasData.standardbestueckung === '') {
       errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Backstage Kühlschrank' });
+    }
+    
+    // Handtuchzettel scan - only required for Konzert events
+    if (uebersichtData.eventType === 'konzert') {
+      const scannedDocuments = riderExtrasData.scannedDocuments || [];
+      const handtuchzettelScans = scannedDocuments.filter(doc => doc.scanName === 'Handtuchzettel');
+      if (handtuchzettelScans.length === 0) {
+        errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Handtuchzettel Scan' });
+      }
     }
     
     // Ton/Lichttechnik section
@@ -352,7 +372,8 @@ function App() {
     return items.some(item => item.text && item.text.trim() !== '');
   };
 
-  const handleVVAConfirm = () => {
+  const handleVVAConfirm = (note) => {
+    setShiftNotes(prev => ({ ...prev, vvaConfirmationNote: note }));
     setCurrentPhase('SL');
     setShowVVAConfirmation(false);
     alert('VVA Phase abgeschlossen. Sie können nun mit der SL Phase fortfahren.');
@@ -362,7 +383,22 @@ function App() {
     setShowVVAConfirmation(false);
   };
 
+  const handleCloseShiftConfirm = (note) => {
+    setShiftNotes(prev => ({ ...prev, closeShiftConfirmationNote: note }));
+    setShowCloseShiftConfirmation(false);
+    handleCloseShiftSave();
+  };
+
+  const handleCloseShiftCancel = () => {
+    setShowCloseShiftConfirmation(false);
+  };
+
   const handleVVAMissingFieldsFinishAnyway = (note) => {
+    setShiftNotes(prev => ({ 
+      ...prev, 
+      vvaMissingFieldsNote: note,
+      vvaMissingFields: vvaMissingFields
+    }));
     setShowVVAMissingFields(false);
     // Clear highlights
     setHighlightedFields({});
@@ -391,6 +427,11 @@ function App() {
   };
 
   const handleSLMissingFieldsFinishAnyway = async (note) => {
+    setShiftNotes(prev => ({ 
+      ...prev, 
+      slMissingFieldsNote: note,
+      slMissingFields: slMissingFields
+    }));
     setShowSLMissingFields(false);
     // Clear highlights
     setHighlightedFields({});
@@ -398,7 +439,16 @@ function App() {
     // Since note is required, proceed with saving
     try {
       if (window.electronAPI && window.electronAPI.closeShift) {
-        const result = await window.electronAPI.closeShift(formData);
+        // Add shift notes to formData before closing
+        const formDataWithNotes = {
+          ...formData,
+          shiftNotes: {
+            ...shiftNotes,
+            slMissingFieldsNote: note,
+            slMissingFields: slMissingFields
+          }
+        };
+        const result = await window.electronAPI.closeShift(formDataWithNotes);
         if (result.success) {
           // Clear shift data after successful close
           if (window.electronAPI && window.electronAPI.clearShiftData) {
@@ -416,6 +466,14 @@ function App() {
               scannedDocuments: []
             },
             gaeste: {}
+          });
+          setShiftNotes({
+            vvaConfirmationNote: null,
+            closeShiftConfirmationNote: null,
+            vvaMissingFieldsNote: null,
+            slMissingFieldsNote: null,
+            vvaMissingFields: null,
+            slMissingFields: null
           });
           setCurrentPhase('VVA');
           
@@ -493,15 +551,21 @@ function App() {
         return; // Stop execution if validation fails
       }
       
-      // All validation passed - proceed with saving
-      handleCloseShiftSave();
+      // All validation passed - show confirmation dialog
+      setHighlightedFields({});
+      setShowCloseShiftConfirmation(true);
     }
   };
 
   const handleCloseShiftSave = async () => {
     try {
       if (window.electronAPI && window.electronAPI.closeShift) {
-        const result = await window.electronAPI.closeShift(formData);
+        // Add shift notes to formData before closing
+        const formDataWithNotes = {
+          ...formData,
+          shiftNotes: shiftNotes
+        };
+        const result = await window.electronAPI.closeShift(formDataWithNotes);
         if (result.success) {
           // Clear shift data after successful close
           if (window.electronAPI && window.electronAPI.clearShiftData) {
@@ -519,6 +583,14 @@ function App() {
               scannedDocuments: []
             },
             gaeste: {}
+          });
+          setShiftNotes({
+            vvaConfirmationNote: null,
+            closeShiftConfirmationNote: null,
+            vvaMissingFieldsNote: null,
+            slMissingFieldsNote: null,
+            vvaMissingFields: null,
+            slMissingFields: null
           });
           setCurrentPhase('VVA');
           
@@ -644,6 +716,7 @@ function App() {
   // Function to count filled required fields for each section
   const getRequiredFieldsCount = (sectionId) => {
     const data = formData[sectionId] || {};
+    const uebersichtData = formData.uebersicht || {}; // Used in multiple cases
     
     switch (sectionId) {
       case 'uebersicht':
@@ -702,10 +775,21 @@ function App() {
       
       case 'rider-extras':
         const hospitalityRequired = ['getInCatering', 'dinner', 'standardbestueckung'];
-        const hospitalityFilled = hospitalityRequired.filter(field => {
+        let hospitalityFilled = hospitalityRequired.filter(field => {
           const value = data[field];
           return value !== undefined && value !== null && value !== '';
         }).length;
+        
+        // Handtuchzettel scan - only required for Konzert events
+        if (uebersichtData.eventType === 'konzert') {
+          hospitalityRequired.push('handtuchzettelScan');
+          const scannedDocuments = data.scannedDocuments || [];
+          const hasHandtuchzettel = scannedDocuments.some(doc => doc.scanName === 'Handtuchzettel');
+          if (hasHandtuchzettel) {
+            hospitalityFilled++;
+          }
+        }
+        
         return { filled: hospitalityFilled, total: hospitalityRequired.length };
       
       case 'secu':
@@ -753,7 +837,6 @@ function App() {
         }).length;
         
         // Agenturzettel scan required for Konzert events
-        const uebersichtData = formData.uebersicht || {};
         if (uebersichtData.eventType === 'konzert') {
           gaesteRequired.push('agenturzettelScan');
           const agenturzettelScans = gaesteData.scannedDocuments || [];
@@ -832,7 +915,7 @@ function App() {
       {/* Sidebar */}
       <aside className="sidebar">
         <h2 className="sidebar-title">
-          Sections
+          ProdÜ
           <span className="sidebar-phase-badge">{currentPhase}</span>
         </h2>
         <nav className="sidebar-nav">
@@ -931,6 +1014,13 @@ function App() {
         onConfirm={handleVVAConfirm}
         onCancel={handleVVACancel}
         hasExtras={hasHospitalityExtras()}
+      />
+
+      {/* Close Shift Confirmation Dialog */}
+      <CloseShiftConfirmationDialog
+        isOpen={showCloseShiftConfirmation}
+        onConfirm={handleCloseShiftConfirm}
+        onCancel={handleCloseShiftCancel}
       />
     </div>
   );

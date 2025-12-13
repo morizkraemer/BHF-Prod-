@@ -3,7 +3,7 @@
  * Handles saving, loading, and clearing shift data
  */
 
-function registerDataHandlers(ipcMain, shiftDataStore) {
+function registerDataHandlers(ipcMain, shiftDataStore, settingsStore) {
   // Save shift data (formData and currentPhase)
   ipcMain.handle('save-data', (event, key, data) => {
     try {
@@ -33,6 +33,15 @@ function registerDataHandlers(ipcMain, shiftDataStore) {
       shiftDataStore.clear();
       shiftDataStore.set('currentShiftData', null);
       shiftDataStore.set('currentPhase', 'VVA');
+      
+      // Clear tech names from settings store
+      if (settingsStore) {
+        settingsStore.set('techNames', {
+          soundEngineerName: '',
+          lightingTechName: ''
+        });
+      }
+      
       return { success: true };
     } catch (error) {
       console.error('Error clearing shift data:', error);

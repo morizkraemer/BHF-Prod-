@@ -75,6 +75,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Dialog operations
   showMessageBox: (options) => ipcRenderer.invoke('show-message-box', options),
-  showErrorBox: (title, content) => ipcRenderer.invoke('show-error-box', title, content)
+  showErrorBox: (title, content) => ipcRenderer.invoke('show-error-box', title, content),
+  
+  // Reset all data
+  resetAllData: () => ipcRenderer.invoke('reset-all-data')
 });
 

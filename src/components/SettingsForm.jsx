@@ -882,6 +882,62 @@ function SettingsForm() {
     );
   };
 
+  const handleResetAllData = async () => {
+    const confirmed = window.confirm(
+      'WARNUNG: Möchten Sie wirklich ALLE Einstellungen und Daten zurücksetzen?\n\n' +
+      'Dies wird gelöscht:\n' +
+      '• Alle Rider Extras Items\n' +
+      '• Alle Night Leads\n' +
+      '• Scanner-Auswahl\n' +
+      '• Scan- und Report-Ordner\n' +
+      '• Tech-Namen\n' +
+      '• Alle Templates\n' +
+      '• Alle Bestückungslisten\n' +
+      '• Alle Shift-Daten\n\n' +
+      'Diese Aktion kann nicht rückgängig gemacht werden!'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    // Double confirmation
+    const doubleConfirmed = window.confirm(
+      'Sind Sie ABSOLUT sicher? Diese Aktion kann NICHT rückgängig gemacht werden!'
+    );
+
+    if (!doubleConfirmed) {
+      return;
+    }
+
+    try {
+      if (window.electronAPI && window.electronAPI.resetAllData) {
+        const result = await window.electronAPI.resetAllData();
+        if (result.success) {
+          alert('Alle Einstellungen und Daten wurden erfolgreich zurückgesetzt. Die Seite wird neu geladen.');
+          // Reload all data
+          loadItems();
+          loadNightLeads();
+          loadScanners();
+          loadSelectedScanner();
+          loadScanFolder();
+          loadReportFolder();
+          loadTemplates();
+          loadBestueckungLists();
+          // Optionally reload the page
+          window.location.reload();
+        } else {
+          alert('Fehler beim Zurücksetzen: ' + (result.error || 'Unbekannter Fehler'));
+        }
+      } else {
+        alert('Fehler: Electron API nicht verfügbar.');
+      }
+    } catch (error) {
+      console.error('Error resetting data:', error);
+      alert('Fehler beim Zurücksetzen: ' + error.message);
+    }
+  };
+
   const renderTemplatesSection = () => (
     <>
       <div className="settings-section">
@@ -981,6 +1037,49 @@ function SettingsForm() {
     </>
   );
 
+  const renderResetSection = () => (
+    <>
+      <div className="settings-section">
+        <h2>Alle Daten zurücksetzen</h2>
+        <p className="settings-description" style={{ color: '#d32f2f', fontWeight: 'bold' }}>
+          ⚠️ WARNUNG: Diese Aktion kann nicht rückgängig gemacht werden!
+        </p>
+        <p className="settings-description">
+          Setzen Sie alle Einstellungen und Daten auf die Standardwerte zurück. Dies umfasst:
+        </p>
+        <ul className="settings-description" style={{ marginLeft: '20px', marginTop: '10px' }}>
+          <li>Alle Rider Extras Items</li>
+          <li>Alle Night Leads</li>
+          <li>Scanner-Auswahl</li>
+          <li>Scan- und Report-Ordner</li>
+          <li>Tech-Namen (Sound Engineer & Lighting Tech)</li>
+          <li>Alle Templates</li>
+          <li>Alle Bestückungslisten</li>
+          <li>Alle aktuellen Shift-Daten</li>
+        </ul>
+        <div style={{ marginTop: '30px' }}>
+          <button
+            type="button"
+            onClick={handleResetAllData}
+            className="settings-delete-button"
+            style={{
+              padding: '12px 24px',
+              fontSize: '16px',
+              backgroundColor: '#d32f2f',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
+            Alle Daten zurücksetzen
+          </button>
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <div className="form-container">
       <div className="settings-container">
@@ -1017,6 +1116,12 @@ function SettingsForm() {
             >
               Templates
             </button>
+            <button
+              className={`settings-sidebar-item ${activeSettingsSection === 'reset' ? 'active' : ''}`}
+              onClick={() => setActiveSettingsSection('reset')}
+            >
+              Reset
+            </button>
           </nav>
         </aside>
 
@@ -1027,6 +1132,7 @@ function SettingsForm() {
              activeSettingsSection === 'night-leads' ? renderNightLeadsSection() : 
              activeSettingsSection === 'bestueckung' ? renderBestueckungSection() :
              activeSettingsSection === 'templates' ? renderTemplatesSection() :
+             activeSettingsSection === 'reset' ? renderResetSection() :
              renderScannerSection()}
           </div>
         </div>
