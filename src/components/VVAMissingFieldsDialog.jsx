@@ -1,122 +1,88 @@
 const { useState, useEffect } = React;
 
 function VVAMissingFieldsDialog({ isOpen, onFinishAnyway, onCancel, missingFields, title = 'Fehlende VVA Felder' }) {
-  const [note, setNote] = useState('');
-  const [fieldConfirmations, setFieldConfirmations] = useState({});
+  const [currentStep, setCurrentStep] = useState(0);
+  const [fieldNotes, setFieldNotes] = useState({});
 
-  // Reset note and confirmations when dialog opens/closes
+  // Reset state when dialog opens/closes
   useEffect(() => {
     if (isOpen) {
-      setNote('');
-      // Initialize confirmations only for Handtuchzettel Scan
-      const confirmations = {};
-      missingFields.forEach((field, index) => {
-        if (field.field === 'Handtuchzettel Scan') {
-          const fieldKey = `${field.section}_${field.field}_${index}`;
-          confirmations[fieldKey] = false;
-        }
-      });
-      setFieldConfirmations(confirmations);
+      setCurrentStep(0);
+      setFieldNotes({});
     }
   }, [isOpen, missingFields]);
 
-  if (!isOpen) return null;
+  if (!isOpen || missingFields.length === 0) return null;
 
-  // Handle toggle switch changes (only for Handtuchzettel Scan)
-  const handleToggleChange = (fieldKey) => {
-    setFieldConfirmations(prev => ({
+  // Get current field
+  const currentField = missingFields[currentStep];
+  const fieldKey = `${currentField.section}_${currentField.field}_${currentStep}`;
+  const currentNote = fieldNotes[fieldKey] || '';
+  const isLastStep = currentStep === missingFields.length - 1;
+  const isFirstStep = currentStep === 0;
+
+  // Handle note change for current field
+  const handleNoteChange = (value) => {
+    setFieldNotes(prev => ({
       ...prev,
-      [fieldKey]: !prev[fieldKey]
+      [fieldKey]: value
     }));
   };
 
-  // Check if Handtuchzettel Scan is confirmed (if it's in the missing fields)
-  const handtuchzettelConfirmed = () => {
-    const handtuchzettelField = missingFields.find(
-      field => field.field === 'Handtuchzettel Scan'
-    );
-    if (!handtuchzettelField) {
-      return true; // Not required, so considered confirmed
-    }
-    const fieldIndex = missingFields.findIndex(
-      field => field.field === 'Handtuchzettel Scan'
-    );
-    const fieldKey = `${handtuchzettelField.section}_${handtuchzettelField.field}_${fieldIndex}`;
-    return fieldConfirmations[fieldKey] || false;
+  // Check if current step can proceed
+  const canProceed = () => {
+    return currentNote.trim() !== '';
   };
 
-  // Group errors by section for display
-  const errorsBySection = {};
-  missingFields.forEach((err, index) => {
-    if (!errorsBySection[err.section]) {
-      errorsBySection[err.section] = [];
+  // Handle continue to next step
+  const handleContinue = () => {
+    if (isLastStep) {
+      // All steps done, finish
+      onFinishAnyway(fieldNotes, {});
+    } else {
+      // Move to next step
+      setCurrentStep(prev => prev + 1);
     }
-    const fieldKey = `${err.section}_${err.field}_${index}`;
-    const isHandtuchzettel = err.field === 'Handtuchzettel Scan';
-    errorsBySection[err.section].push({
-      field: err.field,
-      key: fieldKey,
-      confirmed: fieldConfirmations[fieldKey] || false,
-      needsToggle: isHandtuchzettel
-    });
-  });
+  };
+
+  // Handle go back
+  const handleBack = () => {
+    if (!isFirstStep) {
+      setCurrentStep(prev => prev - 1);
+    }
+  };
 
   return (
     <div className="vva-missing-fields-overlay">
       <div className="vva-missing-fields-dialog">
         <h2 className="vva-missing-fields-title">{title}</h2>
         
-        <div className="vva-missing-fields-content">
-          <p className="vva-missing-fields-description">
-            Die folgenden Felder müssen noch ausgefüllt werden:
-          </p>
-          
-          <div className="vva-missing-fields-list">
-            {Object.entries(errorsBySection).map(([section, fields]) => (
-              <div key={section} className="vva-missing-fields-section">
-                <div className="vva-missing-fields-section-name">{section}:</div>
-                <div className="vva-missing-fields-section-fields">
-                  {fields.map((fieldData) => (
-                    fieldData.needsToggle ? (
-                      <div key={fieldData.key} className="vva-missing-fields-toggle-item">
-                        <div className="vva-missing-fields-field-info">
-                          <span className="vva-missing-fields-field-name">{fieldData.field}</span>
-                          <span className="vva-missing-fields-field-description">
-                            Ich bestätige, dass dieses Feld fehlt
-                          </span>
-                        </div>
-                        <label className="vva-missing-fields-toggle-switch">
-                          <input
-                            type="checkbox"
-                            checked={fieldData.confirmed}
-                            onChange={() => handleToggleChange(fieldData.key)}
-                          />
-                          <span className="vva-missing-fields-toggle-slider"></span>
-                        </label>
-                      </div>
-                    ) : (
-                      <div key={fieldData.key} className="vva-missing-fields-item">
-                        • {fieldData.field}
-                      </div>
-                    )
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* Step Indicator */}
+        <div className="vva-missing-fields-step-indicator">
+          Schritt {currentStep + 1} von {missingFields.length}
+        </div>
 
-          <div className="vva-missing-fields-note">
-            <label className="vva-missing-fields-note-label">
-              Bitte gib eine Notiz ein, warum du die VVA ohne diese Informationen beenden willst *
-            </label>
-            <textarea
-              className="vva-missing-fields-note-textarea"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Bitte gib eine Notiz ein, warum du die VVA ohne diese Informationen beenden willst..."
-              rows={4}
-              required
-            />
+        <div className="vva-missing-fields-content">
+          {/* Current Field Display */}
+          <div className="vva-missing-fields-current-field">
+            <div className="vva-missing-fields-field-description-text">
+              Das Feld <strong>{currentField.field}</strong> im Bereich <strong>{currentField.section}</strong> fehlt noch.
+            </div>
+
+            {/* Note Field */}
+            <div className="vva-missing-fields-note">
+              <label className="vva-missing-fields-note-label">
+                Warum möchtest du ohne diese Information fortfahren? *
+              </label>
+              <textarea
+                className="vva-missing-fields-note-textarea"
+                value={currentNote}
+                onChange={(e) => handleNoteChange(e.target.value)}
+                placeholder="Bitte gib eine Notiz ein, warum du ohne diese Information fortfahren willst..."
+                rows={4}
+                required
+              />
+            </div>
           </div>
         </div>
 
@@ -128,17 +94,25 @@ function VVAMissingFieldsDialog({ isOpen, onFinishAnyway, onCancel, missingField
           >
             Abbrechen
           </button>
+          {!isFirstStep && (
+            <button
+              type="button"
+              onClick={handleBack}
+              className="vva-missing-fields-button vva-missing-fields-button-back"
+            >
+              Zurück
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => onFinishAnyway(note, fieldConfirmations)}
-            disabled={!note || note.trim() === '' || !handtuchzettelConfirmed()}
-            className="vva-missing-fields-button vva-missing-fields-button-finish"
+            onClick={handleContinue}
+            disabled={!canProceed()}
+            className="vva-missing-fields-button vva-missing-fields-button-continue"
           >
-            Trotzdem Beenden
+            {isLastStep ? 'Trotzdem Beenden' : 'Weiter ohne diese Information'}
           </button>
         </div>
       </div>
     </div>
   );
 }
-
