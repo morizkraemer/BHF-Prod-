@@ -469,7 +469,6 @@
 
 .scan-print-icon-button {
   padding: 6px 12px;
-  background-color: #27ae60;
   color: white;
   border: none;
   border-radius: 6px;
@@ -484,8 +483,22 @@
   font-weight: 500;
 }
 
-.scan-print-icon-button:hover {
-  background-color: #229954;
+.scan-print-icon-button-gray {
+  background-color: #95a5a6;
+}
+
+.scan-print-icon-button-gray:hover {
+  background-color: #7f8c8d;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.scan-print-icon-button-printed {
+  background-color: #e74c3c;
+}
+
+.scan-print-icon-button-printed:hover {
+  background-color: #c0392b;
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
@@ -589,6 +602,18 @@
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  background-color: #3498db;
+  color: white;
+}
+
+.scan-button-green {
+  background-color: #27ae60;
+}
+
+.scan-button-green:hover:not(:disabled) {
+  background-color: #229954;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
 .scan-button-secondary {
@@ -615,6 +640,16 @@
 
 .scan-button:hover:not(:disabled) {
   background-color: #2980b9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.scan-button-green {
+  background-color: #27ae60;
+}
+
+.scan-button-green:hover:not(:disabled) {
+  background-color: #229954;
   transform: translateY(-1px);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }

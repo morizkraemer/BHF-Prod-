@@ -1,6 +1,6 @@
 const { useState, useEffect } = React;
 
-function SecuForm({ formData, onDataChange, highlightedFields = [] }) {
+function SecuForm({ formData, onDataChange, highlightedFields = [], printedTemplates = {}, onTemplatePrinted }) {
   const shouldHighlight = (fieldName) => {
     return highlightedFields.includes(fieldName);
   };
@@ -121,6 +121,8 @@ function SecuForm({ formData, onDataChange, highlightedFields = [] }) {
             title="Secuzettel scannen"
             scanName="Securityzettel"
             templateKey="securityzettel"
+            printedTemplates={printedTemplates}
+            onTemplatePrinted={onTemplatePrinted}
           />
         </div>
       </div>

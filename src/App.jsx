@@ -38,6 +38,12 @@ function App() {
   const [slMissingFields, setSlMissingFields] = useState([]);
   const [showCloseShiftConfirmation, setShowCloseShiftConfirmation] = useState(false);
   const [highlightedFields, setHighlightedFields] = useState({});
+  const [printedTemplates, setPrintedTemplates] = useState({
+    securityzettel: false,
+    handtuchzettel: false,
+    technikzettel: false,
+    uebersichtzettel: false
+  });
   const [shiftNotes, setShiftNotes] = useState({
     vvaConfirmationNote: null,
     closeShiftConfirmationNote: null,
@@ -1111,6 +1117,15 @@ function App() {
             formData={formData.uebersicht}
             onDataChange={(data) => handleFormDataChange('uebersicht', data)}
             highlightedFields={highlightedFields.uebersicht || []}
+            printedTemplates={printedTemplates}
+            onPrintAll={() => {
+              setPrintedTemplates({
+                securityzettel: true,
+                handtuchzettel: true,
+                technikzettel: true,
+                uebersichtzettel: true
+              });
+            }}
           />
         );
       case 'rider-extras':
@@ -1119,6 +1134,10 @@ function App() {
             formData={formData['rider-extras']}
             onDataChange={(data) => handleFormDataChange('rider-extras', data)}
             highlightedFields={highlightedFields['rider-extras'] || []}
+            printedTemplates={printedTemplates}
+            onTemplatePrinted={(templateKey) => {
+              setPrintedTemplates(prev => ({ ...prev, [templateKey]: true }));
+            }}
           />
         );
       case 'tontechniker':
@@ -1127,6 +1146,10 @@ function App() {
             formData={formData.tontechniker}
             onDataChange={(data) => handleFormDataChange('tontechniker', data)}
             highlightedFields={highlightedFields.tontechniker || []}
+            printedTemplates={printedTemplates}
+            onTemplatePrinted={(templateKey) => {
+              setPrintedTemplates(prev => ({ ...prev, [templateKey]: true }));
+            }}
           />
         );
       case 'secu':
@@ -1135,6 +1158,10 @@ function App() {
             formData={formData.secu}
             onDataChange={(data) => handleFormDataChange('secu', data)}
             highlightedFields={highlightedFields.secu || []}
+            printedTemplates={printedTemplates}
+            onTemplatePrinted={(templateKey) => {
+              setPrintedTemplates(prev => ({ ...prev, [templateKey]: true }));
+            }}
           />
         );
       case 'andere-mitarbeiter':

@@ -41,10 +41,17 @@ function registerReportHandlers(ipcMain, store) {
         snacksPerPerson: ''
       });
       
-      // Add catering prices to formData for PDF generation
+      // Get bestueckung total prices from settings store
+      const bestueckungTotalPrices = store.get('bestueckungTotalPrices', {
+        'standard-konzert': '',
+        'standard-tranzit': ''
+      });
+      
+      // Add settings data to formData for PDF generation
       const formDataWithSettings = {
         ...formData,
-        cateringPrices: cateringPrices
+        cateringPrices: cateringPrices,
+        bestueckungTotalPrices: bestueckungTotalPrices
       };
       
       // Generate PDF

@@ -148,6 +148,24 @@ function registerCatalogHandlers(ipcMain, store) {
     store.set('bestueckungLists', lists);
     return true;
   });
+
+  // IPC Handlers for Bestückung Total Prices
+  ipcMain.handle('get-bestueckung-total-prices', () => {
+    return store.get('bestueckungTotalPrices', {
+      'standard-konzert': '',
+      'standard-tranzit': ''
+    });
+  });
+
+  ipcMain.handle('save-bestueckung-total-price', (event, bestueckungKey, price) => {
+    const prices = store.get('bestueckungTotalPrices', {
+      'standard-konzert': '',
+      'standard-tranzit': ''
+    });
+    prices[bestueckungKey] = price;
+    store.set('bestueckungTotalPrices', prices);
+    return true;
+  });
 }
 
 module.exports = { registerCatalogHandlers };

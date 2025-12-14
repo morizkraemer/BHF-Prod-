@@ -36,17 +36,22 @@ async function generateReportPDF(formData) {
         </script>`
       );
 
+      // Write HTML to a temporary file instead of using data URL (to avoid URL length limits)
+      const tempHtmlPath = path.join(__dirname, '..', 'temp-report.html');
+      await fs.writeFile(tempHtmlPath, html, 'utf8');
+
       // Create a hidden browser window for PDF generation
       printWindow = new BrowserWindow({
         show: false,
         webPreferences: {
           nodeIntegration: false,
-          contextIsolation: true
+          contextIsolation: true,
+          webSecurity: false // Allow loading local files
         }
       });
 
-      // Load HTML as data URL
-      await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+      // Load HTML from file instead of data URL (to avoid URL length limits)
+      await printWindow.loadFile(tempHtmlPath);
 
       // Wait for the page to be fully loaded and scripts to execute
       await printWindow.webContents.executeJavaScript(`
@@ -88,10 +93,25 @@ async function generateReportPDF(formData) {
       printWindow.close();
       printWindow = null;
 
+      // Clean up temporary file
+      try {
+        await fs.unlink(tempHtmlPath);
+      } catch (cleanupError) {
+        // Ignore cleanup errors
+        console.warn('Failed to cleanup temp file:', cleanupError);
+      }
+
       resolve(pdfBuffer);
     } catch (error) {
       if (printWindow) {
         printWindow.close();
+      }
+      // Try to clean up temp file on error
+      const tempHtmlPath = path.join(__dirname, '..', 'temp-report.html');
+      try {
+        await fs.unlink(tempHtmlPath).catch(() => {});
+      } catch (cleanupError) {
+        // Ignore cleanup errors
       }
       reject(error);
     }

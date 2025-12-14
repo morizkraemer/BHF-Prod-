@@ -1,6 +1,6 @@
 const { useState, useEffect } = React;
 
-function RiderExtrasForm({ formData, onDataChange, highlightedFields = [] }) {
+function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], printedTemplates = {}, onTemplatePrinted }) {
   // Map display field names to field identifiers
   const fieldNameMap = {
     'Get In Catering': 'getInCatering',
@@ -14,7 +14,6 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [] }) {
   };
   const [items, setItems] = useState(formData?.items || [{ amount: '', text: '', price: '', discount: '', originalPrice: '', ekPrice: null, checked: false }]);
   const [standardbestueckung, setStandardbestueckung] = useState(formData?.standardbestueckung || '');
-  const [standardbestueckungTotalPrice, setStandardbestueckungTotalPrice] = useState(formData?.standardbestueckungTotalPrice || '');
   const [getInCatering, setGetInCatering] = useState(formData?.getInCatering || '');
   const [dinner, setDinner] = useState(formData?.dinner || ''); // Can be 'no', 'warm', or 'buyout'
   const [buyoutProvider, setBuyoutProvider] = useState(formData?.buyoutProvider || '');
@@ -85,7 +84,6 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [] }) {
       onDataChange({ 
         items, 
         standardbestueckung,
-        standardbestueckungTotalPrice,
         getInCatering,
         dinner,
         buyoutProvider,
@@ -96,7 +94,7 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [] }) {
         customizedFridgeItems
       });
     }
-  }, [items, standardbestueckung, standardbestueckungTotalPrice, getInCatering, dinner, buyoutProvider, buyoutGroups, scannedDocuments, purchaseReceipts, notes, customizedFridgeItems]);
+  }, [items, standardbestueckung, getInCatering, dinner, buyoutProvider, buyoutGroups, scannedDocuments, purchaseReceipts, notes, customizedFridgeItems]);
 
   useEffect(() => {
     if (window.lucide) {
@@ -489,19 +487,6 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [] }) {
                   </option>
                 ))}
               </select>
-              <div className="form-group" style={{ marginTop: '10px' }}>
-                <label htmlFor="standardbestueckungTotalPrice">Gesamtpreis (€)</label>
-                <input
-                  type="number"
-                  id="standardbestueckungTotalPrice"
-                  value={standardbestueckungTotalPrice}
-                  onChange={(e) => setStandardbestueckungTotalPrice(e.target.value)}
-                  className="form-input"
-                  placeholder="0.00"
-                  step="0.01"
-                  min="0"
-                />
-              </div>
               <div className="fridge-contents-list">
                 {customizedFridgeItems.length > 0 ? (
                   <ul className="fridge-contents-items">
@@ -688,6 +673,8 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [] }) {
               title="Handtuchzettel scannen"
               scanName="Handtuchzettel"
               templateKey="handtuchzettel"
+              printedTemplates={printedTemplates}
+              onTemplatePrinted={onTemplatePrinted}
             />
           </div>
 

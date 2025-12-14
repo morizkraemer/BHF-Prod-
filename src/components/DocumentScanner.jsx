@@ -10,12 +10,17 @@ function DocumentScanner({
   defaultSource = 'glass', // Default scan source
   title = 'Dokument scannen', // Title displayed in the component
   scanName = 'scan', // Name prefix for scanned files
-  templateKey = null // Template key for printing (e.g., 'securityzettel', 'handtuchzettel', 'technikzettel')
+  templateKey = null, // Template key for printing (e.g., 'securityzettel', 'handtuchzettel', 'technikzettel')
+  printedTemplates = {}, // Object tracking which templates have been printed
+  onTemplatePrinted = null // Callback when template is printed
 }) {
   const [isScanning, setIsScanning] = useState(false);
   const [pendingScan, setPendingScan] = useState(null); // File waiting for confirmation
   const [previewDocument, setPreviewDocument] = useState(null); // Document to preview in popup
   const [scanSource, setScanSource] = useState(defaultSource); // 'glass' or 'feeder'
+  
+  // Get print status from props
+  const hasPrinted = templateKey ? (printedTemplates[templateKey] || false) : false;
 
   useEffect(() => {
     // Initialize Lucide icons
@@ -168,6 +173,10 @@ function DocumentScanner({
     try {
       if (window.electronAPI && window.electronAPI.printTemplate) {
         await window.electronAPI.printTemplate(templateKey);
+        // Notify parent component that this template has been printed
+        if (onTemplatePrinted) {
+          onTemplatePrinted(templateKey);
+        }
       }
     } catch (error) {
       alert('Fehler beim Drucken: ' + error.message);
@@ -227,11 +236,19 @@ function DocumentScanner({
       {/* Scan Controls - Single Line */}
       <div className="scan-section" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
         {title && <span className="scan-section-title" style={{ margin: 0, fontSize: '14px', fontWeight: '500' }}>{title}</span>}
+        <button
+          type="button"
+          onClick={handleScan}
+          className="scan-button scan-button-green"
+          disabled={isScanning || pendingScan}
+        >
+          {isScanning ? 'Scannt...' : 'Scannen'}
+        </button>
         {templateKey && (
           <button
             type="button"
             onClick={handlePrintTemplate}
-            className="scan-print-icon-button"
+            className={`scan-print-icon-button ${hasPrinted ? 'scan-print-icon-button-printed' : 'scan-print-icon-button-gray'}`}
             title="Template drucken"
             style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
           >
@@ -239,14 +256,6 @@ function DocumentScanner({
             <span>drucken</span>
           </button>
         )}
-        <button
-          type="button"
-          onClick={handleScan}
-          className="scan-button"
-          disabled={isScanning || pendingScan}
-        >
-          {isScanning ? 'Scannt...' : 'Scannen'}
-        </button>
         <div className="scan-source-select" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <label htmlFor="scan-source" className="scan-source-label" style={{ margin: 0, fontSize: '14px' }}>
             Scan-Quelle:

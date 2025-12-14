@@ -31,6 +31,10 @@ function SettingsForm() {
     'standard-konzert': [],
     'standard-tranzit': []
   });
+  const [bestueckungTotalPrices, setBestueckungTotalPrices] = useState({
+    'standard-konzert': '',
+    'standard-tranzit': ''
+  });
   const [selectedBestueckung, setSelectedBestueckung] = useState('standard-konzert');
   const [selectedRiderItemId, setSelectedRiderItemId] = useState('');
   const [selectedItemAmount, setSelectedItemAmount] = useState('1');
@@ -53,6 +57,7 @@ function SettingsForm() {
     loadItems();
     loadCateringPrices();
     loadScanners();
+    loadBestueckungTotalPrices();
     loadSelectedScanner();
     loadScanFolder();
     loadReportFolder();
@@ -191,6 +196,23 @@ function SettingsForm() {
         'standard-konzert': [],
         'standard-tranzit': []
       });
+    }
+  };
+
+  const loadBestueckungTotalPrices = async () => {
+    if (window.electronAPI && window.electronAPI.getBestueckungTotalPrices) {
+      const prices = await window.electronAPI.getBestueckungTotalPrices();
+      setBestueckungTotalPrices(prices || {
+        'standard-konzert': '',
+        'standard-tranzit': ''
+      });
+    }
+  };
+
+  const handleSaveBestueckungTotalPrice = async (bestueckungKey) => {
+    if (window.electronAPI && window.electronAPI.saveBestueckungTotalPrice) {
+      await window.electronAPI.saveBestueckungTotalPrice(bestueckungKey, bestueckungTotalPrices[bestueckungKey]);
+      alert('Gesamtpreis gespeichert');
     }
   };
 
@@ -667,6 +689,33 @@ function SettingsForm() {
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Total Price for Selected Bestückung */}
+        <div className="settings-add-section">
+          <h3>Gesamtpreis für {bestueckungOptions.find(o => o.value === selectedBestueckung)?.label}</h3>
+          <div className="settings-add-form" style={{ flexDirection: 'column', gap: '15px', maxWidth: '400px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontWeight: '600', fontSize: '14px' }}>Gesamtpreis (€)</label>
+              <input
+                type="number"
+                value={bestueckungTotalPrices[selectedBestueckung] || ''}
+                onChange={(e) => setBestueckungTotalPrices({ ...bestueckungTotalPrices, [selectedBestueckung]: e.target.value })}
+                className="settings-input"
+                placeholder="0.00"
+                step="0.01"
+                min="0"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => handleSaveBestueckungTotalPrice(selectedBestueckung)}
+              className="settings-add-button"
+              style={{ alignSelf: 'flex-start' }}
+            >
+              Speichern
+            </button>
+          </div>
         </div>
 
         {/* Add New Item */}

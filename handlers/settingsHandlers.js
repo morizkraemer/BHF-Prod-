@@ -1,4 +1,9 @@
 const fs = require('fs').promises;
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const execAsync = promisify(exec);
+const path = require('path');
+const { PDFDocument } = require('pdf-lib');
 
 /**
  * IPC Handlers for Settings Management
@@ -67,15 +72,212 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
       throw new Error(`Template-Datei nicht gefunden: ${templatePath}`);
     }
 
-    // Use Electron's webContents.printToPDF or shell.openPath with print dialog
-    // For now, we'll use shell.openPath which opens the PDF and user can print manually
-    // Or we can use a better approach with webContents.printToPDF
+    // Create a visible popup window to show the PDF with print button
+    return new Promise((resolve, reject) => {
+      const { BrowserWindow } = require('electron');
+      const printWindow = new BrowserWindow({
+        width: 900,
+        height: 700,
+        show: false, // Show after content loads
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: false, // Disable for simpler IPC
+          plugins: true // Enable PDF plugin support
+        },
+        parent: mainWindow, // Make it a child window
+        modal: false
+      });
+
+      // Create HTML content with PDF viewer (no toolbar - PDF viewer has its own UI)
+      const fileUrl = `file://${templatePath.replace(/\\/g, '/')}`;
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              margin: 0;
+              padding: 0;
+              overflow: hidden;
+            }
+            embed, iframe {
+              width: 100%;
+              height: 100vh;
+              border: none;
+            }
+          </style>
+        </head>
+        <body>
+          <embed src="${fileUrl}" type="application/pdf" />
+        </body>
+        </html>
+      `;
+
+      // Write HTML to temp file and load it
+      const tempHtmlPath = path.join(__dirname, '..', 'temp-pdf-viewer.html');
+      fs.writeFile(tempHtmlPath, htmlContent, 'utf8')
+        .then(() => {
+          printWindow.loadFile(tempHtmlPath);
+          
+          // Show window when ready
+          printWindow.once('ready-to-show', () => {
+            printWindow.show();
+          });
+
+          let isResolved = false;
+
+          // Handle window close
+          printWindow.on('closed', () => {
+            // Clean up temp file
+            fs.unlink(tempHtmlPath).catch(() => {});
+            if (!isResolved) {
+              isResolved = true;
+              resolve({ success: false, cancelled: true });
+            }
+          });
+
+          // Handle errors
+          printWindow.webContents.once('did-fail-load', (event, errorCode, errorDescription) => {
+            if (isResolved) return;
+            isResolved = true;
+            printWindow.close();
+            reject(new Error(`Fehler beim Laden des Templates: ${errorDescription}`));
+          });
+        })
+        .catch((error) => {
+          printWindow.close();
+          reject(new Error(`Fehler beim Erstellen der Vorschau: ${error.message}`));
+        });
+    });
+  });
+
+  // IPC Handler to merge and print all templates
+  ipcMain.handle('print-all-templates', async (event) => {
+    const templates = store.get('templates', {});
+    
+    // Get all available template paths
+    const templateKeys = ['securityzettel', 'handtuchzettel', 'technikzettel', 'uebersichtzettel'];
+    const templatePaths = [];
+    
+    for (const key of templateKeys) {
+      const templatePath = templates[key];
+      if (templatePath) {
+        try {
+          await fs.access(templatePath);
+          templatePaths.push(templatePath);
+        } catch (error) {
+          console.warn(`Template ${key} nicht gefunden: ${templatePath}`);
+        }
+      }
+    }
+
+    if (templatePaths.length === 0) {
+      throw new Error('Keine Templates zum Drucken gefunden. Bitte laden Sie Templates in den Einstellungen hoch.');
+    }
+
     try {
-      // Open PDF in default viewer, which allows printing
-      await shell.openPath(templatePath);
-      return { success: true };
+      // Merge all PDFs into one
+      const mergedPdf = await PDFDocument.create();
+      
+      for (const templatePath of templatePaths) {
+        const pdfBytes = await fs.readFile(templatePath);
+        const pdf = await PDFDocument.load(pdfBytes);
+        const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        pages.forEach((page) => mergedPdf.addPage(page));
+      }
+
+      // Save merged PDF to temp file
+      const mergedPdfBytes = await mergedPdf.save();
+      const tempMergedPath = path.join(__dirname, '..', 'temp-merged-templates.pdf');
+      await fs.writeFile(tempMergedPath, mergedPdfBytes);
+
+      // Show merged PDF in popup (same as print-template)
+      return new Promise((resolve, reject) => {
+        const { BrowserWindow } = require('electron');
+        const printWindow = new BrowserWindow({
+          width: 900,
+          height: 700,
+          show: false,
+          webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: false,
+            plugins: true
+          },
+          parent: mainWindow,
+          modal: false
+        });
+
+        const fileUrl = `file://${tempMergedPath.replace(/\\/g, '/')}`;
+        const htmlContent = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <style>
+              * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+              }
+              body {
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+              }
+              embed, iframe {
+                width: 100%;
+                height: 100vh;
+                border: none;
+              }
+            </style>
+          </head>
+          <body>
+            <embed src="${fileUrl}" type="application/pdf" />
+          </body>
+          </html>
+        `;
+
+        const tempHtmlPath = path.join(__dirname, '..', 'temp-pdf-viewer.html');
+        fs.writeFile(tempHtmlPath, htmlContent, 'utf8')
+          .then(() => {
+            printWindow.loadFile(tempHtmlPath);
+            
+            printWindow.once('ready-to-show', () => {
+              printWindow.show();
+            });
+
+            let isResolved = false;
+
+            printWindow.on('closed', () => {
+              // Clean up temp files
+              fs.unlink(tempHtmlPath).catch(() => {});
+              fs.unlink(tempMergedPath).catch(() => {});
+              if (!isResolved) {
+                isResolved = true;
+                resolve({ success: false, cancelled: true });
+              }
+            });
+
+            printWindow.webContents.once('did-fail-load', (event, errorCode, errorDescription) => {
+              if (isResolved) return;
+              isResolved = true;
+              printWindow.close();
+              reject(new Error(`Fehler beim Laden des zusammengeführten PDFs: ${errorDescription}`));
+            });
+          })
+          .catch((error) => {
+            printWindow.close();
+            reject(new Error(`Fehler beim Erstellen der Vorschau: ${error.message}`));
+          });
+      });
     } catch (error) {
-      throw new Error(`Fehler beim Öffnen des Templates: ${error.message}`);
+      throw new Error(`Fehler beim Zusammenführen der PDFs: ${error.message}`);
     }
   });
 
@@ -152,6 +354,10 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
       store.set('bestueckungLists', {
         'standard-konzert': [],
         'standard-tranzit': []
+      });
+      store.set('bestueckungTotalPrices', {
+        'standard-konzert': '',
+        'standard-tranzit': ''
       });
       store.set('cateringPrices', {
         warmPerPerson: '',

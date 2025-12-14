@@ -62,6 +62,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getTemplate: (templateKey) => ipcRenderer.invoke('get-template', templateKey),
   uploadTemplate: (templateKey) => ipcRenderer.invoke('upload-template', templateKey),
   printTemplate: (templateKey) => ipcRenderer.invoke('print-template', templateKey),
+  printAllTemplates: () => ipcRenderer.invoke('print-all-templates'),
   
   // Bestückung Lists
   getBestueckungLists: () => ipcRenderer.invoke('get-bestueckung-lists'),
@@ -70,6 +71,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   addBestueckungItem: (bestueckungKey, riderItemId, amount) => ipcRenderer.invoke('add-bestueckung-item', bestueckungKey, riderItemId, amount),
   updateBestueckungItem: (bestueckungKey, itemId, updates) => ipcRenderer.invoke('update-bestueckung-item', bestueckungKey, itemId, updates),
   deleteBestueckungItem: (bestueckungKey, itemId) => ipcRenderer.invoke('delete-bestueckung-item', bestueckungKey, itemId),
+  getBestueckungTotalPrices: () => ipcRenderer.invoke('get-bestueckung-total-prices'),
+  saveBestueckungTotalPrice: (bestueckungKey, price) => ipcRenderer.invoke('save-bestueckung-total-price', bestueckungKey, price),
   
   // Dialog operations
   showMessageBox: (options) => ipcRenderer.invoke('show-message-box', options),

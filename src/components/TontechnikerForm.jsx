@@ -1,6 +1,6 @@
 const { useState, useEffect } = React;
 
-function TontechnikerForm({ formData, onDataChange, highlightedFields = [] }) {
+function TontechnikerForm({ formData, onDataChange, highlightedFields = [], printedTemplates = {}, onTemplatePrinted }) {
   // Map display field names to field identifiers
   const fieldNameMap = {
     'Sound Engineer Name': 'soundEngineerName',
@@ -196,6 +196,8 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [] }) {
             title="Technikzettel scannen"
             scanName="Technikzettel"
             templateKey="technikzettel"
+            printedTemplates={printedTemplates}
+            onTemplatePrinted={onTemplatePrinted}
           />
         </div>
       </div>

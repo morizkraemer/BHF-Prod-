@@ -1,6 +1,6 @@
 const { useState, useEffect, useCallback } = React;
 
-function UebersichtForm({ formData, onDataChange, highlightedFields = [] }) {
+function UebersichtForm({ formData, onDataChange, highlightedFields = [], printedTemplates = {}, onPrintAll }) {
   // Map display field names to field identifiers
   const fieldNameMap = {
     'Event Name': 'eventName',
@@ -44,7 +44,8 @@ function UebersichtForm({ formData, onDataChange, highlightedFields = [] }) {
     notes: formData?.notes || ''
   });
 
-  const [zettelPrinted, setZettelPrinted] = useState(false);
+  // Use printedTemplates from props instead of local state
+  const zettelPrinted = printedTemplates.uebersichtzettel || false;
 
   useEffect(() => {
     // Initialize Lucide icons
@@ -107,15 +108,22 @@ function UebersichtForm({ formData, onDataChange, highlightedFields = [] }) {
 
   const handlePrintZettel = useCallback(async () => {
     try {
-      if (window.electronAPI && window.electronAPI.printTemplate) {
-        await window.electronAPI.printTemplate('uebersichtzettel');
-        setZettelPrinted(true);
+      if (window.electronAPI && window.electronAPI.printAllTemplates) {
+        // Merge and print all templates as one PDF
+        await window.electronAPI.printAllTemplates();
+        
+        // Mark all templates as printed
+        if (onPrintAll) {
+          onPrintAll();
+        }
+      } else {
+        alert('Fehler: Print-API nicht verfügbar.');
       }
     } catch (error) {
       alert('Fehler beim Drucken: ' + error.message);
       console.error('Print error:', error);
     }
-  }, []);
+  }, [onPrintAll]);
 
   return (
     <div className="form-container">

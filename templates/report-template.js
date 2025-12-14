@@ -12,6 +12,10 @@
     const secu = data.secu || {};
     const orderbird = data.orderbird || {};
     const gaeste = data.gaeste || {};
+    
+    // Debug: Log settings data to verify it's being passed
+    console.log('Catering Prices:', data.cateringPrices);
+    console.log('Bestueckung Total Prices:', data.bestueckungTotalPrices);
 
     // Helper function to create field row
     function createFieldRow(label, value) {
@@ -181,11 +185,11 @@
             const travelParty = parseFloat(uebersicht.travelPartyGetIn) || 0;
             let pricePerPerson = 0;
             
-            if (riderExtras.getInCatering === 'warm' && cateringPrices.warmPerPerson) {
+            if (riderExtras.getInCatering === 'warm' && cateringPrices.warmPerPerson && cateringPrices.warmPerPerson.trim() !== '') {
                 pricePerPerson = parseFloat(cateringPrices.warmPerPerson) || 0;
-            } else if (riderExtras.getInCatering === 'kalt' && cateringPrices.coldPerPerson) {
+            } else if (riderExtras.getInCatering === 'kalt' && cateringPrices.coldPerPerson && cateringPrices.coldPerPerson.trim() !== '') {
                 pricePerPerson = parseFloat(cateringPrices.coldPerPerson) || 0;
-            } else if (riderExtras.getInCatering === 'nur-snacks' && cateringPrices.snacksPerPerson) {
+            } else if (riderExtras.getInCatering === 'nur-snacks' && cateringPrices.snacksPerPerson && cateringPrices.snacksPerPerson.trim() !== '') {
                 pricePerPerson = parseFloat(cateringPrices.snacksPerPerson) || 0;
             }
             
@@ -212,7 +216,7 @@
             const travelParty = parseFloat(uebersicht.travelPartyGetIn) || 0;
             let pricePerPerson = 0;
             
-            if (cateringPrices.warmPerPerson) {
+            if (cateringPrices.warmPerPerson && cateringPrices.warmPerPerson.trim() !== '') {
                 pricePerPerson = parseFloat(cateringPrices.warmPerPerson) || 0;
             }
             
@@ -247,8 +251,12 @@
             'standard-tranzit': 'Standard Tranzit'
         };
         let bestueckungValue = bestueckungMap[riderExtras.standardbestueckung] || riderExtras.standardbestueckung;
-        if (riderExtras.standardbestueckungTotalPrice) {
-            const totalPrice = parseFloat(riderExtras.standardbestueckungTotalPrice);
+        
+        // Get total price from settings (not formData)
+        const bestueckungTotalPrices = data.bestueckungTotalPrices || {};
+        const totalPriceStr = bestueckungTotalPrices[riderExtras.standardbestueckung];
+        if (totalPriceStr && totalPriceStr.trim() !== '') {
+            const totalPrice = parseFloat(totalPriceStr);
             if (!isNaN(totalPrice) && totalPrice > 0) {
                 bestueckungValue += ` (Gesamtpreis: €${totalPrice.toFixed(2)})`;
             }
