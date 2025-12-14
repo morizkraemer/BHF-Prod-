@@ -42,6 +42,7 @@ function App() {
     vvaMissingFields: null,
     slMissingFields: null
   });
+  const [shiftStarted, setShiftStarted] = useState(false);
   
   // Global scanner availability state - can be accessed by child components
   window.scannerAvailability = {
@@ -60,6 +61,8 @@ function App() {
           const formDataResult = await window.electronAPI.loadData('currentShiftData');
           if (formDataResult.success && formDataResult.data) {
             setFormData(formDataResult.data);
+            // If there's saved shift data, consider the shift as started
+            setShiftStarted(true);
           }
           
           // Load current phase
@@ -436,46 +439,47 @@ function App() {
     // Clear highlights
     setHighlightedFields({});
     
-    // Since note is required, proceed with saving
-    try {
-      if (window.electronAPI && window.electronAPI.closeShift) {
-        // Add shift notes to formData before closing
-        const formDataWithNotes = {
-          ...formData,
-          shiftNotes: {
-            ...shiftNotes,
-            slMissingFieldsNote: note,
-            slMissingFields: slMissingFields
-          }
-        };
-        const result = await window.electronAPI.closeShift(formDataWithNotes);
-        if (result.success) {
-          // Clear shift data after successful close
-          if (window.electronAPI && window.electronAPI.clearShiftData) {
-            await window.electronAPI.clearShiftData();
-          }
-          
-          // Reset form data and phase
-          setFormData({
-            uebersicht: {},
-            'rider-extras': {},
-            tontechniker: {},
-            orderbird: {},
-            secu: {
-              securityPersonnel: [{ name: '', startTime: '', endTime: '' }],
-              scannedDocuments: []
-            },
-            gaeste: {}
-          });
-          setShiftNotes({
-            vvaConfirmationNote: null,
-            closeShiftConfirmationNote: null,
-            vvaMissingFieldsNote: null,
-            slMissingFieldsNote: null,
-            vvaMissingFields: null,
-            slMissingFields: null
-          });
-          setCurrentPhase('VVA');
+        // Since note is required, proceed with saving
+        try {
+          if (window.electronAPI && window.electronAPI.closeShift) {
+            // Add shift notes to formData before closing
+            const formDataWithNotes = {
+              ...formData,
+              shiftNotes: {
+                ...shiftNotes,
+                slMissingFieldsNote: note,
+                slMissingFields: slMissingFields
+              }
+            };
+            const result = await window.electronAPI.closeShift(formDataWithNotes);
+            if (result.success) {
+              // Clear shift data after successful close
+              if (window.electronAPI && window.electronAPI.clearShiftData) {
+                await window.electronAPI.clearShiftData();
+              }
+              
+              // Reset form data and phase
+              setFormData({
+                uebersicht: {},
+                'rider-extras': {},
+                tontechniker: {},
+                orderbird: {},
+                secu: {
+                  securityPersonnel: [{ name: '', startTime: '', endTime: '' }],
+                  scannedDocuments: []
+                },
+                gaeste: {}
+              });
+              setShiftNotes({
+                vvaConfirmationNote: null,
+                closeShiftConfirmationNote: null,
+                vvaMissingFieldsNote: null,
+                slMissingFieldsNote: null,
+                vvaMissingFields: null,
+                slMissingFields: null
+              });
+              setCurrentPhase('VVA');
+              setShiftStarted(false);
           
           alert(`Shift erfolgreich beendet!\n\nReport gespeichert in:\n${result.eventFolder}\n\nPDF: ${result.pdfPath.split('/').pop()}\nGescannte PDFs: ${result.scannedPDFsCount}`);
         } else {
@@ -593,6 +597,7 @@ function App() {
             slMissingFields: null
           });
           setCurrentPhase('VVA');
+          setShiftStarted(false);
           
           alert(`Shift erfolgreich beendet!\n\nReport gespeichert in:\n${result.eventFolder}\n\nPDF: ${result.pdfPath.split('/').pop()}\nGescannte PDFs: ${result.scannedPDFsCount}`);
         } else {
@@ -711,6 +716,90 @@ function App() {
     
     setFormData(testData);
     alert('Test-Daten wurden eingefügt!');
+  };
+
+  // Function to check if a shift is currently active
+  const isShiftActive = () => {
+    // If a shift has been manually started, consider it active
+    if (shiftStarted) {
+      return true;
+    }
+    
+    const uebersichtData = formData.uebersicht || {};
+    
+    // Check if any key fields are filled in the overview section
+    const keyFields = ['eventName', 'date', 'eventType'];
+    const hasKeyData = keyFields.some(field => {
+      const value = uebersichtData[field];
+      return value !== undefined && value !== null && value !== '';
+    });
+    
+    // Also check if any other sections have meaningful data
+    const hasOtherData = Object.keys(formData).some(sectionId => {
+      if (sectionId === 'uebersicht') return false;
+      
+      const sectionData = formData[sectionId] || {};
+      
+      // For secu section, check if there are filled personnel entries
+      if (sectionId === 'secu') {
+        const personnel = sectionData.securityPersonnel || [];
+        return personnel.some(person => person.name && person.name.trim() !== '');
+      }
+      
+      // For other sections, check if any string fields are filled
+      return Object.values(sectionData).some(value => {
+        if (typeof value === 'string') {
+          return value.trim() !== '';
+        }
+        if (Array.isArray(value)) {
+          return value.length > 0;
+        }
+        if (typeof value === 'boolean') {
+          return value === true;
+        }
+        return false;
+      });
+    });
+    
+    return hasKeyData || hasOtherData;
+  };
+
+  // Function to handle starting a new shift
+  const handleStartShift = () => {
+    // Mark shift as started
+    setShiftStarted(true);
+    
+    // Reset all form data to defaults
+    setFormData({
+      uebersicht: {},
+      'rider-extras': {},
+      tontechniker: {},
+      orderbird: {},
+      secu: {
+        securityPersonnel: [{ name: '', startTime: '', endTime: '' }],
+        scannedDocuments: []
+      },
+      gaeste: {}
+    });
+    
+    // Reset shift notes
+    setShiftNotes({
+      vvaConfirmationNote: null,
+      closeShiftConfirmationNote: null,
+      vvaMissingFieldsNote: null,
+      slMissingFieldsNote: null,
+      vvaMissingFields: null,
+      slMissingFields: null
+    });
+    
+    // Reset phase to VVA
+    setCurrentPhase('VVA');
+    
+    // Set active section to overview
+    setActiveSection('uebersicht');
+    
+    // Clear any highlighted fields
+    setHighlightedFields({});
   };
 
   // Function to count filled required fields for each section
@@ -853,6 +942,25 @@ function App() {
     }
   };
 
+  // StartShiftScreen component
+  const StartShiftScreen = () => {
+    return (
+      <div className="start-shift-screen">
+        <div className="start-shift-container">
+          <h1 className="start-shift-title">Produktionsübersicht</h1>
+          <p className="start-shift-subtitle">Kein aktiver Shift</p>
+          <button 
+            className="start-shift-button"
+            onClick={handleStartShift}
+          >
+            <i data-lucide="play"></i>
+            <span>Shift starten</span>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const renderActiveSection = () => {
     switch (activeSection) {
       case 'uebersicht':
@@ -909,6 +1017,11 @@ function App() {
         return null;
     }
   };
+
+  // Check if shift is active to determine which UI to show
+  if (!isShiftActive()) {
+    return <StartShiftScreen />;
+  }
 
   return (
     <div className="app-container">
