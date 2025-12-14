@@ -10,10 +10,11 @@ function SettingsForm() {
   const [editItemName, setEditItemName] = useState('');
   const [editItemPrice, setEditItemPrice] = useState('');
   const [editItemEkPrice, setEditItemEkPrice] = useState('');
-  const [nightLeads, setNightLeads] = useState([]);
-  const [newLeadName, setNewLeadName] = useState('');
-  const [editingLead, setEditingLead] = useState(null);
-  const [editLeadName, setEditLeadName] = useState('');
+  const [cateringPrices, setCateringPrices] = useState({
+    warmPerPerson: '',
+    coldPerPerson: '',
+    snacksPerPerson: ''
+  });
   const [scanners, setScanners] = useState([]);
   const [selectedScanner, setSelectedScanner] = useState(null);
   const [loadingScanners, setLoadingScanners] = useState(false);
@@ -50,7 +51,7 @@ function SettingsForm() {
 
   useEffect(() => {
     loadItems();
-    loadNightLeads();
+    loadCateringPrices();
     loadScanners();
     loadSelectedScanner();
     loadScanFolder();
@@ -169,10 +170,17 @@ function SettingsForm() {
     }
   };
 
-  const loadNightLeads = async () => {
-    if (window.electronAPI && window.electronAPI.getNightLeads) {
-      const leads = await window.electronAPI.getNightLeads();
-      setNightLeads(leads || []);
+  const loadCateringPrices = async () => {
+    if (window.electronAPI && window.electronAPI.getCateringPrices) {
+      const prices = await window.electronAPI.getCateringPrices();
+      setCateringPrices(prices || { warmPerPerson: '', coldPerPerson: '', snacksPerPerson: '' });
+    }
+  };
+
+  const handleSaveCateringPrices = async () => {
+    if (window.electronAPI && window.electronAPI.saveCateringPrices) {
+      await window.electronAPI.saveCateringPrices(cateringPrices);
+      alert('Catering Preise gespeichert');
     }
   };
 
@@ -260,56 +268,6 @@ function SettingsForm() {
     }
   };
 
-  // Night Leads handlers
-  const handleAddLead = async () => {
-    if (!newLeadName.trim()) {
-      alert('Bitte Name eingeben');
-      return;
-    }
-
-    if (window.electronAPI && window.electronAPI.addNightLead) {
-      await window.electronAPI.addNightLead({
-        name: newLeadName.trim()
-      });
-      setNewLeadName('');
-      loadNightLeads();
-    }
-  };
-
-  const handleStartEditLead = (lead) => {
-    setEditingLead(lead.id);
-    setEditLeadName(lead.name);
-  };
-
-  const handleSaveEditLead = async () => {
-    if (!editLeadName.trim()) {
-      alert('Bitte Name eingeben');
-      return;
-    }
-
-    if (window.electronAPI && window.electronAPI.updateNightLead) {
-      await window.electronAPI.updateNightLead(editingLead, {
-        name: editLeadName.trim()
-      });
-      setEditingLead(null);
-      setEditLeadName('');
-      loadNightLeads();
-    }
-  };
-
-  const handleCancelEditLead = () => {
-    setEditingLead(null);
-    setEditLeadName('');
-  };
-
-  const handleDeleteLead = async (leadId) => {
-    if (window.confirm('Möchten Sie diesen Night Lead wirklich löschen?')) {
-      if (window.electronAPI && window.electronAPI.deleteNightLead) {
-        await window.electronAPI.deleteNightLead(leadId);
-        loadNightLeads();
-      }
-    }
-  };
 
   // Bestückung handlers
   const handleAddBestueckungItem = async () => {
@@ -520,96 +478,60 @@ function SettingsForm() {
     </>
   );
 
-  const renderNightLeadsSection = () => (
+  const renderCateringPricesSection = () => (
     <>
-      <h2>Night Leads Katalog</h2>
+      <h2>Catering Preise</h2>
       <p className="settings-description">
-        Verwalten Sie die verfügbaren Night Leads. Diese können dann im Übersicht-Formular ausgewählt werden.
+        Legen Sie die Preise pro Person für warmes Catering, kaltes Catering und nur Snacks fest. Diese werden im PDF basierend auf der Travel Party Anzahl berechnet.
       </p>
 
-      {/* Add New Lead */}
       <div className="settings-add-section">
-        <h3>Neuer Night Lead hinzufügen</h3>
-        <div className="settings-add-form">
-          <input
-            type="text"
-            value={newLeadName}
-            onChange={(e) => setNewLeadName(e.target.value)}
-            className="settings-input"
-            placeholder="Night Lead Name"
-            style={{ flex: 1 }}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                handleAddLead();
-              }
-            }}
-          />
+        <div className="settings-add-form" style={{ flexDirection: 'column', gap: '15px', maxWidth: '400px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontWeight: '600', fontSize: '14px' }}>Warm Catering Preis pro Person (€)</label>
+            <input
+              type="number"
+              value={cateringPrices.warmPerPerson}
+              onChange={(e) => setCateringPrices({ ...cateringPrices, warmPerPerson: e.target.value })}
+              className="settings-input"
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontWeight: '600', fontSize: '14px' }}>Kalt Catering Preis pro Person (€)</label>
+            <input
+              type="number"
+              value={cateringPrices.coldPerPerson}
+              onChange={(e) => setCateringPrices({ ...cateringPrices, coldPerPerson: e.target.value })}
+              className="settings-input"
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontWeight: '600', fontSize: '14px' }}>Nur Snacks Preis pro Person (€)</label>
+            <input
+              type="number"
+              value={cateringPrices.snacksPerPerson}
+              onChange={(e) => setCateringPrices({ ...cateringPrices, snacksPerPerson: e.target.value })}
+              className="settings-input"
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+            />
+          </div>
           <button
             type="button"
-            onClick={handleAddLead}
+            onClick={handleSaveCateringPrices}
             className="settings-add-button"
+            style={{ alignSelf: 'flex-start' }}
           >
-            Hinzufügen
+            Speichern
           </button>
         </div>
-      </div>
-
-      {/* Leads List */}
-      <div className="settings-items-section">
-        <h3>Vorhandene Night Leads ({nightLeads.length})</h3>
-        {nightLeads.length === 0 ? (
-          <p className="settings-empty">Keine Night Leads vorhanden. Fügen Sie den ersten Night Lead hinzu.</p>
-        ) : (
-          <div className="settings-items-list">
-            {nightLeads.map((lead) => (
-              <div key={lead.id} className="settings-item-row">
-                {editingLead === lead.id ? (
-                  <>
-                    <input
-                      type="text"
-                      value={editLeadName}
-                      onChange={(e) => setEditLeadName(e.target.value)}
-                      className="settings-edit-input"
-                      style={{ flex: 1 }}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSaveEditLead}
-                      className="settings-save-button"
-                    >
-                      Speichern
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleCancelEditLead}
-                      className="settings-cancel-button"
-                    >
-                      Abbrechen
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <span className="settings-item-name" style={{ flex: 1 }}>{lead.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleStartEditLead(lead)}
-                      className="settings-edit-button"
-                    >
-                      Bearbeiten
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteLead(lead.id)}
-                      className="settings-delete-button"
-                    >
-                      Löschen
-                    </button>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </>
   );
@@ -887,7 +809,6 @@ function SettingsForm() {
       'WARNUNG: Möchten Sie wirklich ALLE Einstellungen und Daten zurücksetzen?\n\n' +
       'Dies wird gelöscht:\n' +
       '• Alle Rider Extras Items\n' +
-      '• Alle Night Leads\n' +
       '• Scanner-Auswahl\n' +
       '• Scan- und Report-Ordner\n' +
       '• Tech-Namen\n' +
@@ -917,7 +838,7 @@ function SettingsForm() {
           alert('Alle Einstellungen und Daten wurden erfolgreich zurückgesetzt. Die Seite wird neu geladen.');
           // Reload all data
           loadItems();
-          loadNightLeads();
+          loadCateringPrices();
           loadScanners();
           loadSelectedScanner();
           loadScanFolder();
@@ -1049,7 +970,6 @@ function SettingsForm() {
         </p>
         <ul className="settings-description" style={{ marginLeft: '20px', marginTop: '10px' }}>
           <li>Alle Rider Extras Items</li>
-          <li>Alle Night Leads</li>
           <li>Scanner-Auswahl</li>
           <li>Scan- und Report-Ordner</li>
           <li>Tech-Namen (Sound Engineer & Lighting Tech)</li>
@@ -1093,10 +1013,10 @@ function SettingsForm() {
               Rider
             </button>
             <button
-              className={`settings-sidebar-item ${activeSettingsSection === 'night-leads' ? 'active' : ''}`}
-              onClick={() => setActiveSettingsSection('night-leads')}
+              className={`settings-sidebar-item ${activeSettingsSection === 'catering-prices' ? 'active' : ''}`}
+              onClick={() => setActiveSettingsSection('catering-prices')}
             >
-              Night Leads
+              Catering Preise
             </button>
             <button
               className={`settings-sidebar-item ${activeSettingsSection === 'scanner' ? 'active' : ''}`}
@@ -1129,7 +1049,7 @@ function SettingsForm() {
         <div className="settings-content">
           <div className="settings-form">
             {activeSettingsSection === 'rider' ? renderRiderSection() : 
-             activeSettingsSection === 'night-leads' ? renderNightLeadsSection() : 
+             activeSettingsSection === 'catering-prices' ? renderCateringPricesSection() : 
              activeSettingsSection === 'bestueckung' ? renderBestueckungSection() :
              activeSettingsSection === 'templates' ? renderTemplatesSection() :
              activeSettingsSection === 'reset' ? renderResetSection() :

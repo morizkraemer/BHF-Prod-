@@ -115,6 +115,20 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
     return store.get('reportFolder', null);
   });
 
+  // IPC Handlers for Catering Prices
+  ipcMain.handle('get-catering-prices', () => {
+    return store.get('cateringPrices', {
+      warmPerPerson: '',
+      coldPerPerson: '',
+      snacksPerPerson: ''
+    });
+  });
+
+  ipcMain.handle('save-catering-prices', (event, prices) => {
+    store.set('cateringPrices', prices);
+    return true;
+  });
+
   // Reset all settings and data
   ipcMain.handle('reset-all-data', async () => {
     try {
@@ -138,6 +152,11 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
       store.set('bestueckungLists', {
         'standard-konzert': [],
         'standard-tranzit': []
+      });
+      store.set('cateringPrices', {
+        warmPerPerson: '',
+        coldPerPerson: '',
+        snacksPerPerson: ''
       });
 
       // Clear shift data store and reset to defaults

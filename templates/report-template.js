@@ -174,10 +174,53 @@
     if (riderExtras.getInCatering) {
         const cateringMap = { 'no': 'Nein', 'kalt': 'Kalt', 'nur-snacks': 'Nur Snacks', 'warm': 'Warm', 'buyout': 'Buyout' };
         document.getElementById('field-getin-catering').innerHTML = createFieldRow('Get In Catering', cateringMap[riderExtras.getInCatering] || riderExtras.getInCatering);
+        
+        // Calculate catering sum if warm, cold, or snacks catering is selected
+        if ((riderExtras.getInCatering === 'warm' || riderExtras.getInCatering === 'kalt' || riderExtras.getInCatering === 'nur-snacks') && uebersicht.travelPartyGetIn) {
+            const cateringPrices = data.cateringPrices || {};
+            const travelParty = parseFloat(uebersicht.travelPartyGetIn) || 0;
+            let pricePerPerson = 0;
+            
+            if (riderExtras.getInCatering === 'warm' && cateringPrices.warmPerPerson) {
+                pricePerPerson = parseFloat(cateringPrices.warmPerPerson) || 0;
+            } else if (riderExtras.getInCatering === 'kalt' && cateringPrices.coldPerPerson) {
+                pricePerPerson = parseFloat(cateringPrices.coldPerPerson) || 0;
+            } else if (riderExtras.getInCatering === 'nur-snacks' && cateringPrices.snacksPerPerson) {
+                pricePerPerson = parseFloat(cateringPrices.snacksPerPerson) || 0;
+            }
+            
+            if (pricePerPerson > 0 && travelParty > 0) {
+                const total = (travelParty * pricePerPerson).toFixed(2);
+                document.getElementById('field-catering-sum').innerHTML = createFieldRow('Catering Summe', `€${total} (${travelParty} × €${pricePerPerson.toFixed(2)})`);
+            }
+        }
     }
     if (riderExtras.dinner) {
-        const dinnerMap = { 'no': 'Nein', 'warm': 'Warm', 'buyout': 'Buyout' };
-        document.getElementById('field-dinner').innerHTML = createFieldRow('Dinner', dinnerMap[riderExtras.dinner] || riderExtras.dinner);
+        const dinnerMap = { 'no': 'Nein', 'warm': 'Warm', 'buyout': 'Buyout', 'caterer': 'Caterer' };
+        let dinnerValue = dinnerMap[riderExtras.dinner] || riderExtras.dinner;
+        
+        // Add disclaimer for caterer option only
+        if (riderExtras.dinner === 'caterer') {
+            dinnerValue += ' <span style="color: #e74c3c; font-style: italic;">(Nicht Standard)</span>';
+        }
+        
+        document.getElementById('field-dinner').innerHTML = createFieldRow('Dinner', dinnerValue);
+        
+        // Calculate warm catering sum for dinner when warm option is selected
+        if (riderExtras.dinner === 'warm' && uebersicht.travelPartyGetIn) {
+            const cateringPrices = data.cateringPrices || {};
+            const travelParty = parseFloat(uebersicht.travelPartyGetIn) || 0;
+            let pricePerPerson = 0;
+            
+            if (cateringPrices.warmPerPerson) {
+                pricePerPerson = parseFloat(cateringPrices.warmPerPerson) || 0;
+            }
+            
+            if (pricePerPerson > 0 && travelParty > 0) {
+                const total = (travelParty * pricePerPerson).toFixed(2);
+                document.getElementById('field-dinner-catering-sum').innerHTML = createFieldRow('Dinner Catering Summe', `€${total} (${travelParty} × €${pricePerPerson.toFixed(2)})`);
+            }
+        }
     }
     if (riderExtras.buyoutProvider) {
         document.getElementById('field-buyout-provider').innerHTML = createFieldRow('Buyout Provider', riderExtras.buyoutProvider);
@@ -203,7 +246,14 @@
             'standard-konzert': 'Standard Konzert',
             'standard-tranzit': 'Standard Tranzit'
         };
-        document.getElementById('field-backstage-kuehlschrank').innerHTML = createFieldRow('Backstage Kühlschrank', bestueckungMap[riderExtras.standardbestueckung] || riderExtras.standardbestueckung);
+        let bestueckungValue = bestueckungMap[riderExtras.standardbestueckung] || riderExtras.standardbestueckung;
+        if (riderExtras.standardbestueckungTotalPrice) {
+            const totalPrice = parseFloat(riderExtras.standardbestueckungTotalPrice);
+            if (!isNaN(totalPrice) && totalPrice > 0) {
+                bestueckungValue += ` (Gesamtpreis: €${totalPrice.toFixed(2)})`;
+            }
+        }
+        document.getElementById('field-backstage-kuehlschrank').innerHTML = createFieldRow('Backstage Kühlschrank', bestueckungValue);
 
         // Fridge Items
         if (riderExtras.customizedFridgeItems && riderExtras.customizedFridgeItems.length > 0) {

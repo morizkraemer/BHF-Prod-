@@ -50,11 +50,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   updateRiderItem: (itemId, updates) => ipcRenderer.invoke('update-rider-item', itemId, updates),
   deleteRiderItem: (itemId) => ipcRenderer.invoke('delete-rider-item', itemId),
   
-  // Night Leads Catalog
-  getNightLeads: () => ipcRenderer.invoke('get-night-leads'),
-  addNightLead: (lead) => ipcRenderer.invoke('add-night-lead', lead),
-  updateNightLead: (leadId, updates) => ipcRenderer.invoke('update-night-lead', leadId, updates),
-  deleteNightLead: (leadId) => ipcRenderer.invoke('delete-night-lead', leadId),
+  // Catering Prices
+  getCateringPrices: () => ipcRenderer.invoke('get-catering-prices'),
+  saveCateringPrices: (prices) => ipcRenderer.invoke('save-catering-prices', prices),
   
   // Tech Names
   getTechNames: () => ipcRenderer.invoke('get-tech-names'),

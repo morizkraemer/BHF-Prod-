@@ -34,8 +34,21 @@ function registerReportHandlers(ipcMain, store) {
       // Create event folder
       await fs.mkdir(eventFolderPath, { recursive: true });
       
+      // Get catering prices from settings store
+      const cateringPrices = store.get('cateringPrices', {
+        warmPerPerson: '',
+        coldPerPerson: '',
+        snacksPerPerson: ''
+      });
+      
+      // Add catering prices to formData for PDF generation
+      const formDataWithSettings = {
+        ...formData,
+        cateringPrices: cateringPrices
+      };
+      
       // Generate PDF
-      const pdfBuffer = await generateReportPDF(formData);
+      const pdfBuffer = await generateReportPDF(formDataWithSettings);
       const pdfFileName = `${eventDate}_${sanitizedEventName}_Report.pdf`;
       const pdfPath = path.join(eventFolderPath, pdfFileName);
       await fs.writeFile(pdfPath, pdfBuffer);
