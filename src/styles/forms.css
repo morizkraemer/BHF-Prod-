@@ -36,6 +36,10 @@
   gap: 20px;
 }
 
+.uebersicht-form > * {
+  margin-bottom: 0;
+}
+
 .uebersicht-header-row {
   display: flex;
   justify-content: flex-end;
@@ -154,14 +158,14 @@
 }
 
 .form-row-top-header {
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr auto auto;
   align-items: end;
   gap: 20px;
 }
 
 .form-row-event-details {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
+  justify-content: flex-start;
   gap: 15px;
   align-items: start;
 }
@@ -265,15 +269,16 @@
   align-items: start;
 }
 
-.get-in-doors-box {
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 6px;
-  background-color: #fafafa;
+.get-in-doors-row {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;
+  gap: 20px;
   width: 100%;
+  margin-bottom: 20px;
+}
+
+.get-in-doors-row .form-group-paired-container {
+  flex: 1;
 }
 
 .form-row-travel-party {
@@ -285,18 +290,19 @@
   width: fit-content;
 }
 
-.end-curfew-box {
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 6px;
-  background-color: #fafafa;
+.end-curfew-row {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;
+  gap: 20px;
   width: 100%;
+  margin-top: 20px;
 }
 
-.event-type-fields-box {
+.end-curfew-row .form-group-paired-container {
+  flex: 1;
+}
+
+.event-type-box {
   border: 2px solid #e0e0e0;
   border-radius: 8px;
   padding: 10px;
@@ -304,6 +310,14 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-width: 180px;
+}
+
+.event-type-conditional-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-top: 10px;
 }
 
 .nightliner-parkplatz-box {
@@ -379,6 +393,23 @@
 .radio-text {
   color: #2c3e50;
   user-select: none;
+}
+
+.night-lead-positionen-row {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  width: 100%;
+  margin-bottom: 20px;
+  align-items: flex-start;
+}
+
+.night-lead-vva-column {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  flex: 0 0 33.333%;
+  width: 33.333%;
 }
 
 .night-lead-vva-box {

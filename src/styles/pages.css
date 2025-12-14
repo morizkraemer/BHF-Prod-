@@ -219,6 +219,138 @@
   border-radius: 6px;
 }
 
+/* Positionen Section */
+.night-lead-positionen-row .positionen-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 0 0 66.666%;
+  width: 66.666%;
+  margin-top: 0;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  background-color: #fafafa;
+}
+
+.positionen-section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+}
+
+.positionen-header {
+  display: grid;
+  grid-template-columns: 3fr 1.5fr 1fr 1fr 40px;
+  gap: 12px;
+  padding: 8px 0;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 13px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.positionen-header-name {
+  padding-left: 4px;
+}
+
+.positionen-header-position,
+.positionen-header-funkgerat {
+  text-align: center;
+}
+
+.positionen-header-returned {
+  text-align: center;
+}
+
+.positionen-line {
+  display: grid;
+  grid-template-columns: 3fr 1.5fr 1fr 1fr 40px;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.positionen-name {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background-color: white;
+}
+
+.positionen-name:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.positionen-position,
+.positionen-funkgerat {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background-color: white;
+  cursor: pointer;
+}
+
+.positionen-position:focus,
+.positionen-funkgerat:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.positionen-returned {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.positionen-checkbox {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  margin: 0;
+}
+
+.positionen-checkbox:checked + .checkbox-custom {
+  background-color: #3498db;
+  border-color: #3498db;
+}
+
+.positionen-checkbox:checked + .checkbox-custom::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.positionen-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.positionen-empty {
+  padding: 20px;
+  text-align: center;
+  color: #7f8c8d;
+  font-style: italic;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+}
+
 /* Orderbird Form */
 .orderbird-form {
   display: flex;
