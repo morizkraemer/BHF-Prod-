@@ -40,7 +40,9 @@ function App() {
     vvaMissingFieldsNote: null,
     slMissingFieldsNote: null,
     vvaMissingFields: null,
-    slMissingFields: null
+    slMissingFields: null,
+    vvaFieldConfirmations: null,
+    slFieldConfirmations: null
   });
   const [shiftStarted, setShiftStarted] = useState(false);
   
@@ -168,6 +170,16 @@ function App() {
     const errors = [];
     const uebersichtData = formData.uebersicht || {};
     const riderExtrasData = formData['rider-extras'] || {};
+    
+    // Event Type
+    if (!uebersichtData.eventType || uebersichtData.eventType === '') {
+      errors.push({ section: 'Übersicht', sectionId: 'uebersicht', field: 'Event Typ' });
+    }
+    
+    // Nightliner Parkplatz
+    if (!uebersichtData.nightlinerParkplatz || uebersichtData.nightlinerParkplatz === '') {
+      errors.push({ section: 'Übersicht', sectionId: 'uebersicht', field: 'Nightliner Parkplatz' });
+    }
     
     // Get in Zeit
     if (!uebersichtData.getInTime || uebersichtData.getInTime === '') {
@@ -396,11 +408,12 @@ function App() {
     setShowCloseShiftConfirmation(false);
   };
 
-  const handleVVAMissingFieldsFinishAnyway = (note) => {
+  const handleVVAMissingFieldsFinishAnyway = (note, fieldConfirmations) => {
     setShiftNotes(prev => ({ 
       ...prev, 
       vvaMissingFieldsNote: note,
-      vvaMissingFields: vvaMissingFields
+      vvaMissingFields: vvaMissingFields,
+      vvaFieldConfirmations: fieldConfirmations
     }));
     setShowVVAMissingFields(false);
     // Clear highlights
@@ -429,11 +442,12 @@ function App() {
     setHighlightedFields(highlightMapArrays);
   };
 
-  const handleSLMissingFieldsFinishAnyway = async (note) => {
+  const handleSLMissingFieldsFinishAnyway = async (note, fieldConfirmations) => {
     setShiftNotes(prev => ({ 
       ...prev, 
       slMissingFieldsNote: note,
-      slMissingFields: slMissingFields
+      slMissingFields: slMissingFields,
+      slFieldConfirmations: fieldConfirmations
     }));
     setShowSLMissingFields(false);
     // Clear highlights
@@ -448,7 +462,8 @@ function App() {
               shiftNotes: {
                 ...shiftNotes,
                 slMissingFieldsNote: note,
-                slMissingFields: slMissingFields
+                slMissingFields: slMissingFields,
+                slFieldConfirmations: fieldConfirmations
               }
             };
             const result = await window.electronAPI.closeShift(formDataWithNotes);
@@ -476,7 +491,9 @@ function App() {
                 vvaMissingFieldsNote: null,
                 slMissingFieldsNote: null,
                 vvaMissingFields: null,
-                slMissingFields: null
+                slMissingFields: null,
+                vvaFieldConfirmations: null,
+                slFieldConfirmations: null
               });
               setCurrentPhase('VVA');
               setShiftStarted(false);
