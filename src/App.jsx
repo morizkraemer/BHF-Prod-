@@ -175,14 +175,19 @@ function App() {
     const uebersichtData = formData.uebersicht || {};
     const riderExtrasData = formData['rider-extras'] || {};
     
+    // Event Name
+    if (!uebersichtData.eventName || uebersichtData.eventName === '') {
+      errors.push({ section: 'Übersicht', sectionId: 'uebersicht', field: 'Event Name' });
+    }
+    
     // Event Type
     if (!uebersichtData.eventType || uebersichtData.eventType === '') {
       errors.push({ section: 'Übersicht', sectionId: 'uebersicht', field: 'Event Typ' });
     }
     
-    // Nightliner Parkplatz
+    // Nightliner Parkplatz (now in Hospitality section)
     if (!uebersichtData.nightlinerParkplatz || uebersichtData.nightlinerParkplatz === '') {
-      errors.push({ section: 'Übersicht', sectionId: 'uebersicht', field: 'Nightliner Parkplatz' });
+      errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Nightliner Parkplatz' });
     }
     
     // Get in Zeit
@@ -195,11 +200,11 @@ function App() {
       errors.push({ section: 'Übersicht', sectionId: 'uebersicht', field: 'Doors Zeit' });
     }
     
-    // Travel Party Get In
+    // Travel Party Get In (now in Hospitality section)
     if (!uebersichtData.travelPartyGetIn || uebersichtData.travelPartyGetIn === '') {
-      errors.push({ section: 'Übersicht', sectionId: 'uebersicht', field: 'Travel Party Get In' });
+      errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Travel Party Get In' });
     }
-    
+
     // Catering options (getInCatering and dinner)
     if (!riderExtrasData.getInCatering || riderExtrasData.getInCatering === '') {
       errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Get In Catering' });
@@ -258,7 +263,7 @@ function App() {
     const orderbirdData = formData.orderbird || {};
     
     // Übersicht section
-    const uebersichtRequired = ['eventName', 'date', 'eventType', 'getInTime', 'doorsTime', 'travelPartyGetIn', 'nightLead', 'konzertende', 'backstageCurfew', 'nightlinerParkplatz'];
+    const uebersichtRequired = ['eventName', 'date', 'eventType', 'getInTime', 'doorsTime', 'nightLead', 'konzertende', 'backstageCurfew'];
     if (uebersichtData.eventType === 'konzert') {
       uebersichtRequired.push('agentur');
     } else if (uebersichtData.eventType === 'club' || uebersichtData.eventType === 'andere') {
@@ -271,11 +276,9 @@ function App() {
       'eventType': 'Event Typ',
       'getInTime': 'Get In Zeit',
       'doorsTime': 'Doors Zeit',
-      'travelPartyGetIn': 'Travel Party Get In',
       'nightLead': 'Night Lead',
       'konzertende': 'Konzertende',
       'backstageCurfew': 'Backstage Curfew',
-      'nightlinerParkplatz': 'Nightliner Parkplatz',
       'agentur': 'Agentur',
       'veranstalterName': 'Veranstalter Name'
     };
@@ -288,6 +291,14 @@ function App() {
     });
     
     // Hospitality section
+    // Travel Party Get In (stored in uebersicht but required in hospitality)
+    if (!uebersichtData.travelPartyGetIn || uebersichtData.travelPartyGetIn === '') {
+      errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Travel Party Get In' });
+    }
+    // Nightliner Parkplatz (stored in uebersicht but required in hospitality)
+    if (!uebersichtData.nightlinerParkplatz || uebersichtData.nightlinerParkplatz === '') {
+      errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Nightliner Parkplatz' });
+    }
     if (!riderExtrasData.getInCatering || riderExtrasData.getInCatering === '') {
       errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Get In Catering' });
     }
@@ -437,12 +448,24 @@ function App() {
     setShowCloseShiftConfirmation(false);
   };
 
-  const handleVVAMissingFieldsFinishAnyway = (note, fieldConfirmations) => {
+  const handleVVAMissingFieldsFinishAnyway = (fieldNotes, fieldConfirmations) => {
+    // Combine all field notes into a single note string
+    const combinedNote = Object.entries(fieldNotes)
+      .map(([key, note]) => {
+        // Extract field info from key (section_field_index)
+        const parts = key.split('_');
+        const section = parts[0];
+        const field = parts.slice(1, -1).join('_');
+        return `${section} - ${field}: ${note}`;
+      })
+      .join('\n\n');
+    
     setShiftNotes(prev => ({ 
       ...prev, 
-      vvaMissingFieldsNote: note,
+      vvaMissingFieldsNote: combinedNote,
       vvaMissingFields: vvaMissingFields,
-      vvaFieldConfirmations: fieldConfirmations
+      vvaFieldConfirmations: fieldConfirmations,
+      vvaFieldNotes: fieldNotes // Store individual notes too
     }));
     setShowVVAMissingFields(false);
     // Clear highlights
@@ -471,12 +494,24 @@ function App() {
     setHighlightedFields(highlightMapArrays);
   };
 
-  const handleSLMissingFieldsFinishAnyway = async (note, fieldConfirmations) => {
+  const handleSLMissingFieldsFinishAnyway = async (fieldNotes, fieldConfirmations) => {
+    // Combine all field notes into a single note string
+    const combinedNote = Object.entries(fieldNotes)
+      .map(([key, note]) => {
+        // Extract field info from key (section_field_index)
+        const parts = key.split('_');
+        const section = parts[0];
+        const field = parts.slice(1, -1).join('_');
+        return `${section} - ${field}: ${note}`;
+      })
+      .join('\n\n');
+    
     setShiftNotes(prev => ({ 
       ...prev, 
-      slMissingFieldsNote: note,
+      slMissingFieldsNote: combinedNote,
       slMissingFields: slMissingFields,
-      slFieldConfirmations: fieldConfirmations
+      slFieldConfirmations: fieldConfirmations,
+      slFieldNotes: fieldNotes // Store individual notes too
     }));
     setShowSLMissingFields(false);
     // Clear highlights
@@ -490,7 +525,7 @@ function App() {
               ...formData,
               shiftNotes: {
                 ...shiftNotes,
-                slMissingFieldsNote: note,
+                slMissingFieldsNote: combinedNote,
                 slMissingFields: slMissingFields,
                 slFieldConfirmations: fieldConfirmations
               }
@@ -589,16 +624,32 @@ function App() {
       // SL phase - validate all required fields with detailed errors
       const slErrors = validateAllSectionsDetailed();
       
-      if (slErrors.length > 0) {
+      // Filter out fields that were already confirmed in VVA
+      const vvaFieldNotes = shiftNotes.vvaFieldNotes || {};
+      const filteredSlErrors = slErrors.filter(error => {
+        // Check if this field was already confirmed in VVA
+        // Look for a matching field in vvaFieldNotes by section and field name
+        // Key format: section_field_index (field may contain spaces, so we match by checking if key starts with section_field)
+        const matchingKey = Object.keys(vvaFieldNotes).find(key => {
+          // Check if key starts with the section and field name
+          // Since field names may contain spaces, we need to match more flexibly
+          const expectedPrefix = `${error.section}_${error.field}_`;
+          return key.startsWith(expectedPrefix);
+        });
+        // If a matching key exists, this field was already confirmed in VVA
+        return !matchingKey;
+      });
+      
+      if (filteredSlErrors.length > 0) {
         // Show missing fields dialog instead of alert
-        setSlMissingFields(slErrors);
+        setSlMissingFields(filteredSlErrors);
         setShowSLMissingFields(true);
         // Clear previous highlights when opening dialog
         setHighlightedFields({});
         
         // Highlight the first section with errors
-        if (slErrors.length > 0) {
-          setActiveSection(slErrors[0].sectionId);
+        if (filteredSlErrors.length > 0) {
+          setActiveSection(filteredSlErrors[0].sectionId);
         }
         
         return; // Stop execution if validation fails
@@ -870,15 +921,15 @@ function App() {
     
     switch (sectionId) {
       case 'uebersicht':
-        let uebersichtRequired = ['eventName', 'date', 'eventType', 'getInTime', 'doorsTime', 'travelPartyGetIn', 'nightLead', 'konzertende', 'backstageCurfew', 'nightlinerParkplatz'];
-        
+        let uebersichtRequired = ['eventName', 'date', 'eventType', 'getInTime', 'doorsTime', 'nightLead', 'konzertende', 'backstageCurfew'];
+
         // Add conditional required fields based on event type
         if (data.eventType === 'konzert') {
           uebersichtRequired.push('agentur');
         } else if (data.eventType === 'club' || data.eventType === 'andere') {
           uebersichtRequired.push('veranstalterName');
         }
-        
+
         const uebersichtFilled = uebersichtRequired.filter(field => {
           const value = data[field];
           return value !== undefined && value !== null && value !== '';
@@ -928,8 +979,13 @@ function App() {
         return { filled: tontechnikerFilled, total: tontechnikerRequired.length };
       
       case 'rider-extras':
-        const hospitalityRequired = ['getInCatering', 'dinner', 'standardbestueckung'];
+        const hospitalityRequired = ['getInCatering', 'dinner', 'standardbestueckung', 'travelPartyGetIn', 'nightlinerParkplatz'];
         let hospitalityFilled = hospitalityRequired.filter(field => {
+          // Travel Party Get In and Nightliner Parkplatz are stored in uebersicht data
+          if (field === 'travelPartyGetIn' || field === 'nightlinerParkplatz') {
+            const value = uebersichtData[field];
+            return value !== undefined && value !== null && value !== '';
+          }
           const value = data[field];
           return value !== undefined && value !== null && value !== '';
         }).length;
@@ -1192,6 +1248,94 @@ function App() {
               <div id="uebersicht-print-button-container"></div>
             )}
           </div>
+          {activeSection === 'rider-extras' && (
+            <div className="travel-party-section">
+              <div className="travel-party-nightliner-row">
+                <div className="form-group-paired-container">
+                  <div className="form-group form-group-paired-left">
+                    <label htmlFor="travelPartyGetInTitle">Travel Party Get In *</label>
+                    <input
+                      type="number"
+                      id="travelPartyGetInTitle"
+                      value={formData.uebersicht?.travelPartyGetIn || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        handleFormDataChange('uebersicht', {
+                          ...formData.uebersicht,
+                          travelPartyGetIn: value,
+                          travelPartyTatsachlich: value || formData.uebersicht?.travelPartyTatsachlich || ''
+                        });
+                      }}
+                      className={`form-input ${highlightedFields['rider-extras']?.includes('Travel Party Get In') ? 'field-highlighted' : ''}`}
+                      min="0"
+                      placeholder="0"
+                      required
+                    />
+                  </div>
+                  <div className="form-group form-group-paired-right">
+                    <label htmlFor="travelPartyTatsachlichTitle">Tatsächlich</label>
+                    <input
+                      type="number"
+                      id="travelPartyTatsachlichTitle"
+                      value={formData.uebersicht?.travelPartyTatsachlich || ''}
+                      onChange={(e) => {
+                        handleFormDataChange('uebersicht', {
+                          ...formData.uebersicht,
+                          travelPartyTatsachlich: e.target.value
+                        });
+                      }}
+                      className="form-input"
+                      min="0"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+                <div className="nightliner-parkplatz-box">
+                  <div className={`form-group form-group-nightliner-radio ${highlightedFields['rider-extras']?.includes('Nightliner Parkplatz') ? 'field-highlighted-group' : ''}`}>
+                    <label className="nightliner-radio-label">Nightliner Parkplatz *</label>
+                    <div className="nightliner-radio-buttons">
+                      <label className="radio-option-label">
+                        <input
+                          type="radio"
+                          name="nightlinerParkplatz"
+                          value="yes"
+                          checked={formData.uebersicht?.nightlinerParkplatz === 'yes'}
+                          onChange={(e) => {
+                            handleFormDataChange('uebersicht', {
+                              ...formData.uebersicht,
+                              nightlinerParkplatz: e.target.value
+                            });
+                          }}
+                          className="nightliner-radio"
+                          required
+                        />
+                        <span className="radio-custom"></span>
+                        <span className="radio-text">Ja</span>
+                      </label>
+                      <label className="radio-option-label">
+                        <input
+                          type="radio"
+                          name="nightlinerParkplatz"
+                          value="no"
+                          checked={formData.uebersicht?.nightlinerParkplatz === 'no'}
+                          onChange={(e) => {
+                            handleFormDataChange('uebersicht', {
+                              ...formData.uebersicht,
+                              nightlinerParkplatz: e.target.value
+                            });
+                          }}
+                          className="nightliner-radio"
+                          required
+                        />
+                        <span className="radio-custom"></span>
+                        <span className="radio-text">Nein</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           {renderActiveSection()}
         </div>
       </main>

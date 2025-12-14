@@ -34,6 +34,40 @@
   margin-bottom: 20px;
 }
 
+.travel-party-section {
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.travel-party-nightliner-row {
+  display: flex;
+  gap: 20px;
+  align-items: end;
+  width: 100%;
+}
+
+.travel-party-nightliner-row .form-group-paired-container {
+  display: flex;
+  gap: 0;
+  flex: 1;
+  max-width: 400px;
+}
+
+.travel-party-nightliner-row .form-group {
+  margin: 0;
+}
+
+.travel-party-nightliner-row .nightliner-parkplatz-box {
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px;
+  background-color: #fafafa;
+  display: flex;
+  justify-content: center;
+  width: fit-content;
+  flex-shrink: 0;
+}
+
 /* Close Shift and Settings Buttons - Sidebar */
 .sidebar-bottom-buttons {
   display: flex;
