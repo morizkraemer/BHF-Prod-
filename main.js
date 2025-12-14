@@ -8,6 +8,11 @@ const { registerScannerHandlers } = require('./handlers/scannerHandlers');
 const { registerReportHandlers } = require('./handlers/reportHandlers');
 const { registerDataHandlers } = require('./handlers/dataHandlers');
 
+// Add V8 flags for macOS 15.6 compatibility
+app.commandLine.appendSwitch('--disable-features', 'VizDisplayCompositor');
+app.commandLine.appendSwitch('--disable-software-rasterizer');
+app.commandLine.appendSwitch('--no-sandbox');
+
 // Enable hot reload in development
 if (process.argv.includes('--dev')) {
   require('electron-reload')(__dirname, {
@@ -28,7 +33,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true
     },
-    icon: path.join(__dirname, 'assets', 'icons', 'icon.png')
+    icon: path.join(__dirname, 'assets', 'icons', 'icon-1000px.png')
   });
 
   mainWindow.loadFile('index.html');
