@@ -224,64 +224,49 @@ function DocumentScanner({
         </div>
       )}
       
-      {/* Scan Controls */}
-      <div className="scan-section">
-        {/* Title with Print Button */}
-        {title && (
-          <div className="scan-section-title-row">
-            <h3 className="scan-section-title">{title}</h3>
-            {templateKey && (
-              <button
-                type="button"
-                onClick={handlePrintTemplate}
-                className="scan-print-icon-button"
-                title="Template drucken"
-              >
-                <i data-lucide="printer" style={{ width: '16px', height: '16px' }}></i>
-                <span>drucken</span>
-              </button>
-            )}
-          </div>
+      {/* Scan Controls - Single Line */}
+      <div className="scan-section" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        {title && <span className="scan-section-title" style={{ margin: 0, fontSize: '14px', fontWeight: '500' }}>{title}</span>}
+        {templateKey && (
+          <button
+            type="button"
+            onClick={handlePrintTemplate}
+            className="scan-print-icon-button"
+            title="Template drucken"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+          >
+            <i data-lucide="printer" style={{ width: '16px', height: '16px' }}></i>
+            <span>drucken</span>
+          </button>
         )}
-        
-        <div className="scan-controls-row">
-          {/* Middle Stack: Scan Button, Source, Printer Name */}
-          <div className="scan-controls-middle">
-            <button
-              type="button"
-              onClick={handleScan}
-              className="scan-button"
-              disabled={isScanning || pendingScan}
-            >
-              {isScanning ? 'Scannt...' : 'Scannen'}
-            </button>
-            <div className="scan-source-select">
-              <label htmlFor="scan-source" className="scan-source-label">
-                Scan-Quelle:
-              </label>
-              <select
-                id="scan-source"
-                value={scanSource}
-                onChange={(e) => setScanSource(e.target.value)}
-                className="scan-source-dropdown"
-                disabled={isScanning || pendingScan}
-              >
-                <option value="glass">Glas</option>
-                <option value="feeder">Oben</option>
-              </select>
-            </div>
-          </div>
+        <button
+          type="button"
+          onClick={handleScan}
+          className="scan-button"
+          disabled={isScanning || pendingScan}
+        >
+          {isScanning ? 'Scannt...' : 'Scannen'}
+        </button>
+        <div className="scan-source-select" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <label htmlFor="scan-source" className="scan-source-label" style={{ margin: 0, fontSize: '14px' }}>
+            Scan-Quelle:
+          </label>
+          <select
+            id="scan-source"
+            value={scanSource}
+            onChange={(e) => setScanSource(e.target.value)}
+            className="scan-source-dropdown"
+            disabled={isScanning || pendingScan}
+          >
+            <option value="glass">Glas</option>
+            <option value="feeder">Oben</option>
+          </select>
         </div>
         {scanSource === 'feeder' && !isScanning && !pendingScan && (
-          <div className="scan-feeder-warning">
-            <p>⚠️ Bitte stellen Sie sicher, dass sich Dokumente im Einzug befinden.</p>
-          </div>
+          <span style={{ fontSize: '12px', color: '#d97706' }}>⚠️ Dokumente im Einzug?</span>
         )}
         {isScanning && (
-          <div className="scan-status">
-            <p>⏳ Scan läuft...</p>
-            <p className="scan-status-hint">Bitte warten Sie, während das Dokument gescannt wird.</p>
-          </div>
+          <span style={{ fontSize: '12px', color: '#2563eb' }}>⏳ Scan läuft...</span>
         )}
       </div>
 
