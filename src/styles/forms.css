@@ -404,23 +404,20 @@
   align-items: flex-start;
 }
 
-.night-lead-vva-column {
+.night-lead-vva-box {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 8px;
   flex: 0 0 33.333%;
   width: 33.333%;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 8px;
+  background-color: #fafafa;
 }
 
-.night-lead-vva-box {
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 10px;
-  background-color: #fafafa;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  align-items: end;
+.night-lead-vva-box .form-group {
+  width: 100%;
 }
 
 .form-group-travel-party-container {

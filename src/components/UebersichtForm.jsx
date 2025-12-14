@@ -40,7 +40,8 @@ function UebersichtForm({ formData, onDataChange, highlightedFields = [] }) {
     vva: formData?.vva || '',
     companyName: formData?.companyName || '',
     nightlinerParkplatz: formData?.nightlinerParkplatz || '',
-    positionen: formData?.positionen || []
+    positionen: formData?.positionen || [],
+    notes: formData?.notes || ''
   });
 
   const [zettelPrinted, setZettelPrinted] = useState(false);
@@ -305,7 +306,7 @@ function UebersichtForm({ formData, onDataChange, highlightedFields = [] }) {
         {/* Night Lead/VVA and Positionen side by side */}
         <div className="night-lead-positionen-row">
           {/* Left side: Night Lead and VVA stacked */}
-          <div className="night-lead-vva-column">
+          <div className="night-lead-vva-box">
             <div className="form-group">
               <label htmlFor="nightLead">Night Lead *</label>
               <input
@@ -438,6 +439,19 @@ function UebersichtForm({ formData, onDataChange, highlightedFields = [] }) {
             + Add Person
           </button>
           </div>
+        </div>
+
+        {/* Notes Section */}
+        <div className="notes-section">
+          <label htmlFor="uebersichtNotes" className="notes-label">Notizen</label>
+          <textarea
+            id="uebersichtNotes"
+            value={localData.notes}
+            onChange={(e) => handleChange('notes', e.target.value)}
+            className="form-textarea"
+            placeholder="Zusätzliche Notizen oder Bemerkungen..."
+            rows="4"
+          />
         </div>
 
         {/* Konzertende and Backstage Curfew - moved to end */}
