@@ -836,6 +836,28 @@
   transform: scale(0.95);
 }
 
+.buyout-add-link {
+  display: inline-block;
+  color: #3498db;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  margin-top: 12px;
+}
+
+.buyout-add-link:hover:not(.disabled) {
+  color: #2980b9;
+}
+
+.buyout-add-link.disabled {
+  color: #95a5a6;
+  cursor: not-allowed;
+  text-decoration: none;
+  opacity: 0.5;
+}
+
 .notes-section {
   margin-top: 20px;
 }

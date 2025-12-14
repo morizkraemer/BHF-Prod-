@@ -100,7 +100,7 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [] }) {
     if (window.lucide) {
       window.lucide.createIcons();
     }
-  }, [items]); // Re-initialize icons when items change
+  }, [items, buyoutGroups]); // Re-initialize icons when items or buyoutGroups change
 
   // Calculate buyout total for all groups
   const buyoutTotal = buyoutGroups.reduce((total, group) => {
@@ -460,14 +460,14 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [] }) {
                     <span className="buyout-grand-total-amount">€{buyoutTotal}</span>
                   </div>
                 )}
-                <button
-                  type="button"
-                  onClick={handleAddBuyoutGroup}
-                  className="add-line-button"
-                  disabled={dinner !== 'buyout'}
+                <span
+                  onClick={dinner === 'buyout' ? handleAddBuyoutGroup : undefined}
+                  className={`buyout-add-link ${dinner !== 'buyout' ? 'disabled' : ''}`}
+                  style={{ cursor: dinner === 'buyout' ? 'pointer' : 'not-allowed' }}
                 >
-                  + Add Buyout Group
-                </button>
+                  <i data-lucide="plus" style={{ width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }}></i>
+                  Weiteren Betrag hinzufügen
+                </span>
               </div>
             </div>
 
