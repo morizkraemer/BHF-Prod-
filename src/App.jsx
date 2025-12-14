@@ -12,6 +12,9 @@ function App() {
       securityPersonnel: [{ name: '', startTime: '', endTime: '' }],
       scannedDocuments: []
     },
+    'andere-mitarbeiter': {
+      mitarbeiter: []
+    },
     gaeste: {}
   });
 
@@ -20,6 +23,7 @@ function App() {
     { id: 'rider-extras', name: 'Hospitality' },
     { id: 'tontechniker', name: 'Ton/Lichttechnik' },
     { id: 'secu', name: 'Secu' },
+    { id: 'andere-mitarbeiter', name: 'Andere Mitarbeiter' },
     { id: 'gaeste', name: 'Gäste' },
     { id: 'orderbird', name: 'Orderbird' }
   ];
@@ -326,9 +330,14 @@ function App() {
         errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Lighting Tech End Zeit' });
       }
     }
-    const scannedImages = tontechnikerData.scannedImages || [];
-    if (scannedImages.length === 0) {
-      errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Gescannte Bilder' });
+    // Only require scanning if at least one tech is enabled
+    const soundEngineerEnabled = tontechnikerData.soundEngineerEnabled !== false;
+    const lightingTechEnabled = tontechnikerData.lightingTechEnabled === true;
+    if (soundEngineerEnabled || lightingTechEnabled) {
+      const scannedImages = tontechnikerData.scannedImages || [];
+      if (scannedImages.length === 0) {
+        errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Gescannte Bilder' });
+      }
     }
     
     // Secu section
@@ -349,6 +358,26 @@ function App() {
       if (secuScannedDocuments.length === 0) {
         errors.push({ section: 'Secu', sectionId: 'secu', field: 'Gescannte Dokumente' });
       }
+    }
+    
+    // Andere Mitarbeiter section
+    const andereMitarbeiterData = formData['andere-mitarbeiter'] || {};
+    const mitarbeiter = andereMitarbeiterData.mitarbeiter || [];
+    if (mitarbeiter.length > 0) {
+      mitarbeiter.forEach((person, index) => {
+        if (!person.name || person.name.trim() === '') {
+          errors.push({ section: 'Andere Mitarbeiter', sectionId: 'andere-mitarbeiter', field: `Andere Mitarbeiter Person ${index + 1} Name` });
+        }
+        if (!person.startTime || person.startTime === '') {
+          errors.push({ section: 'Andere Mitarbeiter', sectionId: 'andere-mitarbeiter', field: `Andere Mitarbeiter Person ${index + 1} Start Zeit` });
+        }
+        if (!person.endTime || person.endTime === '') {
+          errors.push({ section: 'Andere Mitarbeiter', sectionId: 'andere-mitarbeiter', field: `Andere Mitarbeiter Person ${index + 1} End Zeit` });
+        }
+        if (!person.category || person.category === '') {
+          errors.push({ section: 'Andere Mitarbeiter', sectionId: 'andere-mitarbeiter', field: `Andere Mitarbeiter Person ${index + 1} Kategorie` });
+        }
+      });
     }
     
     // Orderbird section
@@ -482,6 +511,9 @@ function App() {
                 secu: {
                   securityPersonnel: [{ name: '', startTime: '', endTime: '' }],
                   scannedDocuments: []
+                },
+                'andere-mitarbeiter': {
+                  mitarbeiter: [{ name: '', startTime: '', endTime: '', category: '' }]
                 },
                 gaeste: {}
               });
@@ -705,6 +737,12 @@ function App() {
         ],
         scannedDocuments: []
       },
+      'andere-mitarbeiter': {
+        mitarbeiter: [
+          { name: 'Max Mustermann', startTime: '17:00', endTime: '01:00', category: 'Kasse' },
+          { name: 'Anna Schmidt', startTime: '18:00', endTime: '02:00', category: 'WC' }
+        ]
+      },
       orderbird: {
         receipts: [],
         zBericht: true,
@@ -761,6 +799,12 @@ function App() {
       if (sectionId === 'secu') {
         const personnel = sectionData.securityPersonnel || [];
         return personnel.some(person => person.name && person.name.trim() !== '');
+      }
+      
+      // For andere-mitarbeiter section, check if there are filled entries
+      if (sectionId === 'andere-mitarbeiter') {
+        const mitarbeiter = sectionData.mitarbeiter || [];
+        return mitarbeiter.some(person => person.name && person.name.trim() !== '');
       }
       
       // For other sections, check if any string fields are filled
@@ -870,11 +914,15 @@ function App() {
           });
         }
         
-        // Scanned images are always required
-        const scannedImages = data.scannedImages || [];
-        tontechnikerRequired.push('scannedImages');
-        if (scannedImages.length > 0) {
-          tontechnikerFilled++;
+        // Scanned images are only required if at least one tech is enabled
+        const soundEngineerEnabled = data.soundEngineerEnabled !== false;
+        const lightingTechEnabled = data.lightingTechEnabled === true;
+        if (soundEngineerEnabled || lightingTechEnabled) {
+          const scannedImages = data.scannedImages || [];
+          tontechnikerRequired.push('scannedImages');
+          if (scannedImages.length > 0) {
+            tontechnikerFilled++;
+          }
         }
         
         return { filled: tontechnikerFilled, total: tontechnikerRequired.length };
@@ -924,6 +972,27 @@ function App() {
         }
         
         return { filled: secuFilled, total: secuRequired };
+      
+      case 'andere-mitarbeiter':
+        // Each person's fields are required if there are any entries
+        const mitarbeiter = data.mitarbeiter || [];
+        if (mitarbeiter.length === 0) {
+          // No personnel = no required fields
+          return { filled: 0, total: 0 };
+        }
+        
+        // For each person, name, startTime, endTime, and category are required
+        let andereMitarbeiterRequired = mitarbeiter.length * 4; // 4 fields per person
+        let andereMitarbeiterFilled = 0;
+        
+        mitarbeiter.forEach(person => {
+          if (person.name && person.name.trim() !== '') andereMitarbeiterFilled++;
+          if (person.startTime && person.startTime !== '') andereMitarbeiterFilled++;
+          if (person.endTime && person.endTime !== '') andereMitarbeiterFilled++;
+          if (person.category && person.category !== '') andereMitarbeiterFilled++;
+        });
+        
+        return { filled: andereMitarbeiterFilled, total: andereMitarbeiterRequired };
       
       case 'orderbird':
         // Required: at least one scan, Z Bericht, Benutzerberichte
@@ -1012,6 +1081,14 @@ function App() {
             highlightedFields={highlightedFields.secu || []}
           />
         );
+      case 'andere-mitarbeiter':
+        return (
+          <AndereMitarbeiterForm
+            formData={formData['andere-mitarbeiter']}
+            onDataChange={(data) => handleFormDataChange('andere-mitarbeiter', data)}
+            highlightedFields={highlightedFields['andere-mitarbeiter'] || []}
+          />
+        );
       case 'gaeste':
         return (
           <GaesteForm
@@ -1051,7 +1128,7 @@ function App() {
         <nav className="sidebar-nav">
           {sections.map(section => {
             const count = getRequiredFieldsCount(section.id);
-            const isComplete = count.total > 0 && count.filled === count.total;
+            const isComplete = (count.total > 0 && count.filled === count.total) || count.total === 0;
             
             return (
               <button
@@ -1060,11 +1137,9 @@ function App() {
                 onClick={() => setActiveSection(section.id)}
               >
                 <span className="sidebar-item-name">{section.name}</span>
-                {count.total > 0 && (
-                  <span className={`sidebar-item-counter ${isComplete ? 'sidebar-item-counter-complete' : ''}`}>
-                    {count.filled}/{count.total}
-                  </span>
-                )}
+                <span className={`sidebar-item-counter ${isComplete ? 'sidebar-item-counter-complete' : ''}`}>
+                  {count.total > 0 ? `${count.filled}/${count.total}` : '—'}
+                </span>
               </button>
             );
           })}

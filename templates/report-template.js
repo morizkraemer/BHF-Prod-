@@ -274,6 +274,22 @@
         document.getElementById('secu-section').style.display = 'none';
     }
 
+    // Andere Mitarbeiter
+    const andereMitarbeiter = data['andere-mitarbeiter'] || {};
+    if (andereMitarbeiter.mitarbeiter && andereMitarbeiter.mitarbeiter.length > 0) {
+        let andereMitarbeiterHtml = '<div class="table-container"><table><thead><tr><th>Name</th><th>Start</th><th>Ende</th><th>Dauer</th><th>Kategorie</th></tr></thead><tbody>';
+        andereMitarbeiter.mitarbeiter.forEach(person => {
+            if (person.name || person.startTime || person.endTime || person.category) {
+                const duration = calculateDuration(person.startTime, person.endTime);
+                andereMitarbeiterHtml += `<tr><td>${escapeHtml(person.name || '-')}</td><td>${escapeHtml(person.startTime || '-')}</td><td>${escapeHtml(person.endTime || '-')}</td><td>${escapeHtml(duration)}</td><td>${escapeHtml(person.category || '-')}</td></tr>`;
+            }
+        });
+        andereMitarbeiterHtml += '</tbody></table></div>';
+        document.getElementById('andere-mitarbeiter-table-container').innerHTML = andereMitarbeiterHtml;
+    } else {
+        document.getElementById('andere-mitarbeiter-section').style.display = 'none';
+    }
+
     // Orderbird
     const orderbirdItems = [];
     if (orderbird.zBericht) orderbirdItems.push('Z Bericht');
