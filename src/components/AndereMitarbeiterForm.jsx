@@ -41,6 +41,10 @@ function AndereMitarbeiterForm({ formData, onDataChange, highlightedFields = [] 
       <div className="andere-mitarbeiter-form">
         {/* Mitarbeiter Section */}
         <div className="andere-mitarbeiter-section">
+          {/* Subtitle */}
+          <div className="andere-mitarbeiter-subtitle">
+            Kasse, WC, Stage Hand, Extern (auf Rechnung)
+          </div>
           {/* Column Headers */}
           <div className="andere-mitarbeiter-header">
             <div className="andere-mitarbeiter-header-name">Name</div>

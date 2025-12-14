@@ -114,6 +114,14 @@
   gap: 12px;
 }
 
+.andere-mitarbeiter-subtitle {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 8px;
+  padding: 8px 0;
+  font-style: italic;
+}
+
 .andere-mitarbeiter-header {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1.5fr 40px;
@@ -305,9 +313,10 @@
 
 .scan-section {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .scan-section-title-row {
@@ -319,10 +328,11 @@
 }
 
 .scan-section-title {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
   color: #2c3e50;
   margin: 0;
+  white-space: nowrap;
 }
 
 .scan-print-icon-button {
@@ -396,10 +406,10 @@
 
 .scan-source-select {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 4px;
-  width: 100%;
+  gap: 6px;
+  width: auto;
 }
 
 .scan-source-label {
