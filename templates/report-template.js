@@ -86,9 +86,6 @@
     if (uebersicht.nightLead) {
         document.getElementById('field-night-lead').innerHTML = createFieldRow('Night Lead', uebersicht.nightLead);
     }
-    if (uebersicht.nightlinerParkplatz) {
-        document.getElementById('field-nightliner').innerHTML = createFieldRow('Nightliner Parkplatz', uebersicht.nightlinerParkplatz === 'yes' ? 'Ja' : 'Nein');
-    }
 
     // Time fields - all separate
     if (uebersicht.getInTime) {
@@ -119,12 +116,6 @@
         document.getElementById('field-backstage-curfew-tatsachlich').innerHTML = createFieldRow('Backstage Curfew Tatsächlich', uebersicht.backstageCurfewTatsachlich);
     }
 
-    if (uebersicht.travelPartyGetIn) {
-        document.getElementById('field-travel-party-getin').innerHTML = createFieldRow('Travel Party Get In', uebersicht.travelPartyGetIn);
-    }
-    if (uebersicht.travelPartyTatsachlich) {
-        document.getElementById('field-travel-party-tatsachlich').innerHTML = createFieldRow('Travel Party Tatsächlich', uebersicht.travelPartyTatsachlich);
-    }
     if (uebersicht.agentur) {
         document.getElementById('field-agentur').innerHTML = createFieldRow('Agentur', uebersicht.agentur);
     }
@@ -144,7 +135,42 @@
         document.getElementById('field-vva').innerHTML = createFieldRow('VVA', uebersicht.vva);
     }
 
+    // Positionen
+    if (uebersicht.positionen && uebersicht.positionen.length > 0) {
+        let positionenHtml = '<div class="table-container"><table><thead><tr><th>Name</th><th>Position</th><th>Funkgerät</th><th>Zurückgegeben</th></tr></thead><tbody>';
+        uebersicht.positionen.forEach(position => {
+            if (position.name) {
+                const returned = position.returned ? 'Ja' : 'Nein';
+                positionenHtml += `<tr><td>${escapeHtml(position.name || '-')}</td><td>${escapeHtml(position.position || '-')}</td><td>${escapeHtml(position.funkgerat || '-')}</td><td>${escapeHtml(returned)}</td></tr>`;
+            }
+        });
+        positionenHtml += '</tbody></table></div>';
+        document.getElementById('positionen-table-container').innerHTML = positionenHtml;
+    }
+
+    // Übersicht Notes
+    if (uebersicht.notes) {
+        document.getElementById('uebersicht-notes-container').innerHTML = `
+            <div class="notes-container">
+                <div class="notes-label">Notizen:</div>
+                <div class="notes-content">${escapeHtml(uebersicht.notes)}</div>
+            </div>
+        `;
+    }
+
     // Hospitality
+    // Travel Party (stored in uebersicht but displayed in Hospitality section)
+    if (uebersicht.travelPartyGetIn) {
+        document.getElementById('field-travel-party-getin-hospitality').innerHTML = createFieldRow('Travel Party Get In', uebersicht.travelPartyGetIn);
+    }
+    if (uebersicht.travelPartyTatsachlich) {
+        document.getElementById('field-travel-party-tatsachlich-hospitality').innerHTML = createFieldRow('Travel Party Tatsächlich', uebersicht.travelPartyTatsachlich);
+    }
+    // Nightliner Parkplatz (stored in uebersicht but displayed in Hospitality section)
+    if (uebersicht.nightlinerParkplatz) {
+        document.getElementById('field-nightliner-hospitality').innerHTML = createFieldRow('Nightliner Parkplatz', uebersicht.nightlinerParkplatz === 'yes' ? 'Ja' : 'Nein');
+    }
+    
     if (riderExtras.getInCatering) {
         const cateringMap = { 'no': 'Nein', 'kalt': 'Kalt', 'nur-snacks': 'Nur Snacks', 'warm': 'Warm', 'buyout': 'Buyout' };
         document.getElementById('field-getin-catering').innerHTML = createFieldRow('Get In Catering', cateringMap[riderExtras.getInCatering] || riderExtras.getInCatering);
