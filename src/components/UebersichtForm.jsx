@@ -40,7 +40,6 @@ function UebersichtForm({ formData, onDataChange, highlightedFields = [], printe
     vva: formData?.vva || '',
     companyName: formData?.companyName || '',
     nightlinerParkplatz: formData?.nightlinerParkplatz || '',
-    positionen: formData?.positionen || [],
     notes: formData?.notes || ''
   });
 
@@ -311,141 +310,30 @@ function UebersichtForm({ formData, onDataChange, highlightedFields = [], printe
           </div>
         </div>
 
-        {/* Night Lead/VVA and Positionen side by side */}
-        <div className="night-lead-positionen-row">
-          {/* Left side: Night Lead and VVA stacked */}
-          <div className="night-lead-vva-box">
-            <div className="form-group">
-              <label htmlFor="nightLead">Night Lead *</label>
-              <input
-                type="text"
-                id="nightLead"
-                value={localData.nightLead}
-                onChange={(e) => handleChange('nightLead', e.target.value)}
-                className={`form-input ${shouldHighlight('Night Lead') ? 'field-highlighted' : ''}`}
-                placeholder="Night Lead"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="vva">VVA</label>
-              <input
-                type="text"
-                id="vva"
-                value={localData.vva}
-                onChange={(e) => handleChange('vva', e.target.value)}
-                className="form-input"
-                placeholder="VVA"
-              />
-            </div>
+        {/* Night Lead and VVA */}
+        <div className="night-lead-vva-box">
+          <div className="form-group">
+            <label htmlFor="nightLead">Night Lead *</label>
+            <input
+              type="text"
+              id="nightLead"
+              value={localData.nightLead}
+              onChange={(e) => handleChange('nightLead', e.target.value)}
+              className={`form-input ${shouldHighlight('Night Lead') ? 'field-highlighted' : ''}`}
+              placeholder="Night Lead"
+              required
+            />
           </div>
-
-          {/* Right side: Positionen Section */}
-          <div className="positionen-section">
-          <h3 className="positionen-section-title">Positionen</h3>
-          {/* Column Headers */}
-          <div className="positionen-header">
-            <div className="positionen-header-name">Name</div>
-            <div className="positionen-header-position">Position</div>
-            <div className="positionen-header-funkgerat">Funkgerät</div>
-            <div className="positionen-header-returned">Zurückgegeben</div>
-            <div className="positionen-header-actions"></div>
-          </div>
-
-          {/* Positionen List */}
-          {localData.positionen.length === 0 ? (
-            <div className="positionen-empty">Keine Positionen hinzugefügt</div>
-          ) : (
-            localData.positionen.map((position, index) => (
-              <div key={index} className="positionen-line">
-                <input
-                  type="text"
-                  value={position.name || ''}
-                  onChange={(e) => {
-                    const newPositionen = [...localData.positionen];
-                    newPositionen[index] = { ...newPositionen[index], name: e.target.value };
-                    setLocalData({ ...localData, positionen: newPositionen });
-                  }}
-                  className="positionen-name"
-                  placeholder="Name *"
-                  required
-                />
-                <select
-                  value={position.position || ''}
-                  onChange={(e) => {
-                    const newPositionen = [...localData.positionen];
-                    newPositionen[index] = { ...newPositionen[index], position: e.target.value };
-                    setLocalData({ ...localData, positionen: newPositionen });
-                  }}
-                  className="positionen-position"
-                >
-                  <option value="">Position wählen</option>
-                  <option value="Bar">Bar</option>
-                  <option value="Garderobe">Garderobe</option>
-                  <option value="Kasse">Kasse</option>
-                  <option value="Runner">Runner</option>
-                </select>
-                <select
-                  value={position.funkgerat || ''}
-                  onChange={(e) => {
-                    const newPositionen = [...localData.positionen];
-                    newPositionen[index] = { ...newPositionen[index], funkgerat: e.target.value };
-                    setLocalData({ ...localData, positionen: newPositionen });
-                  }}
-                  className="positionen-funkgerat"
-                >
-                  <option value="">--</option>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                  <option value="6">6</option>
-                </select>
-                <div className="positionen-returned">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={position.returned || false}
-                      onChange={(e) => {
-                        const newPositionen = [...localData.positionen];
-                        newPositionen[index] = { ...newPositionen[index], returned: e.target.checked };
-                        setLocalData({ ...localData, positionen: newPositionen });
-                      }}
-                      className="positionen-checkbox"
-                    />
-                    <span className="checkbox-custom"></span>
-                  </label>
-                </div>
-                <div className="positionen-controls">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newPositionen = localData.positionen.filter((_, i) => i !== index);
-                      setLocalData({ ...localData, positionen: newPositionen });
-                    }}
-                    className="remove-line-button"
-                    title="Remove"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-          
-          <button
-            type="button"
-            onClick={() => {
-              setLocalData({
-                ...localData,
-                positionen: [...localData.positionen, { name: '', position: '', funkgerat: '', returned: false }]
-              });
-            }}
-            className="add-line-button"
-          >
-            + Add Person
-          </button>
+          <div className="form-group">
+            <label htmlFor="vva">VVA</label>
+            <input
+              type="text"
+              id="vva"
+              value={localData.vva}
+              onChange={(e) => handleChange('vva', e.target.value)}
+              className="form-input"
+              placeholder="VVA"
+            />
           </div>
         </div>
 
