@@ -6,7 +6,11 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "build": "electron-builder",
+    "build": "electron-packager . \"Produktionsübersicht\" --platform=darwin --arch=x64 --icon=assets/icons/icon-1000px.png --out=dist --overwrite",
+    "build:mac": "electron-packager . \"Produktionsübersicht\" --platform=darwin --arch=x64 --icon=assets/icons/icon-1000px.png --out=dist --overwrite",
+    "build:win": "electron-packager . \"Produktionsübersicht\" --platform=win32 --arch=x64 --icon=assets/icons/icon-1000px.png --out=dist --overwrite",
+    "build:linux": "electron-packager . \"Produktionsübersicht\" --platform=linux --arch=x64 --icon=assets/icons/icon-1000px.png --out=dist --overwrite",
+    "build:all": "npm run build:mac && npm run build:win && npm run build:linux",
     "preview-report": "electron preview-report.js"
   },
   "keywords": [
@@ -18,7 +22,7 @@
   "license": "MIT",
   "devDependencies": {
     "electron": "^34.0.0",
-    "electron-builder": "^24.9.1",
+    "@electron/packager": "^19.0.1",
     "electron-reload": "^2.0.0-alpha.1"
   },
   "dependencies": {
@@ -28,18 +32,5 @@
     "pdfkit": "^0.14.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
-  },
-  "build": {
-    "appId": "com.bhf.produktionstool",
-    "productName": "Produktionsübersicht",
-    "mac": {
-      "icon": "assets/icons/icon-1000px.png"
-    },
-    "win": {
-      "icon": "assets/icons/icon-1000px.png"
-    },
-    "linux": {
-      "icon": "assets/icons/icon-1000px.png"
-    }
   }
 }
