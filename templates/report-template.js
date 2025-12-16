@@ -179,8 +179,8 @@
         const cateringMap = { 'no': 'Nein', 'kalt': 'Kalt', 'nur-snacks': 'Nur Snacks', 'warm': 'Warm', 'buyout': 'Buyout' };
         document.getElementById('field-getin-catering').innerHTML = createFieldRow('Get In Catering', cateringMap[riderExtras.getInCatering] || riderExtras.getInCatering);
         
-        // Calculate catering sum if warm, cold, or snacks catering is selected
-        if ((riderExtras.getInCatering === 'warm' || riderExtras.getInCatering === 'kalt' || riderExtras.getInCatering === 'nur-snacks') && uebersicht.travelPartyGetIn) {
+        // Calculate catering sum if warm or cold catering is selected
+        if ((riderExtras.getInCatering === 'warm' || riderExtras.getInCatering === 'kalt') && uebersicht.travelPartyGetIn) {
             const cateringPrices = data.cateringPrices || {};
             const travelParty = parseFloat(uebersicht.travelPartyGetIn) || 0;
             let pricePerPerson = 0;
@@ -189,8 +189,6 @@
                 pricePerPerson = parseFloat(cateringPrices.warmPerPerson) || 0;
             } else if (riderExtras.getInCatering === 'kalt' && cateringPrices.coldPerPerson && cateringPrices.coldPerPerson.trim() !== '') {
                 pricePerPerson = parseFloat(cateringPrices.coldPerPerson) || 0;
-            } else if (riderExtras.getInCatering === 'nur-snacks' && cateringPrices.snacksPerPerson && cateringPrices.snacksPerPerson.trim() !== '') {
-                pricePerPerson = parseFloat(cateringPrices.snacksPerPerson) || 0;
             }
             
             if (pricePerPerson > 0 && travelParty > 0) {
@@ -402,12 +400,56 @@
 
     if (gaeste.paymentType === 'pauschale' && gaeste.pauschaleOptions) {
         const options = [];
-        if (gaeste.pauschaleOptions.standard) options.push('Standard');
-        if (gaeste.pauschaleOptions.longdrinks) options.push('Longdrinks');
-        if (gaeste.pauschaleOptions.sektCocktails) options.push('Sekt-Cocktails');
-        if (gaeste.pauschaleOptions.shots) options.push('Shots');
+        const prices = [];
+        const pauschalePrices = data.pauschalePrices || {};
+        
+        if (gaeste.pauschaleOptions.standard) {
+            options.push('Standard');
+            if (pauschalePrices.standard && pauschalePrices.standard.trim() !== '') {
+                const price = parseFloat(pauschalePrices.standard) || 0;
+                if (price > 0) {
+                    prices.push(`Standard: €${price.toFixed(2)}`);
+                }
+            }
+        }
+        if (gaeste.pauschaleOptions.longdrinks) {
+            options.push('Longdrinks');
+            if (pauschalePrices.longdrinks && pauschalePrices.longdrinks.trim() !== '') {
+                const price = parseFloat(pauschalePrices.longdrinks) || 0;
+                if (price > 0) {
+                    prices.push(`Longdrinks: €${price.toFixed(2)}`);
+                }
+            }
+        }
+        if (gaeste.pauschaleOptions.sektCocktails) {
+            options.push('Sekt-Cocktails');
+            if (pauschalePrices.sektCocktails && pauschalePrices.sektCocktails.trim() !== '') {
+                const price = parseFloat(pauschalePrices.sektCocktails) || 0;
+                if (price > 0) {
+                    prices.push(`Sekt-Cocktails: €${price.toFixed(2)}`);
+                }
+            }
+        }
+        if (gaeste.pauschaleOptions.shots) {
+            options.push('Shots');
+            if (pauschalePrices.shots && pauschalePrices.shots.trim() !== '') {
+                const price = parseFloat(pauschalePrices.shots) || 0;
+                if (price > 0) {
+                    prices.push(`Shots: €${price.toFixed(2)}`);
+                }
+            }
+        }
         if (options.length > 0) {
             document.getElementById('field-pauschale-options').innerHTML = createFieldRow('Pauschale Optionen', options.join(', '));
+        }
+        if (prices.length > 0) {
+            const total = prices.reduce((sum, priceStr) => {
+                const match = priceStr.match(/€(\d+\.?\d*)/);
+                return sum + (match ? parseFloat(match[1]) : 0);
+            }, 0);
+            const pricesDisplay = prices.join(', ');
+            const totalDisplay = total > 0 ? ` (Gesamt: €${total.toFixed(2)})` : '';
+            document.getElementById('field-pauschale-prices').innerHTML = createFieldRow('Pauschale Preise', pricesDisplay + totalDisplay);
         }
     }
 

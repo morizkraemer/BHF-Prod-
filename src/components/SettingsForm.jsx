@@ -12,8 +12,13 @@ function SettingsForm() {
   const [editItemEkPrice, setEditItemEkPrice] = useState('');
   const [cateringPrices, setCateringPrices] = useState({
     warmPerPerson: '',
-    coldPerPerson: '',
-    snacksPerPerson: ''
+    coldPerPerson: ''
+  });
+  const [pauschalePrices, setPauschalePrices] = useState({
+    standard: '',
+    longdrinks: '',
+    sektCocktails: '',
+    shots: ''
   });
   const [scanners, setScanners] = useState([]);
   const [selectedScanner, setSelectedScanner] = useState(null);
@@ -56,6 +61,7 @@ function SettingsForm() {
   useEffect(() => {
     loadItems();
     loadCateringPrices();
+    loadPauschalePrices();
     loadScanners();
     loadBestueckungTotalPrices();
     loadSelectedScanner();
@@ -178,7 +184,7 @@ function SettingsForm() {
   const loadCateringPrices = async () => {
     if (window.electronAPI && window.electronAPI.getCateringPrices) {
       const prices = await window.electronAPI.getCateringPrices();
-      setCateringPrices(prices || { warmPerPerson: '', coldPerPerson: '', snacksPerPerson: '' });
+      setCateringPrices(prices || { warmPerPerson: '', coldPerPerson: '' });
     }
   };
 
@@ -186,6 +192,20 @@ function SettingsForm() {
     if (window.electronAPI && window.electronAPI.saveCateringPrices) {
       await window.electronAPI.saveCateringPrices(cateringPrices);
       alert('Catering Preise gespeichert');
+    }
+  };
+
+  const loadPauschalePrices = async () => {
+    if (window.electronAPI && window.electronAPI.getPauschalePrices) {
+      const prices = await window.electronAPI.getPauschalePrices();
+      setPauschalePrices(prices || { standard: '', longdrinks: '', sektCocktails: '', shots: '' });
+    }
+  };
+
+  const handleSavePauschalePrices = async () => {
+    if (window.electronAPI && window.electronAPI.savePauschalePrices) {
+      await window.electronAPI.savePauschalePrices(pauschalePrices);
+      alert('Pauschale Preise gespeichert');
     }
   };
 
@@ -504,7 +524,7 @@ function SettingsForm() {
     <>
       <h2>Catering Preise</h2>
       <p className="settings-description">
-        Legen Sie die Preise pro Person für warmes Catering, kaltes Catering und nur Snacks fest. Diese werden im PDF basierend auf der Travel Party Anzahl berechnet.
+        Legen Sie die Preise pro Person für warmes Catering und kaltes Catering fest. Diese werden im PDF basierend auf der Travel Party Anzahl berechnet.
       </p>
 
       <div className="settings-add-section">
@@ -533,12 +553,66 @@ function SettingsForm() {
               min="0"
             />
           </div>
+          <button
+            type="button"
+            onClick={handleSaveCateringPrices}
+            className="settings-add-button"
+            style={{ alignSelf: 'flex-start' }}
+          >
+            Speichern
+          </button>
+        </div>
+      </div>
+
+      <h2 style={{ marginTop: '40px' }}>Gast Pauschale Preise</h2>
+      <p className="settings-description">
+        Legen Sie die Preise für die verschiedenen Pauschale-Optionen fest. Diese werden im PDF verwendet, wenn Pauschale als Zahlungsart ausgewählt wurde.
+      </p>
+
+      <div className="settings-add-section">
+        <div className="settings-add-form" style={{ flexDirection: 'column', gap: '15px', maxWidth: '400px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontWeight: '600', fontSize: '14px' }}>Nur Snacks Preis pro Person (€)</label>
+            <label style={{ fontWeight: '600', fontSize: '14px' }}>Standard Pauschale Preis (€)</label>
             <input
               type="number"
-              value={cateringPrices.snacksPerPerson}
-              onChange={(e) => setCateringPrices({ ...cateringPrices, snacksPerPerson: e.target.value })}
+              value={pauschalePrices.standard}
+              onChange={(e) => setPauschalePrices({ ...pauschalePrices, standard: e.target.value })}
+              className="settings-input"
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontWeight: '600', fontSize: '14px' }}>Longdrinks Pauschale Preis (€)</label>
+            <input
+              type="number"
+              value={pauschalePrices.longdrinks}
+              onChange={(e) => setPauschalePrices({ ...pauschalePrices, longdrinks: e.target.value })}
+              className="settings-input"
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontWeight: '600', fontSize: '14px' }}>Sekt-Cocktails Pauschale Preis (€)</label>
+            <input
+              type="number"
+              value={pauschalePrices.sektCocktails}
+              onChange={(e) => setPauschalePrices({ ...pauschalePrices, sektCocktails: e.target.value })}
+              className="settings-input"
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontWeight: '600', fontSize: '14px' }}>Shots Pauschale Preis (€)</label>
+            <input
+              type="number"
+              value={pauschalePrices.shots}
+              onChange={(e) => setPauschalePrices({ ...pauschalePrices, shots: e.target.value })}
               className="settings-input"
               placeholder="0.00"
               step="0.01"
@@ -547,7 +621,7 @@ function SettingsForm() {
           </div>
           <button
             type="button"
-            onClick={handleSaveCateringPrices}
+            onClick={handleSavePauschalePrices}
             className="settings-add-button"
             style={{ alignSelf: 'flex-start' }}
           >
@@ -920,6 +994,7 @@ function SettingsForm() {
           // Reload all data
           loadItems();
           loadCateringPrices();
+          loadPauschalePrices();
           loadScanners();
           loadSelectedScanner();
           loadScanFolder();

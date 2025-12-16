@@ -37,8 +37,15 @@ function registerReportHandlers(ipcMain, store) {
       // Get catering prices from settings store
       const cateringPrices = store.get('cateringPrices', {
         warmPerPerson: '',
-        coldPerPerson: '',
-        snacksPerPerson: ''
+        coldPerPerson: ''
+      });
+      
+      // Get pauschale prices from settings store
+      const pauschalePrices = store.get('pauschalePrices', {
+        standard: '',
+        longdrinks: '',
+        sektCocktails: '',
+        shots: ''
       });
       
       // Get bestueckung total prices from settings store
@@ -51,6 +58,7 @@ function registerReportHandlers(ipcMain, store) {
       const formDataWithSettings = {
         ...formData,
         cateringPrices: cateringPrices,
+        pauschalePrices: pauschalePrices,
         bestueckungTotalPrices: bestueckungTotalPrices
       };
       

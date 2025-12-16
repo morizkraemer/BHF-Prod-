@@ -54,6 +54,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getCateringPrices: () => ipcRenderer.invoke('get-catering-prices'),
   saveCateringPrices: (prices) => ipcRenderer.invoke('save-catering-prices', prices),
   
+  // Pauschale Prices
+  getPauschalePrices: () => ipcRenderer.invoke('get-pauschale-prices'),
+  savePauschalePrices: (prices) => ipcRenderer.invoke('save-pauschale-prices', prices),
+  
   // Tech Names
   getTechNames: () => ipcRenderer.invoke('get-tech-names'),
   saveTechNames: (names) => ipcRenderer.invoke('save-tech-names', names),

@@ -324,13 +324,27 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
   ipcMain.handle('get-catering-prices', () => {
     return store.get('cateringPrices', {
       warmPerPerson: '',
-      coldPerPerson: '',
-      snacksPerPerson: ''
+      coldPerPerson: ''
     });
   });
 
   ipcMain.handle('save-catering-prices', (event, prices) => {
     store.set('cateringPrices', prices);
+    return true;
+  });
+
+  // IPC Handlers for Pauschale Prices
+  ipcMain.handle('get-pauschale-prices', () => {
+    return store.get('pauschalePrices', {
+      standard: '',
+      longdrinks: '',
+      sektCocktails: '',
+      shots: ''
+    });
+  });
+
+  ipcMain.handle('save-pauschale-prices', (event, prices) => {
+    store.set('pauschalePrices', prices);
     return true;
   });
 
@@ -364,8 +378,13 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
       });
       store.set('cateringPrices', {
         warmPerPerson: '',
-        coldPerPerson: '',
-        snacksPerPerson: ''
+        coldPerPerson: ''
+      });
+      store.set('pauschalePrices', {
+        standard: '',
+        longdrinks: '',
+        sektCocktails: '',
+        shots: ''
       });
 
       // Clear shift data store and reset to defaults
