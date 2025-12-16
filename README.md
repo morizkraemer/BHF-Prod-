@@ -19,6 +19,25 @@ npm start
 npm run dev
 ```
 
+## Building
+
+Build the application for distribution:
+
+```bash
+# Build for current platform (macOS by default)
+npm run build
+
+# Build for specific platforms
+npm run build:mac
+npm run build:win
+npm run build:linux
+
+# Build for all platforms
+npm run build:all
+```
+
+Built applications will be output to the `dist/` directory.
+
 ## Project Structure
 
 - `main.js` - Electron main process

@@ -3,6 +3,7 @@ const { exec } = require('child_process');
 const { promisify } = require('util');
 const execAsync = promisify(exec);
 const path = require('path');
+const { app } = require('electron');
 const { PDFDocument } = require('pdf-lib');
 
 /**
@@ -120,7 +121,8 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
       `;
 
       // Write HTML to temp file and load it
-      const tempHtmlPath = path.join(__dirname, '..', 'temp-pdf-viewer.html');
+      const tempDir = app.getPath('temp');
+      const tempHtmlPath = path.join(tempDir, 'temp-pdf-viewer.html');
       fs.writeFile(tempHtmlPath, htmlContent, 'utf8')
         .then(() => {
           printWindow.loadFile(tempHtmlPath);
@@ -194,7 +196,8 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
 
       // Save merged PDF to temp file
       const mergedPdfBytes = await mergedPdf.save();
-      const tempMergedPath = path.join(__dirname, '..', 'temp-merged-templates.pdf');
+      const tempDir = app.getPath('temp');
+      const tempMergedPath = path.join(tempDir, 'temp-merged-templates.pdf');
       await fs.writeFile(tempMergedPath, mergedPdfBytes);
 
       // Show merged PDF in popup (same as print-template)
@@ -243,7 +246,7 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
           </html>
         `;
 
-        const tempHtmlPath = path.join(__dirname, '..', 'temp-pdf-viewer.html');
+        const tempHtmlPath = path.join(tempDir, 'temp-pdf-viewer.html');
         fs.writeFile(tempHtmlPath, htmlContent, 'utf8')
           .then(() => {
             printWindow.loadFile(tempHtmlPath);

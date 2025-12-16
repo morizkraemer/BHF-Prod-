@@ -1,4 +1,4 @@
-const { BrowserWindow } = require('electron');
+const { BrowserWindow, app } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
 
@@ -37,7 +37,8 @@ async function generateReportPDF(formData) {
       );
 
       // Write HTML to a temporary file instead of using data URL (to avoid URL length limits)
-      const tempHtmlPath = path.join(__dirname, '..', 'temp-report.html');
+      const tempDir = app.getPath('temp');
+      const tempHtmlPath = path.join(tempDir, 'temp-report.html');
       await fs.writeFile(tempHtmlPath, html, 'utf8');
 
       // Create a hidden browser window for PDF generation
@@ -107,7 +108,8 @@ async function generateReportPDF(formData) {
         printWindow.close();
       }
       // Try to clean up temp file on error
-      const tempHtmlPath = path.join(__dirname, '..', 'temp-report.html');
+      const tempDir = app.getPath('temp');
+      const tempHtmlPath = path.join(tempDir, 'temp-report.html');
       try {
         await fs.unlink(tempHtmlPath).catch(() => {});
       } catch (cleanupError) {
