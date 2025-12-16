@@ -424,12 +424,8 @@
 
 .vva-missing-fields-field-description-text {
   font-size: 16px;
-  color: #2c3e50;
+  color: #d32f2f;
   line-height: 1.6;
-  padding: 16px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  border-left: 4px solid #3498db;
 }
 
 .vva-missing-fields-field-description-text strong {
@@ -453,6 +449,11 @@
   background-color: #f8f9fa;
   border-radius: 8px;
   border: 1px solid #e9ecef;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .vva-missing-fields-section {
@@ -479,6 +480,38 @@
   color: #495057;
   margin-bottom: 4px;
   line-height: 1.5;
+}
+
+.vva-missing-fields-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.vva-missing-fields-summary-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+
+.vva-missing-fields-summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: white;
+  border-radius: 6px;
+  border-left: 3px solid #3498db;
+  font-size: 14px;
+  color: #2c3e50;
+}
+
+.vva-missing-fields-note-indicator {
+  font-size: 12px;
+  color: #27ae60;
+  font-weight: 500;
+  margin-left: 12px;
 }
 
 /* Toggle Switch Styles */
