@@ -234,6 +234,19 @@ function App() {
       errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Backstage Kühlschrank' });
     }
     
+    // Ton/Lichttechnik section - Get In Times (Start Times) required when enabled
+    const tontechnikerData = formData.tontechniker || {};
+    if (tontechnikerData.soundEngineerEnabled !== false) {
+      if (!tontechnikerData.soundEngineerStartTime || tontechnikerData.soundEngineerStartTime === '') {
+        errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Sound Engineer Start Zeit' });
+      }
+    }
+    if (tontechnikerData.lightingTechEnabled === true) {
+      if (!tontechnikerData.lightingTechStartTime || tontechnikerData.lightingTechStartTime === '') {
+        errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Lighting Tech Start Zeit' });
+      }
+    }
+    
     return errors;
   };
 
@@ -402,12 +415,6 @@ function App() {
     if (!hasScans) {
       errors.push({ section: 'Orderbird', sectionId: 'orderbird', field: 'Belege Scans' });
     }
-    if (orderbirdData.zBericht !== true) {
-      errors.push({ section: 'Orderbird', sectionId: 'orderbird', field: 'Z Bericht' });
-    }
-    if (orderbirdData.benutzerberichte !== true) {
-      errors.push({ section: 'Orderbird', sectionId: 'orderbird', field: 'Benutzerberichte' });
-    }
     
     // Gäste section - Agenturzettel required for Konzert events
     const gaesteData = formData.gaeste || {};
@@ -454,17 +461,23 @@ function App() {
     setShowCloseShiftConfirmation(false);
   };
 
-  const handleVVAMissingFieldsFinishAnyway = (fieldNotes, fieldConfirmations) => {
-    // Combine all field notes into a single note string
-    const combinedNote = Object.entries(fieldNotes)
-      .map(([key, note]) => {
-        // Extract field info from key (section_field_index)
-        const parts = key.split('_');
-        const section = parts[0];
-        const field = parts.slice(1, -1).join('_');
-        return `${section} - ${field}: ${note}`;
-      })
-      .join('\n\n');
+  const handleVVAMissingFieldsFinishAnyway = (fieldNotes, fieldConfirmations, allFieldsNote) => {
+    // Use all-fields note if provided, otherwise combine individual field notes
+    let combinedNote = '';
+    if (allFieldsNote && allFieldsNote.trim() !== '') {
+      combinedNote = allFieldsNote.trim();
+    } else {
+      // Combine all field notes into a single note string
+      combinedNote = Object.entries(fieldNotes)
+        .map(([key, note]) => {
+          // Extract field info from key (section_field_index)
+          const parts = key.split('_');
+          const section = parts[0];
+          const field = parts.slice(1, -1).join('_');
+          return `${section} - ${field}: ${note}`;
+        })
+        .join('\n\n');
+    }
     
     setShiftNotes(prev => ({ 
       ...prev, 
@@ -500,17 +513,23 @@ function App() {
     setHighlightedFields(highlightMapArrays);
   };
 
-  const handleSLMissingFieldsFinishAnyway = async (fieldNotes, fieldConfirmations) => {
-    // Combine all field notes into a single note string
-    const combinedNote = Object.entries(fieldNotes)
-      .map(([key, note]) => {
-        // Extract field info from key (section_field_index)
-        const parts = key.split('_');
-        const section = parts[0];
-        const field = parts.slice(1, -1).join('_');
-        return `${section} - ${field}: ${note}`;
-      })
-      .join('\n\n');
+  const handleSLMissingFieldsFinishAnyway = async (fieldNotes, fieldConfirmations, allFieldsNote) => {
+    // Use all-fields note if provided, otherwise combine individual field notes
+    let combinedNote = '';
+    if (allFieldsNote && allFieldsNote.trim() !== '') {
+      combinedNote = allFieldsNote.trim();
+    } else {
+      // Combine all field notes into a single note string
+      combinedNote = Object.entries(fieldNotes)
+        .map(([key, note]) => {
+          // Extract field info from key (section_field_index)
+          const parts = key.split('_');
+          const section = parts[0];
+          const field = parts.slice(1, -1).join('_');
+          return `${section} - ${field}: ${note}`;
+        })
+        .join('\n\n');
+    }
     
     setShiftNotes(prev => ({ 
       ...prev, 
@@ -1057,12 +1076,10 @@ function App() {
         return { filled: andereMitarbeiterFilled, total: andereMitarbeiterRequired };
       
       case 'orderbird':
-        // Required: at least one scan, Z Bericht, Benutzerberichte
+        // Required: at least one scan
         const hasScans = formData.orderbird?.receipts && formData.orderbird.receipts.length > 0;
-        const hasZBericht = formData.orderbird?.zBericht === true;
-        const hasBenutzerberichte = formData.orderbird?.benutzerberichte === true;
-        const orderbirdFilled = (hasScans ? 1 : 0) + (hasZBericht ? 1 : 0) + (hasBenutzerberichte ? 1 : 0);
-        const orderbirdRequired = 3;
+        const orderbirdFilled = hasScans ? 1 : 0;
+        const orderbirdRequired = 1;
         return { filled: orderbirdFilled, total: orderbirdRequired };
       
       case 'gaeste':
