@@ -309,21 +309,6 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
                       <span className="radio-custom"></span>
                       <span className="radio-text">Kalt</span>
                     </label>
-                    <label className="radio-option-label">
-                      <input
-                        type="radio"
-                        name="getInCatering"
-                        value="nur-snacks"
-                        checked={getInCatering === 'nur-snacks'}
-                        onChange={(e) => {
-                          setGetInCatering(e.target.value);
-                        }}
-                        className="catering-radio"
-                        required
-                      />
-                      <span className="radio-custom"></span>
-                      <span className="radio-text">Nur Snacks</span>
-                    </label>
                   </div>
                 </div>
 
@@ -401,73 +386,75 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
                     <option value="uber-agentur">Uber Agentur</option>
                   </select>
                 </div>
-                {buyoutGroups.map((group, index) => (
-                  <div key={index} className="buyout-group">
-                    <div className="buyout-container">
-                      <div className="buyout-fields">
-                        <div className="form-group-paired-container">
-                          <div className="form-group form-group-paired-left">
-                            <label htmlFor={`buyoutPeople-${index}`}>Anzahl Personen</label>
-                            <input
-                              type="number"
-                              id={`buyoutPeople-${index}`}
-                              value={group.people}
-                              onChange={(e) => handleBuyoutGroupChange(index, 'people', e.target.value)}
-                              disabled={dinner !== 'buyout'}
-                              className="form-input"
-                              min="0"
-                              placeholder="0"
-                            />
+                {dinner === 'buyout' && buyoutProvider === 'uber-bahnhof-pauli' && (
+                  <>
+                    {buyoutGroups.map((group, index) => (
+                      <div key={index} className="buyout-group">
+                        <div className="buyout-container">
+                          <div className="buyout-fields">
+                            <div className="form-group-paired-container">
+                              <div className="form-group form-group-paired-left">
+                                <label htmlFor={`buyoutPeople-${index}`}>Anzahl Personen</label>
+                                <input
+                                  type="number"
+                                  id={`buyoutPeople-${index}`}
+                                  value={group.people}
+                                  onChange={(e) => handleBuyoutGroupChange(index, 'people', e.target.value)}
+                                  className="form-input"
+                                  min="0"
+                                  placeholder="0"
+                                />
+                              </div>
+                              <div className="form-group form-group-paired-right">
+                                <label htmlFor={`buyoutPerPerson-${index}`}>Buyout pro Person</label>
+                                <input
+                                  type="number"
+                                  id={`buyoutPerPerson-${index}`}
+                                  value={group.perPerson}
+                                  onChange={(e) => handleBuyoutGroupChange(index, 'perPerson', e.target.value)}
+                                  className="form-input"
+                                  min="0"
+                                  step="0.01"
+                                  placeholder="0.00"
+                                />
+                              </div>
+                            </div>
                           </div>
-                          <div className="form-group form-group-paired-right">
-                            <label htmlFor={`buyoutPerPerson-${index}`}>Buyout pro Person</label>
-                            <input
-                              type="number"
-                              id={`buyoutPerPerson-${index}`}
-                              value={group.perPerson}
-                              onChange={(e) => handleBuyoutGroupChange(index, 'perPerson', e.target.value)}
-                              disabled={dinner !== 'buyout'}
-                              className="form-input"
-                              min="0"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
+                          <div className="buyout-total">
+                            <span className="buyout-total-amount">
+                              €{group.people && group.perPerson 
+                                ? (parseFloat(group.people) * parseFloat(group.perPerson)).toFixed(2)
+                                : '0.00'}
+                            </span>
                           </div>
+                          {buyoutGroups.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveBuyoutGroup(index)}
+                              className="remove-line-button"
+                              title="Entfernen"
+                            >
+                              ×
+                            </button>
+                          )}
                         </div>
                       </div>
-                      <div className="buyout-total">
-                        <span className="buyout-total-amount">
-                          €{group.people && group.perPerson 
-                            ? (parseFloat(group.people) * parseFloat(group.perPerson)).toFixed(2)
-                            : '0.00'}
-                        </span>
+                    ))}
+                    {buyoutGroups.length > 1 && (
+                      <div className="buyout-grand-total">
+                        <span className="buyout-grand-total-amount">€{buyoutTotal}</span>
                       </div>
-                      {buyoutGroups.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveBuyoutGroup(index)}
-                          className="remove-line-button"
-                          title="Entfernen"
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                {buyoutGroups.length > 1 && (
-                  <div className="buyout-grand-total">
-                    <span className="buyout-grand-total-amount">€{buyoutTotal}</span>
-                  </div>
+                    )}
+                    <span
+                      onClick={handleAddBuyoutGroup}
+                      className="buyout-add-link"
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <i data-lucide="plus" style={{ width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }}></i>
+                      Weiteren Betrag hinzufügen
+                    </span>
+                  </>
                 )}
-                <span
-                  onClick={dinner === 'buyout' ? handleAddBuyoutGroup : undefined}
-                  className={`buyout-add-link ${dinner !== 'buyout' ? 'disabled' : ''}`}
-                  style={{ cursor: dinner === 'buyout' ? 'pointer' : 'not-allowed' }}
-                >
-                  <i data-lucide="plus" style={{ width: '16px', height: '16px', display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }}></i>
-                  Weiteren Betrag hinzufügen
-                </span>
               </div>
             </div>
 
