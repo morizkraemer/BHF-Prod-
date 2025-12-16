@@ -34,6 +34,19 @@
     <script type="text/babel" src="src/components/VVAConfirmationDialog.jsx"></script>
     <script type="text/babel" src="src/components/CloseShiftConfirmationDialog.jsx"></script>
     <script type="text/babel" src="src/components/VVAMissingFieldsDialog.jsx"></script>
+    <!-- Utility files (must be loaded before hooks and components) -->
+    <script type="text/babel" src="src/utils/constants.js"></script>
+    <script type="text/babel" src="src/utils/validation.js"></script>
+    <script type="text/babel" src="src/utils/shiftHandlers.js"></script>
+    <!-- Hooks (must be loaded before components) -->
+    <script type="text/babel" src="src/hooks/useFormData.js"></script>
+    <script type="text/babel" src="src/hooks/useScanner.js"></script>
+    <script type="text/babel" src="src/hooks/useShiftState.js"></script>
+    <!-- New components -->
+    <script type="text/babel" src="src/components/StartShiftScreen.jsx"></script>
+    <script type="text/babel" src="src/components/Sidebar.jsx"></script>
+    <script type="text/babel" src="src/components/MainContent.jsx"></script>
+    <!-- Main App (must be loaded last) -->
     <script type="text/babel" src="src/App.jsx"></script>
 </body>
 </html>

@@ -29,10 +29,10 @@ function VVAMissingFieldsDialog({ isOpen, onFinishAnyway, onCancel, missingField
   const isFirstStep = currentStep === 0;
   const totalSteps = missingFields.length + 1; // Individual fields + summary step
   
-  // Check if this is a scan field
-  const isScanField = currentField.field.includes('Scan') || 
+  // Check if this is a scan field (only if currentField exists)
+  const isScanField = currentField ? (currentField.field.includes('Scan') || 
                       currentField.field.includes('Gescannte') ||
-                      currentField.field.includes('gescannt');
+                      currentField.field.includes('gescannt')) : false;
   
   // Extract scan name from field name
   const getScanName = (fieldName) => {
