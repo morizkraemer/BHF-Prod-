@@ -853,6 +853,38 @@ function SettingsForm() {
     );
   };
 
+  const handleResetShiftData = async () => {
+    const confirmed = window.confirm(
+      'Möchten Sie wirklich den aktuellen Shift zurücksetzen?\n\n' +
+      'Dies wird gelöscht:\n' +
+      '• Alle aktuellen Shift-Daten\n' +
+      '• Tech-Namen (Sound Engineer & Lighting Tech)\n' +
+      '• Aktuelle Phase wird auf VVA zurückgesetzt\n\n' +
+      'Einstellungen und Templates bleiben erhalten.'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      if (window.electronAPI && window.electronAPI.clearShiftData) {
+        const result = await window.electronAPI.clearShiftData();
+        if (result.success) {
+          alert('Shift-Daten wurden erfolgreich zurückgesetzt. Die Seite wird neu geladen.');
+          window.location.reload();
+        } else {
+          alert('Fehler beim Zurücksetzen: ' + (result.error || 'Unbekannter Fehler'));
+        }
+      } else {
+        alert('Fehler: Electron API nicht verfügbar.');
+      }
+    } catch (error) {
+      console.error('Error resetting shift data:', error);
+      alert('Fehler beim Zurücksetzen: ' + error.message);
+    }
+  };
+
   const handleResetAllData = async () => {
     const confirmed = window.confirm(
       'WARNUNG: Möchten Sie wirklich ALLE Einstellungen und Daten zurücksetzen?\n\n' +
@@ -1010,26 +1042,18 @@ function SettingsForm() {
   const renderResetSection = () => (
     <>
       <div className="settings-section">
-        <h2>Alle Daten zurücksetzen</h2>
-        <p className="settings-description" style={{ color: '#d32f2f', fontWeight: 'bold' }}>
-          ⚠️ WARNUNG: Diese Aktion kann nicht rückgängig gemacht werden!
-        </p>
+        <h2>Daten zurücksetzen</h2>
         <p className="settings-description">
-          Setzen Sie alle Einstellungen und Daten auf die Standardwerte zurück. Dies umfasst:
+          Setzen Sie Shift-Daten oder alle Einstellungen zurück.
         </p>
-        <ul className="settings-description" style={{ marginLeft: '20px', marginTop: '10px' }}>
-          <li>Alle Rider Extras Items</li>
-          <li>Scanner-Auswahl</li>
-          <li>Scan- und Report-Ordner</li>
-          <li>Tech-Namen (Sound Engineer & Lighting Tech)</li>
-          <li>Alle Templates</li>
-          <li>Alle Bestückungslisten</li>
-          <li>Alle aktuellen Shift-Daten</li>
-        </ul>
-        <div style={{ marginTop: '30px' }}>
+        <div style={{ marginTop: '30px', marginBottom: '30px' }}>
+          <h3 style={{ fontSize: '18px', marginBottom: '10px' }}>Shift zurücksetzen</h3>
+          <p className="settings-description">
+            Setzt nur die aktuellen Shift-Daten zurück. Einstellungen und Templates bleiben erhalten.
+          </p>
           <button
             type="button"
-            onClick={handleResetAllData}
+            onClick={handleResetShiftData}
             className="settings-delete-button"
             style={{
               padding: '12px 24px',
@@ -1039,11 +1063,47 @@ function SettingsForm() {
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              marginTop: '10px'
             }}
           >
-            Alle Daten zurücksetzen
+            Shift zurücksetzen
           </button>
+        </div>
+        <div style={{ marginTop: '30px' }}>
+          <h3 style={{ fontSize: '18px', marginBottom: '10px' }}>Alle Daten zurücksetzen</h3>
+          <p className="settings-description" style={{ color: '#d32f2f', fontWeight: 'bold' }}>
+            ⚠️ WARNUNG: Diese Aktion kann nicht rückgängig gemacht werden!
+          </p>
+          <p className="settings-description">
+            Setzen Sie alle Einstellungen und Daten auf die Standardwerte zurück. Dies umfasst:
+          </p>
+          <ul className="settings-description" style={{ marginLeft: '20px', marginTop: '10px' }}>
+            <li>Alle Rider Extras Items</li>
+            <li>Scanner-Auswahl</li>
+            <li>Scan- und Report-Ordner</li>
+            <li>Tech-Namen (Sound Engineer & Lighting Tech)</li>
+            <li>Alle Templates</li>
+            <li>Alle Bestückungslisten</li>
+            <li>Alle aktuellen Shift-Daten</li>
+          </ul>
+          <div style={{ marginTop: '15px' }}>
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                handleResetAllData();
+              }}
+              style={{
+                color: '#d32f2f',
+                textDecoration: 'underline',
+                fontSize: '14px',
+                cursor: 'pointer'
+              }}
+            >
+              Alle Daten zurücksetzen
+            </a>
+          </div>
         </div>
       </div>
     </>
