@@ -382,8 +382,8 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
                     className="buyout-provider-select"
                   >
                     <option value="">-- Buyout Über --</option>
-                    <option value="uber-bahnhof-pauli">Uber Bahnhof Pauli</option>
-                    <option value="uber-agentur">Uber Agentur</option>
+                    <option value="uber-bahnhof-pauli">Über Bahnhof Pauli</option>
+                    <option value="uber-agentur">Über Agentur</option>
                   </select>
                 </div>
                 {dinner === 'buyout' && buyoutProvider === 'uber-bahnhof-pauli' && (
@@ -394,7 +394,7 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
                           <div className="buyout-fields">
                             <div className="form-group-paired-container">
                               <div className="form-group form-group-paired-left">
-                                <label htmlFor={`buyoutPeople-${index}`}>Anzahl Personen</label>
+                                <label htmlFor={`buyoutPeople-${index}`}>Anzahl Personen *</label>
                                 <input
                                   type="number"
                                   id={`buyoutPeople-${index}`}
@@ -403,10 +403,11 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
                                   className="form-input"
                                   min="0"
                                   placeholder="0"
+                                  required
                                 />
                               </div>
                               <div className="form-group form-group-paired-right">
-                                <label htmlFor={`buyoutPerPerson-${index}`}>Buyout pro Person</label>
+                                <label htmlFor={`buyoutPerPerson-${index}`}>Buyout pro Person *</label>
                                 <input
                                   type="number"
                                   id={`buyoutPerPerson-${index}`}
@@ -416,6 +417,7 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
                                   min="0"
                                   step="0.01"
                                   placeholder="0.00"
+                                  required
                                 />
                               </div>
                             </div>

@@ -17,7 +17,6 @@ function SettingsForm() {
   const [pauschalePrices, setPauschalePrices] = useState({
     standard: '',
     longdrinks: '',
-    sektCocktails: '',
     shots: ''
   });
   const [scanners, setScanners] = useState([]);
@@ -39,6 +38,10 @@ function SettingsForm() {
   const [bestueckungTotalPrices, setBestueckungTotalPrices] = useState({
     'standard-konzert': '',
     'standard-tranzit': ''
+  });
+  const [bestueckungPricingTypes, setBestueckungPricingTypes] = useState({
+    'standard-konzert': 'pauschale',
+    'standard-tranzit': 'pauschale'
   });
   const [selectedBestueckung, setSelectedBestueckung] = useState('standard-konzert');
   const [selectedRiderItemId, setSelectedRiderItemId] = useState('');
@@ -64,6 +67,7 @@ function SettingsForm() {
     loadPauschalePrices();
     loadScanners();
     loadBestueckungTotalPrices();
+    loadBestueckungPricingTypes();
     loadSelectedScanner();
     loadScanFolder();
     loadReportFolder();
@@ -229,10 +233,27 @@ function SettingsForm() {
     }
   };
 
+  const loadBestueckungPricingTypes = async () => {
+    if (window.electronAPI && window.electronAPI.getBestueckungPricingTypes) {
+      const types = await window.electronAPI.getBestueckungPricingTypes();
+      setBestueckungPricingTypes(types || {
+        'standard-konzert': 'pauschale',
+        'standard-tranzit': 'pauschale'
+      });
+    }
+  };
+
   const handleSaveBestueckungTotalPrice = async (bestueckungKey) => {
     if (window.electronAPI && window.electronAPI.saveBestueckungTotalPrice) {
       await window.electronAPI.saveBestueckungTotalPrice(bestueckungKey, bestueckungTotalPrices[bestueckungKey]);
       alert('Gesamtpreis gespeichert');
+    }
+  };
+
+  const handleSaveBestueckungPricingType = async (bestueckungKey) => {
+    if (window.electronAPI && window.electronAPI.saveBestueckungPricingType) {
+      await window.electronAPI.saveBestueckungPricingType(bestueckungKey, bestueckungPricingTypes[bestueckungKey]);
+      alert('Preisart gespeichert');
     }
   };
 
@@ -596,18 +617,6 @@ function SettingsForm() {
             />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontWeight: '600', fontSize: '14px' }}>Sekt-Cocktails Pauschale Preis (€)</label>
-            <input
-              type="number"
-              value={pauschalePrices.sektCocktails}
-              onChange={(e) => setPauschalePrices({ ...pauschalePrices, sektCocktails: e.target.value })}
-              className="settings-input"
-              placeholder="0.00"
-              step="0.01"
-              min="0"
-            />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <label style={{ fontWeight: '600', fontSize: '14px' }}>Shots Pauschale Preis (€)</label>
             <input
               type="number"
@@ -765,12 +774,39 @@ function SettingsForm() {
           </select>
         </div>
 
-        {/* Total Price for Selected Bestückung */}
+        {/* Pricing Type and Price for Selected Bestückung */}
         <div className="settings-add-section">
-          <h3>Gesamtpreis für {bestueckungOptions.find(o => o.value === selectedBestueckung)?.label}</h3>
+          <h3>Preiseinstellung für {bestueckungOptions.find(o => o.value === selectedBestueckung)?.label}</h3>
           <div className="settings-add-form" style={{ flexDirection: 'column', gap: '15px', maxWidth: '400px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontWeight: '600', fontSize: '14px' }}>Gesamtpreis (€)</label>
+              <label style={{ fontWeight: '600', fontSize: '14px' }}>Preisart</label>
+              <div style={{ display: 'flex', gap: '20px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name={`pricing-type-${selectedBestueckung}`}
+                    value="pauschale"
+                    checked={bestueckungPricingTypes[selectedBestueckung] === 'pauschale'}
+                    onChange={(e) => setBestueckungPricingTypes({ ...bestueckungPricingTypes, [selectedBestueckung]: e.target.value })}
+                  />
+                  <span>Pauschale</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name={`pricing-type-${selectedBestueckung}`}
+                    value="perPerson"
+                    checked={bestueckungPricingTypes[selectedBestueckung] === 'perPerson'}
+                    onChange={(e) => setBestueckungPricingTypes({ ...bestueckungPricingTypes, [selectedBestueckung]: e.target.value })}
+                  />
+                  <span>Pro Person</span>
+                </label>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontWeight: '600', fontSize: '14px' }}>
+                {bestueckungPricingTypes[selectedBestueckung] === 'pauschale' ? 'Pauschale Preis (€)' : 'Preis pro Person (€)'}
+              </label>
               <input
                 type="number"
                 value={bestueckungTotalPrices[selectedBestueckung] || ''}
@@ -783,7 +819,10 @@ function SettingsForm() {
             </div>
             <button
               type="button"
-              onClick={() => handleSaveBestueckungTotalPrice(selectedBestueckung)}
+              onClick={() => {
+                handleSaveBestueckungTotalPrice(selectedBestueckung);
+                handleSaveBestueckungPricingType(selectedBestueckung);
+              }}
               className="settings-add-button"
               style={{ alignSelf: 'flex-start' }}
             >
@@ -1203,16 +1242,16 @@ function SettingsForm() {
               Catering Preise
             </button>
             <button
+              className={`settings-sidebar-item ${activeSettingsSection === 'bestueckung' ? 'active' : ''}`}
+              onClick={() => setActiveSettingsSection('bestueckung')}
+            >
+              Backstage Kühlschrank
+            </button>
+            <button
               className={`settings-sidebar-item ${activeSettingsSection === 'scanner' ? 'active' : ''}`}
               onClick={() => setActiveSettingsSection('scanner')}
             >
               Printer / Scanner
-            </button>
-            <button
-              className={`settings-sidebar-item ${activeSettingsSection === 'bestueckung' ? 'active' : ''}`}
-              onClick={() => setActiveSettingsSection('bestueckung')}
-            >
-              Bestückung
             </button>
             <button
               className={`settings-sidebar-item ${activeSettingsSection === 'templates' ? 'active' : ''}`}

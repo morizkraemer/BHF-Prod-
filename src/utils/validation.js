@@ -43,6 +43,28 @@ const validateVVAtoSL = (formData) => {
     errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Dinner' });
   }
   
+  // If buyout is selected, require buyout groups with people and perPerson
+  if (riderExtrasData.dinner === 'buyout') {
+    if (!riderExtrasData.buyoutProvider || riderExtrasData.buyoutProvider === '') {
+      errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Buyout Provider' });
+    }
+    if (riderExtrasData.buyoutProvider === 'uber-bahnhof-pauli') {
+      const buyoutGroups = riderExtrasData.buyoutGroups || [];
+      if (buyoutGroups.length === 0) {
+        errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Buyout Gruppen' });
+      } else {
+        buyoutGroups.forEach((group, index) => {
+          if (!group.people || group.people === '' || parseFloat(group.people) <= 0) {
+            errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: `Buyout Gruppe ${index + 1} - Anzahl Personen` });
+          }
+          if (!group.perPerson || group.perPerson === '' || parseFloat(group.perPerson) <= 0) {
+            errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: `Buyout Gruppe ${index + 1} - Buyout pro Person` });
+          }
+        });
+      }
+    }
+  }
+  
   // Handtuchzettel scan (scannedDocuments with scanName="Handtuchzettel") - only required for Konzert events
   if (uebersichtData.eventType === 'konzert') {
     const scannedDocuments = riderExtrasData.scannedDocuments || [];
@@ -125,6 +147,29 @@ const validateAllSectionsDetailed = (formData) => {
   if (!riderExtrasData.dinner || riderExtrasData.dinner === '') {
     errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Dinner' });
   }
+  
+  // If buyout is selected, require buyout groups with people and perPerson
+  if (riderExtrasData.dinner === 'buyout') {
+    if (!riderExtrasData.buyoutProvider || riderExtrasData.buyoutProvider === '') {
+      errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Buyout Provider' });
+    }
+    if (riderExtrasData.buyoutProvider === 'uber-bahnhof-pauli') {
+      const buyoutGroups = riderExtrasData.buyoutGroups || [];
+      if (buyoutGroups.length === 0) {
+        errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Buyout Gruppen' });
+      } else {
+        buyoutGroups.forEach((group, index) => {
+          if (!group.people || group.people === '' || parseFloat(group.people) <= 0) {
+            errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: `Buyout Gruppe ${index + 1} - Anzahl Personen` });
+          }
+          if (!group.perPerson || group.perPerson === '' || parseFloat(group.perPerson) <= 0) {
+            errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: `Buyout Gruppe ${index + 1} - Buyout pro Person` });
+          }
+        });
+      }
+    }
+  }
+  
   if (!riderExtrasData.standardbestueckung || riderExtrasData.standardbestueckung === '') {
     errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Backstage Kühlschrank' });
   }
@@ -409,11 +454,440 @@ const getRequiredFieldsCount = (sectionId, formData) => {
   }
 };
 
+// Get all VVA required fields with their fill status
+const getVVAFieldsStatus = (formData) => {
+  const fields = [];
+  const uebersichtData = formData.uebersicht || {};
+  const riderExtrasData = formData['rider-extras'] || {};
+  const tontechnikerData = formData.tontechniker || {};
+  
+  // Event Name
+  fields.push({
+    section: 'Übersicht',
+    sectionId: 'uebersicht',
+    field: 'Event Name',
+    isFilled: !!(uebersichtData.eventName && uebersichtData.eventName !== '')
+  });
+  
+  // Event Type
+  fields.push({
+    section: 'Übersicht',
+    sectionId: 'uebersicht',
+    field: 'Event Typ',
+    isFilled: !!(uebersichtData.eventType && uebersichtData.eventType !== '')
+  });
+  
+  // Nightliner Parkplatz
+  fields.push({
+    section: 'Hospitality',
+    sectionId: 'rider-extras',
+    field: 'Nightliner Parkplatz',
+    isFilled: !!(uebersichtData.nightlinerParkplatz && uebersichtData.nightlinerParkplatz !== '')
+  });
+  
+  // Get in Zeit
+  fields.push({
+    section: 'Übersicht',
+    sectionId: 'uebersicht',
+    field: 'Get In Zeit',
+    isFilled: !!(uebersichtData.getInTime && uebersichtData.getInTime !== '')
+  });
+  
+  // Doors Zeit
+  fields.push({
+    section: 'Übersicht',
+    sectionId: 'uebersicht',
+    field: 'Doors Zeit',
+    isFilled: !!(uebersichtData.doorsTime && uebersichtData.doorsTime !== '')
+  });
+  
+  // Travel Party Get In
+  fields.push({
+    section: 'Hospitality',
+    sectionId: 'rider-extras',
+    field: 'Travel Party Get In',
+    isFilled: !!(uebersichtData.travelPartyGetIn && uebersichtData.travelPartyGetIn !== '')
+  });
+  
+  // Get In Catering
+  fields.push({
+    section: 'Hospitality',
+    sectionId: 'rider-extras',
+    field: 'Get In Catering',
+    isFilled: !!(riderExtrasData.getInCatering && riderExtrasData.getInCatering !== '')
+  });
+  
+  // Dinner
+  fields.push({
+    section: 'Hospitality',
+    sectionId: 'rider-extras',
+    field: 'Dinner',
+    isFilled: !!(riderExtrasData.dinner && riderExtrasData.dinner !== '')
+  });
+  
+  // Buyout fields (if buyout is selected)
+  if (riderExtrasData.dinner === 'buyout') {
+    fields.push({
+      section: 'Hospitality',
+      sectionId: 'rider-extras',
+      field: 'Buyout Provider',
+      isFilled: !!(riderExtrasData.buyoutProvider && riderExtrasData.buyoutProvider !== '')
+    });
+    
+    if (riderExtrasData.buyoutProvider === 'uber-bahnhof-pauli') {
+      const buyoutGroups = riderExtrasData.buyoutGroups || [];
+      if (buyoutGroups.length === 0) {
+        fields.push({
+          section: 'Hospitality',
+          sectionId: 'rider-extras',
+          field: 'Buyout Gruppen',
+          isFilled: false
+        });
+      } else {
+        buyoutGroups.forEach((group, index) => {
+          fields.push({
+            section: 'Hospitality',
+            sectionId: 'rider-extras',
+            field: `Buyout Gruppe ${index + 1} - Anzahl Personen`,
+            isFilled: !!(group.people && group.people !== '' && parseFloat(group.people) > 0)
+          });
+          fields.push({
+            section: 'Hospitality',
+            sectionId: 'rider-extras',
+            field: `Buyout Gruppe ${index + 1} - Buyout pro Person`,
+            isFilled: !!(group.perPerson && group.perPerson !== '' && parseFloat(group.perPerson) > 0)
+          });
+        });
+      }
+    }
+  }
+  
+  // Handtuchzettel scan (only for Konzert events)
+  if (uebersichtData.eventType === 'konzert') {
+    const scannedDocuments = riderExtrasData.scannedDocuments || [];
+    const hasHandtuchzettel = scannedDocuments.some(doc => doc.scanName === 'Handtuchzettel');
+    fields.push({
+      section: 'Hospitality',
+      sectionId: 'rider-extras',
+      field: 'Handtuchzettel Scan',
+      isFilled: hasHandtuchzettel
+    });
+  }
+  
+  // Backstage Kühlschrank
+  fields.push({
+    section: 'Hospitality',
+    sectionId: 'rider-extras',
+    field: 'Backstage Kühlschrank',
+    isFilled: !!(riderExtrasData.standardbestueckung && riderExtrasData.standardbestueckung !== '')
+  });
+  
+  // Ton/Lichttechnik - Sound Engineer Start Zeit
+  if (tontechnikerData.soundEngineerEnabled !== false) {
+    fields.push({
+      section: 'Ton/Lichttechnik',
+      sectionId: 'tontechniker',
+      field: 'Sound Engineer Start Zeit',
+      isFilled: !!(tontechnikerData.soundEngineerStartTime && tontechnikerData.soundEngineerStartTime !== '')
+    });
+  }
+  
+  // Ton/Lichttechnik - Lighting Tech Start Zeit
+  if (tontechnikerData.lightingTechEnabled === true) {
+    fields.push({
+      section: 'Ton/Lichttechnik',
+      sectionId: 'tontechniker',
+      field: 'Lighting Tech Start Zeit',
+      isFilled: !!(tontechnikerData.lightingTechStartTime && tontechnikerData.lightingTechStartTime !== '')
+    });
+  }
+  
+  return fields;
+};
+
+// Get all required fields with their fill status (for SL phase)
+const getAllFieldsStatus = (formData) => {
+  const fields = [];
+  const uebersichtData = formData.uebersicht || {};
+  const riderExtrasData = formData['rider-extras'] || {};
+  const tontechnikerData = formData.tontechniker || {};
+  const secuData = formData.secu || {};
+  const orderbirdData = formData.orderbird || {};
+  const gaesteData = formData.gaeste || {};
+  const andereMitarbeiterData = formData['andere-mitarbeiter'] || {};
+  
+  const fieldNameMap = {
+    'eventName': 'Event Name',
+    'date': 'Datum',
+    'eventType': 'Event Typ',
+    'getInTime': 'Get In Zeit',
+    'doorsTime': 'Doors Zeit',
+    'nightLead': 'Night Lead',
+    'konzertende': 'Konzertende',
+    'backstageCurfew': 'Backstage Curfew',
+    'agentur': 'Agentur',
+    'veranstalterName': 'Veranstalter Name'
+  };
+  
+  // Übersicht section
+  const uebersichtRequired = ['eventName', 'date', 'eventType', 'getInTime', 'doorsTime', 'nightLead', 'konzertende', 'backstageCurfew'];
+  if (uebersichtData.eventType === 'konzert') {
+    uebersichtRequired.push('agentur');
+  } else if (uebersichtData.eventType === 'club' || uebersichtData.eventType === 'andere') {
+    uebersichtRequired.push('veranstalterName');
+  }
+  
+  uebersichtRequired.forEach(field => {
+    const value = uebersichtData[field];
+    fields.push({
+      section: 'Übersicht',
+      sectionId: 'uebersicht',
+      field: fieldNameMap[field] || field,
+      isFilled: !!(value !== undefined && value !== null && value !== '')
+    });
+  });
+  
+  // Hospitality section
+  fields.push({
+    section: 'Hospitality',
+    sectionId: 'rider-extras',
+    field: 'Travel Party Get In',
+    isFilled: !!(uebersichtData.travelPartyGetIn && uebersichtData.travelPartyGetIn !== '')
+  });
+  
+  fields.push({
+    section: 'Hospitality',
+    sectionId: 'rider-extras',
+    field: 'Nightliner Parkplatz',
+    isFilled: !!(uebersichtData.nightlinerParkplatz && uebersichtData.nightlinerParkplatz !== '')
+  });
+  
+  fields.push({
+    section: 'Hospitality',
+    sectionId: 'rider-extras',
+    field: 'Get In Catering',
+    isFilled: !!(riderExtrasData.getInCatering && riderExtrasData.getInCatering !== '')
+  });
+  
+  fields.push({
+    section: 'Hospitality',
+    sectionId: 'rider-extras',
+    field: 'Dinner',
+    isFilled: !!(riderExtrasData.dinner && riderExtrasData.dinner !== '')
+  });
+  
+  // Buyout fields (if buyout is selected)
+  if (riderExtrasData.dinner === 'buyout') {
+    fields.push({
+      section: 'Hospitality',
+      sectionId: 'rider-extras',
+      field: 'Buyout Provider',
+      isFilled: !!(riderExtrasData.buyoutProvider && riderExtrasData.buyoutProvider !== '')
+    });
+    
+    if (riderExtrasData.buyoutProvider === 'uber-bahnhof-pauli') {
+      const buyoutGroups = riderExtrasData.buyoutGroups || [];
+      if (buyoutGroups.length === 0) {
+        fields.push({
+          section: 'Hospitality',
+          sectionId: 'rider-extras',
+          field: 'Buyout Gruppen',
+          isFilled: false
+        });
+      } else {
+        buyoutGroups.forEach((group, index) => {
+          fields.push({
+            section: 'Hospitality',
+            sectionId: 'rider-extras',
+            field: `Buyout Gruppe ${index + 1} - Anzahl Personen`,
+            isFilled: !!(group.people && group.people !== '' && parseFloat(group.people) > 0)
+          });
+          fields.push({
+            section: 'Hospitality',
+            sectionId: 'rider-extras',
+            field: `Buyout Gruppe ${index + 1} - Buyout pro Person`,
+            isFilled: !!(group.perPerson && group.perPerson !== '' && parseFloat(group.perPerson) > 0)
+          });
+        });
+      }
+    }
+  }
+  
+  fields.push({
+    section: 'Hospitality',
+    sectionId: 'rider-extras',
+    field: 'Backstage Kühlschrank',
+    isFilled: !!(riderExtrasData.standardbestueckung && riderExtrasData.standardbestueckung !== '')
+  });
+  
+  // Handtuchzettel scan (only for Konzert events)
+  if (uebersichtData.eventType === 'konzert') {
+    const scannedDocuments = riderExtrasData.scannedDocuments || [];
+    const hasHandtuchzettel = scannedDocuments.some(doc => doc.scanName === 'Handtuchzettel');
+    fields.push({
+      section: 'Hospitality',
+      sectionId: 'rider-extras',
+      field: 'Handtuchzettel Scan',
+      isFilled: hasHandtuchzettel
+    });
+  }
+  
+  // Ton/Lichttechnik section
+  if (tontechnikerData.soundEngineerEnabled !== false) {
+    fields.push({
+      section: 'Ton/Lichttechnik',
+      sectionId: 'tontechniker',
+      field: 'Sound Engineer Name',
+      isFilled: !!(tontechnikerData.soundEngineerName && tontechnikerData.soundEngineerName !== '')
+    });
+    fields.push({
+      section: 'Ton/Lichttechnik',
+      sectionId: 'tontechniker',
+      field: 'Sound Engineer Start Zeit',
+      isFilled: !!(tontechnikerData.soundEngineerStartTime && tontechnikerData.soundEngineerStartTime !== '')
+    });
+    fields.push({
+      section: 'Ton/Lichttechnik',
+      sectionId: 'tontechniker',
+      field: 'Sound Engineer End Zeit',
+      isFilled: !!(tontechnikerData.soundEngineerEndTime && tontechnikerData.soundEngineerEndTime !== '')
+    });
+  }
+  
+  if (tontechnikerData.lightingTechEnabled === true) {
+    fields.push({
+      section: 'Ton/Lichttechnik',
+      sectionId: 'tontechniker',
+      field: 'Lighting Tech Name',
+      isFilled: !!(tontechnikerData.lightingTechName && tontechnikerData.lightingTechName !== '')
+    });
+    fields.push({
+      section: 'Ton/Lichttechnik',
+      sectionId: 'tontechniker',
+      field: 'Lighting Tech Start Zeit',
+      isFilled: !!(tontechnikerData.lightingTechStartTime && tontechnikerData.lightingTechStartTime !== '')
+    });
+    fields.push({
+      section: 'Ton/Lichttechnik',
+      sectionId: 'tontechniker',
+      field: 'Lighting Tech End Zeit',
+      isFilled: !!(tontechnikerData.lightingTechEndTime && tontechnikerData.lightingTechEndTime !== '')
+    });
+  }
+  
+  const soundEngineerEnabled = tontechnikerData.soundEngineerEnabled !== false;
+  const lightingTechEnabled = tontechnikerData.lightingTechEnabled === true;
+  if (soundEngineerEnabled || lightingTechEnabled) {
+    const scannedImages = tontechnikerData.scannedImages || [];
+    fields.push({
+      section: 'Ton/Lichttechnik',
+      sectionId: 'tontechniker',
+      field: 'Gescannte Bilder',
+      isFilled: scannedImages.length > 0
+    });
+  }
+  
+  // Secu section
+  const securityPersonnel = secuData.securityPersonnel || [];
+  if (securityPersonnel.length > 0) {
+    securityPersonnel.forEach((person, index) => {
+      fields.push({
+        section: 'Secu',
+        sectionId: 'secu',
+        field: `Secu Person ${index + 1} Name`,
+        isFilled: !!(person.name && person.name.trim() !== '')
+      });
+      fields.push({
+        section: 'Secu',
+        sectionId: 'secu',
+        field: `Secu Person ${index + 1} Start Zeit`,
+        isFilled: !!(person.startTime && person.startTime !== '')
+      });
+      fields.push({
+        section: 'Secu',
+        sectionId: 'secu',
+        field: `Secu Person ${index + 1} End Zeit`,
+        isFilled: !!(person.endTime && person.endTime !== '')
+      });
+    });
+    const secuScannedDocuments = secuData.scannedDocuments || [];
+    fields.push({
+      section: 'Secu',
+      sectionId: 'secu',
+      field: 'Gescannte Dokumente',
+      isFilled: secuScannedDocuments.length > 0
+    });
+  }
+  
+  // Andere Mitarbeiter section
+  const mitarbeiter = andereMitarbeiterData.mitarbeiter || [];
+  if (mitarbeiter.length > 0) {
+    mitarbeiter.forEach((person, index) => {
+      fields.push({
+        section: 'Andere Mitarbeiter',
+        sectionId: 'andere-mitarbeiter',
+        field: `Andere Mitarbeiter Person ${index + 1} Name`,
+        isFilled: !!(person.name && person.name.trim() !== '')
+      });
+      fields.push({
+        section: 'Andere Mitarbeiter',
+        sectionId: 'andere-mitarbeiter',
+        field: `Andere Mitarbeiter Person ${index + 1} Start Zeit`,
+        isFilled: !!(person.startTime && person.startTime !== '')
+      });
+      fields.push({
+        section: 'Andere Mitarbeiter',
+        sectionId: 'andere-mitarbeiter',
+        field: `Andere Mitarbeiter Person ${index + 1} End Zeit`,
+        isFilled: !!(person.endTime && person.endTime !== '')
+      });
+      fields.push({
+        section: 'Andere Mitarbeiter',
+        sectionId: 'andere-mitarbeiter',
+        field: `Andere Mitarbeiter Person ${index + 1} Kategorie`,
+        isFilled: !!(person.category && person.category !== '')
+      });
+    });
+  }
+  
+  // Orderbird section
+  const hasScans = orderbirdData.receipts && orderbirdData.receipts.length > 0;
+  fields.push({
+    section: 'Orderbird',
+    sectionId: 'orderbird',
+    field: 'Belege Scans',
+    isFilled: hasScans
+  });
+  
+  // Gäste section
+  if (uebersichtData.eventType === 'konzert') {
+    const agenturzettelScans = gaesteData.scannedDocuments || [];
+    const hasAgenturzettel = agenturzettelScans.some(doc => doc.scanName === 'Agenturzettel');
+    fields.push({
+      section: 'Gäste',
+      sectionId: 'gaeste',
+      field: 'Agenturzettel Scan',
+      isFilled: hasAgenturzettel
+    });
+  }
+  
+  fields.push({
+    section: 'Gäste',
+    sectionId: 'gaeste',
+    field: 'Gäste Gesamt',
+    isFilled: !!(gaesteData.gaesteGesamt && gaesteData.gaesteGesamt !== '')
+  });
+  
+  return fields;
+};
+
 // Make available globally
 window.AppValidation = {
   validateVVAtoSL,
   validateAllSectionsDetailed,
   hasHospitalityExtras,
-  getRequiredFieldsCount
+  getRequiredFieldsCount,
+  getVVAFieldsStatus,
+  getAllFieldsStatus
 };
 

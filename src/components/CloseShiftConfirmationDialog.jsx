@@ -1,6 +1,6 @@
 const { useState, useEffect } = React;
 
-function CloseShiftConfirmationDialog({ isOpen, onConfirm, onCancel }) {
+function CloseShiftConfirmationDialog({ isOpen, onConfirm, onCancel, formData }) {
   const [confirmed, setConfirmed] = useState(false);
   const [note, setNote] = useState('');
 
@@ -11,6 +11,18 @@ function CloseShiftConfirmationDialog({ isOpen, onConfirm, onCancel }) {
       setNote('');
     }
   }, [isOpen]);
+  
+  // Get field status summary
+  const fieldStatus = formData ? window.AppValidation.getAllFieldsStatus(formData) : [];
+  
+  // Group fields by section
+  const fieldsBySection = {};
+  fieldStatus.forEach(field => {
+    if (!fieldsBySection[field.section]) {
+      fieldsBySection[field.section] = [];
+    }
+    fieldsBySection[field.section].push(field);
+  });
 
   const handleConfirm = () => {
     if (confirmed) {
@@ -26,6 +38,30 @@ function CloseShiftConfirmationDialog({ isOpen, onConfirm, onCancel }) {
         <h2 className="close-shift-confirmation-title">SHIFT BEENDEN</h2>
         
         <div className="close-shift-confirmation-content">
+          {/* Field Status Summary */}
+          {fieldStatus.length > 0 && (
+            <div className="field-status-summary">
+              <h3 className="field-status-summary-title">Feld-Status Übersicht</h3>
+              <div className="field-status-summary-content">
+                {Object.entries(fieldsBySection).map(([section, fields]) => (
+                  <div key={section} className="field-status-section">
+                    <div className="field-status-section-header">{section}</div>
+                    <div className="field-status-fields">
+                      {fields.map((field, index) => (
+                        <div key={index} className="field-status-item">
+                          <span className={`field-status-icon ${field.isFilled ? 'field-status-filled' : 'field-status-missing'}`}>
+                            {field.isFilled ? '✓' : '✗'}
+                          </span>
+                          <span className="field-status-label">{field.field}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
           <div className="close-shift-confirmation-checkbox-group">
             <label className="close-shift-confirmation-checkbox-label">
               <input

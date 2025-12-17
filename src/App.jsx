@@ -106,7 +106,6 @@ function App() {
         scannerName={scannerName}
         scannerAvailable={scannerAvailable}
         getRequiredFieldsCount={getRequiredFieldsCountForSection}
-        onFillTestData={handlers.handleFillTestData}
         onCloseShift={handlers.handleCloseShift}
       />
 
@@ -127,6 +126,7 @@ function App() {
         }
         onCancel={() => handlers.handleVVAMissingFieldsCancel(shiftState.vvaMissingFields)}
         missingFields={shiftState.vvaMissingFields}
+        formData={formData}
       />
 
       {/* SL Missing Fields Dialog */}
@@ -138,6 +138,7 @@ function App() {
         onCancel={() => handlers.handleSLMissingFieldsCancel(shiftState.slMissingFields)}
         missingFields={shiftState.slMissingFields}
         title="Fehlende Felder"
+        formData={formData}
       />
 
       {/* VVA Confirmation Dialog */}
@@ -146,6 +147,7 @@ function App() {
         onConfirm={handlers.handleVVAConfirm}
         onCancel={handlers.handleVVACancel}
         hasExtras={window.AppValidation.hasHospitalityExtras(formData)}
+        formData={formData}
       />
 
       {/* Close Shift Confirmation Dialog */}
@@ -153,6 +155,7 @@ function App() {
         isOpen={shiftState.showCloseShiftConfirmation}
         onConfirm={handlers.handleCloseShiftConfirm}
         onCancel={handlers.handleCloseShiftCancel}
+        formData={formData}
       />
     </div>
   );

@@ -77,6 +77,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   deleteBestueckungItem: (bestueckungKey, itemId) => ipcRenderer.invoke('delete-bestueckung-item', bestueckungKey, itemId),
   getBestueckungTotalPrices: () => ipcRenderer.invoke('get-bestueckung-total-prices'),
   saveBestueckungTotalPrice: (bestueckungKey, price) => ipcRenderer.invoke('save-bestueckung-total-price', bestueckungKey, price),
+  getBestueckungPricingTypes: () => ipcRenderer.invoke('get-bestueckung-pricing-types'),
+  saveBestueckungPricingType: (bestueckungKey, pricingType) => ipcRenderer.invoke('save-bestueckung-pricing-type', bestueckungKey, pricingType),
   
   // Dialog operations
   showMessageBox: (options) => ipcRenderer.invoke('show-message-box', options),

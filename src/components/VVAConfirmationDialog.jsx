@@ -1,6 +1,6 @@
 const { useState, useEffect } = React;
 
-function VVAConfirmationDialog({ isOpen, onConfirm, onCancel, hasExtras }) {
+function VVAConfirmationDialog({ isOpen, onConfirm, onCancel, hasExtras, formData }) {
   const [checklistChecked, setChecklistChecked] = useState(false);
   const [extrasConfirmed, setExtrasConfirmed] = useState(false);
   const [note, setNote] = useState('');
@@ -13,6 +13,18 @@ function VVAConfirmationDialog({ isOpen, onConfirm, onCancel, hasExtras }) {
       setNote('');
     }
   }, [isOpen, hasExtras]);
+  
+  // Get field status summary
+  const fieldStatus = formData ? window.AppValidation.getVVAFieldsStatus(formData) : [];
+  
+  // Group fields by section
+  const fieldsBySection = {};
+  fieldStatus.forEach(field => {
+    if (!fieldsBySection[field.section]) {
+      fieldsBySection[field.section] = [];
+    }
+    fieldsBySection[field.section].push(field);
+  });
 
   const handleConfirm = () => {
     if (checklistChecked && (hasExtras || extrasConfirmed)) {
@@ -28,6 +40,30 @@ function VVAConfirmationDialog({ isOpen, onConfirm, onCancel, hasExtras }) {
         <h2 className="vva-confirmation-title">FINISH VVA</h2>
         
         <div className="vva-confirmation-content">
+          {/* Field Status Summary */}
+          {fieldStatus.length > 0 && (
+            <div className="field-status-summary">
+              <h3 className="field-status-summary-title">Feld-Status Übersicht</h3>
+              <div className="field-status-summary-content">
+                {Object.entries(fieldsBySection).map(([section, fields]) => (
+                  <div key={section} className="field-status-section">
+                    <div className="field-status-section-header">{section}</div>
+                    <div className="field-status-fields">
+                      {fields.map((field, index) => (
+                        <div key={index} className="field-status-item">
+                          <span className={`field-status-icon ${field.isFilled ? 'field-status-filled' : 'field-status-missing'}`}>
+                            {field.isFilled ? '✓' : '✗'}
+                          </span>
+                          <span className="field-status-label">{field.field}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
           <div className="vva-confirmation-checkbox-group">
             <label className="vva-confirmation-checkbox-label">
               <input

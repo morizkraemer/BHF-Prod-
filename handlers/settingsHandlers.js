@@ -338,7 +338,6 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
     return store.get('pauschalePrices', {
       standard: '',
       longdrinks: '',
-      sektCocktails: '',
       shots: ''
     });
   });
@@ -375,6 +374,10 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
       store.set('bestueckungTotalPrices', {
         'standard-konzert': '',
         'standard-tranzit': ''
+      });
+      store.set('bestueckungPricingTypes', {
+        'standard-konzert': 'pauschale',
+        'standard-tranzit': 'pauschale'
       });
       store.set('cateringPrices', {
         warmPerPerson: '',

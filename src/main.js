@@ -45,6 +45,9 @@ function createWindow() {
   // In development it's the webpack dev server URL, in production it's the bundled file
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
   
+  // Maximize window on startup
+  mainWindow.maximize();
+  
   // Open DevTools in development mode
   if (process.env.NODE_ENV === 'development' || process.argv.includes('--dev')) {
     mainWindow.webContents.openDevTools();

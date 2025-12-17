@@ -1,9 +1,13 @@
 const { useState, useEffect } = React;
 
-function VVAMissingFieldsDialog({ isOpen, onFinishAnyway, onCancel, missingFields, title = 'Fehlende VVA Felder' }) {
+function VVAMissingFieldsDialog({ isOpen, onFinishAnyway, onCancel, missingFields, title = 'Fehlende VVA Felder', formData }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [fieldNotes, setFieldNotes] = useState({});
   const [allFieldsNote, setAllFieldsNote] = useState('');
+  const [showFieldStatusSummary, setShowFieldStatusSummary] = useState(false);
+
+  // Determine if this is VVA or SL phase based on title
+  const isVVA = title === 'Fehlende VVA Felder';
 
   // Reset state when dialog opens/closes
   useEffect(() => {
@@ -11,6 +15,7 @@ function VVAMissingFieldsDialog({ isOpen, onFinishAnyway, onCancel, missingField
       setCurrentStep(0);
       setFieldNotes({});
       setAllFieldsNote('');
+      setShowFieldStatusSummary(false);
     }
   }, [isOpen, missingFields]);
 
@@ -87,8 +92,8 @@ function VVAMissingFieldsDialog({ isOpen, onFinishAnyway, onCancel, missingField
   // Handle continue to next step
   const handleContinue = () => {
     if (isSummaryStep) {
-      // On summary step, finish
-      onFinishAnyway(fieldNotes, {}, allFieldsNote);
+      // On summary step, show field status summary dialog instead of finishing immediately
+      setShowFieldStatusSummary(true);
     } else if (currentStep === missingFields.length - 1) {
       // Last individual field, move to summary
       setCurrentStep(prev => prev + 1);
@@ -96,6 +101,17 @@ function VVAMissingFieldsDialog({ isOpen, onFinishAnyway, onCancel, missingField
       // Move to next individual field
       setCurrentStep(prev => prev + 1);
     }
+  };
+  
+  // Handle confirm from field status summary
+  const handleFieldStatusConfirm = () => {
+    setShowFieldStatusSummary(false);
+    onFinishAnyway(fieldNotes, {}, allFieldsNote);
+  };
+  
+  // Handle cancel from field status summary
+  const handleFieldStatusCancel = () => {
+    setShowFieldStatusSummary(false);
   };
 
   // Handle go back
@@ -215,6 +231,15 @@ function VVAMissingFieldsDialog({ isOpen, onFinishAnyway, onCancel, missingField
           </button>
         </div>
       </div>
+      
+      {/* Field Status Summary Dialog */}
+      <FieldStatusSummaryDialog
+        isOpen={showFieldStatusSummary}
+        onConfirm={handleFieldStatusConfirm}
+        onCancel={handleFieldStatusCancel}
+        formData={formData}
+        isVVA={isVVA}
+      />
     </div>
   );
 }

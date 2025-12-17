@@ -166,6 +166,24 @@ function registerCatalogHandlers(ipcMain, store) {
     store.set('bestueckungTotalPrices', prices);
     return true;
   });
+
+  // IPC Handlers for Bestückung Pricing Types
+  ipcMain.handle('get-bestueckung-pricing-types', () => {
+    return store.get('bestueckungPricingTypes', {
+      'standard-konzert': 'pauschale',
+      'standard-tranzit': 'pauschale'
+    });
+  });
+
+  ipcMain.handle('save-bestueckung-pricing-type', (event, bestueckungKey, pricingType) => {
+    const types = store.get('bestueckungPricingTypes', {
+      'standard-konzert': 'pauschale',
+      'standard-tranzit': 'pauschale'
+    });
+    types[bestueckungKey] = pricingType;
+    store.set('bestueckungPricingTypes', types);
+    return true;
+  });
 }
 
 module.exports = { registerCatalogHandlers };

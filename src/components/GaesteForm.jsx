@@ -9,7 +9,6 @@ function GaesteForm({ formData, onDataChange, highlightedFields = [] }) {
     pauschaleOptions: formData?.pauschaleOptions || {
       standard: true,
       longdrinks: false,
-      sektCocktails: false,
       shots: false
     },
     anzahlAbendkasse: formData?.anzahlAbendkasse || '',
@@ -107,16 +106,6 @@ function GaesteForm({ formData, onDataChange, highlightedFields = [] }) {
                 />
                 <span className="checkbox-custom"></span>
                 <span className="checkbox-text">Longdrinks</span>
-              </label>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={localData.pauschaleOptions.sektCocktails}
-                  onChange={(e) => handleChange('pauschaleOptions', { ...localData.pauschaleOptions, sektCocktails: e.target.checked })}
-                  className="rider-extras-checkbox"
-                />
-                <span className="checkbox-custom"></span>
-                <span className="checkbox-text">Sekt-Cocktails</span>
               </label>
               <label className="checkbox-label">
                 <input

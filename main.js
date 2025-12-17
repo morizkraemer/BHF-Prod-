@@ -38,6 +38,9 @@ function createWindow() {
 
   mainWindow.loadFile('index.html');
 
+  // Maximize window on startup
+  mainWindow.maximize();
+
   // Open DevTools in development mode
   if (process.argv.includes('--dev')) {
     mainWindow.webContents.openDevTools();

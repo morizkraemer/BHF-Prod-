@@ -44,7 +44,6 @@ function registerReportHandlers(ipcMain, store) {
       const pauschalePrices = store.get('pauschalePrices', {
         standard: '',
         longdrinks: '',
-        sektCocktails: '',
         shots: ''
       });
       
@@ -54,12 +53,19 @@ function registerReportHandlers(ipcMain, store) {
         'standard-tranzit': ''
       });
       
+      // Get bestueckung pricing types from settings store
+      const bestueckungPricingTypes = store.get('bestueckungPricingTypes', {
+        'standard-konzert': 'pauschale',
+        'standard-tranzit': 'pauschale'
+      });
+      
       // Add settings data to formData for PDF generation
       const formDataWithSettings = {
         ...formData,
         cateringPrices: cateringPrices,
         pauschalePrices: pauschalePrices,
-        bestueckungTotalPrices: bestueckungTotalPrices
+        bestueckungTotalPrices: bestueckungTotalPrices,
+        bestueckungPricingTypes: bestueckungPricingTypes
       };
       
       // Generate PDF

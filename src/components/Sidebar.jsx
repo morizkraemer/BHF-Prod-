@@ -5,7 +5,6 @@ function Sidebar({
   scannerName,
   scannerAvailable,
   getRequiredFieldsCount,
-  onFillTestData,
   onCloseShift
 }) {
   return (
@@ -42,18 +41,6 @@ function Sidebar({
               {scannerName || 'Kein Scanner ausgewählt'}
             </span>
           </div>
-        </div>
-        <div className="sidebar-divider"></div>
-        {/* Test Data Button */}
-        <div className="sidebar-test-button-container">
-          <button 
-            className="test-data-button-sidebar"
-            onClick={onFillTestData}
-            title="Füllt alle Felder mit Test-Daten"
-          >
-            <i data-lucide="flask"></i>
-            <span>Test-Daten</span>
-          </button>
         </div>
         <div className="sidebar-divider"></div>
         {/* Close Shift and Settings Buttons */}
