@@ -6,7 +6,7 @@ const sections = [
   { id: 'secu', name: 'Secu' },
   { id: 'andere-mitarbeiter', name: 'Andere Mitarbeiter' },
   { id: 'gaeste', name: 'Gäste' },
-  { id: 'orderbird', name: 'Orderbird' }
+  { id: 'kassen', name: 'Kassen' }
 ];
 
 const settingsSection = { id: 'settings', name: 'Settings' };
@@ -16,7 +16,7 @@ const getInitialFormData = () => ({
   uebersicht: {},
   'rider-extras': {},
   tontechniker: {},
-  orderbird: {},
+  kassen: {},
   secu: {
     securityPersonnel: [{ name: '', startTime: '', endTime: '' }],
     scannedDocuments: []
@@ -44,7 +44,8 @@ const getInitialPrintedTemplates = () => ({
   securityzettel: false,
   handtuchzettel: false,
   technikzettel: false,
-  uebersichtzettel: false
+  uebersichtzettel: false,
+  kassenzettel: false
 });
 
 // Make available globally

@@ -40,7 +40,7 @@ function toCamelCaseFolderName(str) {
 
 /**
  * Determines the section name based on the source and scanName
- * @param {string} source - The source section (e.g., 'tontechniker', 'secu', 'orderbird', 'rider-extras', 'gaeste')
+ * @param {string} source - The source section (e.g., 'tontechniker', 'secu', 'kassen', 'rider-extras', 'gaeste')
  * @param {string} scanName - The scanName from the document
  * @returns {string} - The section name
  */
@@ -51,7 +51,10 @@ function getSectionName(source, scanName) {
   if (source === 'secu') {
     return 'Security';
   }
-  if (source === 'orderbird') {
+  if (source === 'kassen') {
+    if (scanName === 'Abrechnungen') {
+      return 'Abrechnungen';
+    }
     return 'Belege';
   }
   if (source === 'rider-extras') {
@@ -189,14 +192,27 @@ function registerReportHandlers(ipcMain, store) {
         });
       }
       
-      // From Orderbird
-      if (formData.orderbird?.receipts) {
-        formData.orderbird.receipts.forEach(doc => {
+      // From Kassen - Belege
+      if (formData.kassen?.receipts) {
+        formData.kassen.receipts.forEach(doc => {
           if (doc.filePath) {
             scannedDocs.push({
               filePath: doc.filePath,
-              source: 'orderbird',
-              scanName: doc.scanName || 'Orderbird-Belege'
+              source: 'kassen',
+              scanName: doc.scanName || 'Kassen-Belege'
+            });
+          }
+        });
+      }
+      
+      // From Kassen - Abrechnungen
+      if (formData.kassen?.abrechnungen) {
+        formData.kassen.abrechnungen.forEach(doc => {
+          if (doc.filePath) {
+            scannedDocs.push({
+              filePath: doc.filePath,
+              source: 'kassen',
+              scanName: doc.scanName || 'Abrechnungen'
             });
           }
         });

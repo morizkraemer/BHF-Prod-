@@ -93,12 +93,16 @@ function MainContent({
             highlightedFields={highlightedFields.gaeste || []}
           />
         );
-      case 'orderbird':
+      case 'kassen':
         return (
-          <OrderbirdForm
-            formData={formData.orderbird}
-            onDataChange={(data) => handleFormDataChange('orderbird', data)}
-            highlightedFields={highlightedFields.orderbird || []}
+          <KassenForm
+            formData={formData.kassen}
+            onDataChange={(data) => handleFormDataChange('kassen', data)}
+            highlightedFields={highlightedFields.kassen || []}
+            printedTemplates={printedTemplates}
+            onTemplatePrinted={(templateKey) => {
+              setPrintedTemplates(prev => ({ ...prev, [templateKey]: true }));
+            }}
           />
         );
       case 'settings':

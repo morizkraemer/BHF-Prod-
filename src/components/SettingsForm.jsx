@@ -29,7 +29,8 @@ function SettingsForm() {
     securityzettel: null,
     handtuchzettel: null,
     technikzettel: null,
-    uebersichtzettel: null
+    uebersichtzettel: null,
+    kassenzettel: null
   });
   const [bestueckungLists, setBestueckungLists] = useState({
     'standard-konzert': [],
@@ -100,11 +101,13 @@ function SettingsForm() {
       const handtuchzettel = await window.electronAPI.getTemplate('handtuchzettel');
       const technikzettel = await window.electronAPI.getTemplate('technikzettel');
       const uebersichtzettel = await window.electronAPI.getTemplate('uebersichtzettel');
+      const kassenzettel = await window.electronAPI.getTemplate('kassenzettel');
       setTemplates({
         securityzettel,
         handtuchzettel,
         technikzettel,
-        uebersichtzettel
+        uebersichtzettel,
+        kassenzettel
       });
     }
   };
@@ -1144,6 +1147,28 @@ function SettingsForm() {
           <button
             type="button"
             onClick={() => handleUploadTemplate('uebersichtzettel')}
+            className="settings-upload-template-button"
+          >
+            Template hochladen
+          </button>
+        </div>
+      </div>
+
+      {/* Kassenzettel Template */}
+      <div className="settings-scanner-section">
+        <h3>Kassenzettel Template</h3>
+        <p className="settings-description">
+          Template für Kassenzettel-Drucke
+        </p>
+        <div className="settings-template-form">
+          <div className="settings-template-display">
+            <span className="settings-template-path">
+              {templates.kassenzettel ? templates.kassenzettel.split('/').pop() : 'Kein Template hochgeladen'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleUploadTemplate('kassenzettel')}
             className="settings-upload-template-button"
           >
             Template hochladen

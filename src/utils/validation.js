@@ -102,7 +102,7 @@ const validateAllSectionsDetailed = (formData) => {
   const riderExtrasData = formData['rider-extras'] || {};
   const tontechnikerData = formData.tontechniker || {};
   const secuData = formData.secu || {};
-  const orderbirdData = formData.orderbird || {};
+  const kassenData = formData.kassen || {};
   
   // Übersicht section
   const uebersichtRequired = ['eventName', 'date', 'eventType', 'getInTime', 'doorsTime', 'nightLead', 'konzertende', 'backstageCurfew'];
@@ -256,10 +256,14 @@ const validateAllSectionsDetailed = (formData) => {
     });
   }
   
-  // Orderbird section
-  const hasScans = orderbirdData.receipts && orderbirdData.receipts.length > 0;
-  if (!hasScans) {
-    errors.push({ section: 'Orderbird', sectionId: 'orderbird', field: 'Belege Scans' });
+  // Kassen section
+  const hasReceipts = kassenData.receipts && kassenData.receipts.length > 0;
+  if (!hasReceipts) {
+    errors.push({ section: 'Kassen', sectionId: 'kassen', field: 'Belege Scans' });
+  }
+  const hasAbrechnungen = kassenData.abrechnungen && kassenData.abrechnungen.length > 0;
+  if (!hasAbrechnungen) {
+    errors.push({ section: 'Kassen', sectionId: 'kassen', field: 'Abrechnungen Scans' });
   }
   
   // Gäste section - Agenturzettel required for Konzert events
@@ -422,12 +426,13 @@ const getRequiredFieldsCount = (sectionId, formData) => {
       
       return { filled: andereMitarbeiterFilled, total: andereMitarbeiterRequired };
     
-    case 'orderbird':
-      // Required: at least one scan
-      const hasScans = formData.orderbird?.receipts && formData.orderbird.receipts.length > 0;
-      const orderbirdFilled = hasScans ? 1 : 0;
-      const orderbirdRequired = 1;
-      return { filled: orderbirdFilled, total: orderbirdRequired };
+    case 'kassen':
+      // Required: at least one scan for receipts and abrechnungen
+      const hasReceipts = formData.kassen?.receipts && formData.kassen.receipts.length > 0;
+      const hasAbrechnungen = formData.kassen?.abrechnungen && formData.kassen.abrechnungen.length > 0;
+      const kassenFilled = (hasReceipts ? 1 : 0) + (hasAbrechnungen ? 1 : 0);
+      const kassenRequired = 2;
+      return { filled: kassenFilled, total: kassenRequired };
     
     case 'gaeste':
       const gaesteData = formData.gaeste || {};
@@ -612,7 +617,7 @@ const getAllFieldsStatus = (formData) => {
   const riderExtrasData = formData['rider-extras'] || {};
   const tontechnikerData = formData.tontechniker || {};
   const secuData = formData.secu || {};
-  const orderbirdData = formData.orderbird || {};
+  const kassenData = formData.kassen || {};
   const gaesteData = formData.gaeste || {};
   const andereMitarbeiterData = formData['andere-mitarbeiter'] || {};
   
@@ -850,13 +855,20 @@ const getAllFieldsStatus = (formData) => {
     });
   }
   
-  // Orderbird section
-  const hasScans = orderbirdData.receipts && orderbirdData.receipts.length > 0;
+  // Kassen section
+  const hasReceipts = kassenData.receipts && kassenData.receipts.length > 0;
   fields.push({
-    section: 'Orderbird',
-    sectionId: 'orderbird',
+    section: 'Kassen',
+    sectionId: 'kassen',
     field: 'Belege Scans',
-    isFilled: hasScans
+    isFilled: hasReceipts
+  });
+  const hasAbrechnungen = kassenData.abrechnungen && kassenData.abrechnungen.length > 0;
+  fields.push({
+    section: 'Kassen',
+    sectionId: 'kassen',
+    field: 'Abrechnungen Scans',
+    isFilled: hasAbrechnungen
   });
   
   // Gäste section
