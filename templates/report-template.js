@@ -18,11 +18,12 @@
 
     // Helper function to create field row
     function createFieldRow(label, value) {
-        if (value === undefined || value === null || value === '') return '';
+        // Always show field, use '-' if value is empty
+        const displayValue = (value === undefined || value === null || value === '') ? '-' : String(value);
         return `
             <div class="field-row">
                 <span class="field-label">${escapeHtml(label)}:</span>
-                <span class="field-value">${escapeHtml(String(value))}</span>
+                <span class="field-value">${escapeHtml(displayValue)}</span>
             </div>
         `;
     }
@@ -75,68 +76,30 @@
         document.getElementById('event-date').textContent = uebersicht.date;
     }
 
-    // Übersicht Fields
-    if (uebersicht.eventName) {
-        document.getElementById('field-event-name').innerHTML = createFieldRow('Event Name', uebersicht.eventName);
-    }
-    if (uebersicht.date) {
-        document.getElementById('field-date').innerHTML = createFieldRow('Datum', uebersicht.date);
-    }
-    if (uebersicht.eventType) {
-        const eventTypeMap = { 'club': 'Club', 'konzert': 'Konzert', 'einmietung': 'Einmietung', 'andere': 'Andere' };
-        document.getElementById('field-event-type').innerHTML = createFieldRow('Event Typ', eventTypeMap[uebersicht.eventType] || uebersicht.eventType);
-    }
-    if (uebersicht.nightLead) {
-        document.getElementById('field-night-lead').innerHTML = createFieldRow('Night Lead', uebersicht.nightLead);
-    }
+    // Übersicht Fields - always show all fields
+    const eventTypeMap = { 'club': 'Club', 'konzert': 'Konzert', 'einmietung': 'Einmietung', 'andere': 'Andere' };
+    document.getElementById('field-event-name').innerHTML = createFieldRow('Event Name', uebersicht.eventName);
+    document.getElementById('field-date').innerHTML = createFieldRow('Datum', uebersicht.date);
+    document.getElementById('field-event-type').innerHTML = createFieldRow('Event Typ', eventTypeMap[uebersicht.eventType] || uebersicht.eventType);
+    document.getElementById('field-night-lead').innerHTML = createFieldRow('Night Lead', uebersicht.nightLead);
 
-    // Time fields - all separate
-    if (uebersicht.getInTime) {
-        document.getElementById('field-getin-geplant').innerHTML = createFieldRow('Get In Geplant', uebersicht.getInTime);
-    }
-    if (uebersicht.getInTatsachlich) {
-        document.getElementById('field-getin-tatsachlich').innerHTML = createFieldRow('Get In Tatsächlich', uebersicht.getInTatsachlich);
-    }
+    // Time fields - all separate, always show
+    document.getElementById('field-getin-geplant').innerHTML = createFieldRow('Get In Geplant', uebersicht.getInTime);
+    document.getElementById('field-getin-tatsachlich').innerHTML = createFieldRow('Get In Tatsächlich', uebersicht.getInTatsachlich);
+    document.getElementById('field-doors-geplant').innerHTML = createFieldRow('Doors Geplant', uebersicht.doorsTime);
+    document.getElementById('field-doors-tatsachlich').innerHTML = createFieldRow('Doors Tatsächlich', uebersicht.doorsTatsachlich);
+    document.getElementById('field-konzertende-geplant').innerHTML = createFieldRow('Konzertende Geplant', uebersicht.konzertende);
+    document.getElementById('field-konzertende-tatsachlich').innerHTML = createFieldRow('Konzertende Tatsächlich', uebersicht.konzertendeTatsachlich);
+    document.getElementById('field-backstage-curfew-geplant').innerHTML = createFieldRow('Backstage Curfew Geplant', uebersicht.backstageCurfew);
+    document.getElementById('field-backstage-curfew-tatsachlich').innerHTML = createFieldRow('Backstage Curfew Tatsächlich', uebersicht.backstageCurfewTatsachlich);
 
-    if (uebersicht.doorsTime) {
-        document.getElementById('field-doors-geplant').innerHTML = createFieldRow('Doors Geplant', uebersicht.doorsTime);
-    }
-    if (uebersicht.doorsTatsachlich) {
-        document.getElementById('field-doors-tatsachlich').innerHTML = createFieldRow('Doors Tatsächlich', uebersicht.doorsTatsachlich);
-    }
-
-    if (uebersicht.konzertende) {
-        document.getElementById('field-konzertende-geplant').innerHTML = createFieldRow('Konzertende Geplant', uebersicht.konzertende);
-    }
-    if (uebersicht.konzertendeTatsachlich) {
-        document.getElementById('field-konzertende-tatsachlich').innerHTML = createFieldRow('Konzertende Tatsächlich', uebersicht.konzertendeTatsachlich);
-    }
-
-    if (uebersicht.backstageCurfew) {
-        document.getElementById('field-backstage-curfew-geplant').innerHTML = createFieldRow('Backstage Curfew Geplant', uebersicht.backstageCurfew);
-    }
-    if (uebersicht.backstageCurfewTatsachlich) {
-        document.getElementById('field-backstage-curfew-tatsachlich').innerHTML = createFieldRow('Backstage Curfew Tatsächlich', uebersicht.backstageCurfewTatsachlich);
-    }
-
-    if (uebersicht.agentur) {
-        document.getElementById('field-agentur').innerHTML = createFieldRow('Agentur', uebersicht.agentur);
-    }
-    if (uebersicht.agenturAPName) {
-        document.getElementById('field-agentur-ap').innerHTML = createFieldRow('Agentur AP Name', uebersicht.agenturAPName);
-    }
-    if (uebersicht.veranstalterName) {
-        document.getElementById('field-veranstalter-name').innerHTML = createFieldRow('Veranstalter Name', uebersicht.veranstalterName);
-    }
-    if (uebersicht.veranstalterAPName) {
-        document.getElementById('field-veranstalter-ap').innerHTML = createFieldRow('Veranstalter AP Name', uebersicht.veranstalterAPName);
-    }
-    if (uebersicht.companyName) {
-        document.getElementById('field-company-name').innerHTML = createFieldRow('Company Name', uebersicht.companyName);
-    }
-    if (uebersicht.vva) {
-        document.getElementById('field-vva').innerHTML = createFieldRow('VVA', uebersicht.vva);
-    }
+    // Conditional fields - always show
+    document.getElementById('field-agentur').innerHTML = createFieldRow('Agentur', uebersicht.agentur);
+    document.getElementById('field-agentur-ap').innerHTML = createFieldRow('Agentur AP Name', uebersicht.agenturAPName);
+    document.getElementById('field-veranstalter-name').innerHTML = createFieldRow('Veranstalter Name', uebersicht.veranstalterName);
+    document.getElementById('field-veranstalter-ap').innerHTML = createFieldRow('Veranstalter AP Name', uebersicht.veranstalterAPName);
+    document.getElementById('field-company-name').innerHTML = createFieldRow('Company Name', uebersicht.companyName);
+    document.getElementById('field-vva').innerHTML = createFieldRow('VVA', uebersicht.vva);
 
     // Positionen
     if (uebersicht.positionen && uebersicht.positionen.length > 0) {
@@ -163,32 +126,29 @@
 
     // Hospitality
     // Travel Party (stored in uebersicht but displayed in Hospitality section)
-    if (uebersicht.travelPartyGetIn) {
-        document.getElementById('field-travel-party-getin-hospitality').innerHTML = createFieldRow('Travel Party Get In', uebersicht.travelPartyGetIn);
-    }
-    if (uebersicht.travelPartyTatsachlich) {
-        document.getElementById('field-travel-party-tatsachlich-hospitality').innerHTML = createFieldRow('Travel Party Tatsächlich', uebersicht.travelPartyTatsachlich);
-    }
-    // Nightliner Parkplatz (stored in uebersicht but displayed in Hospitality section)
-    if (uebersicht.nightlinerParkplatz) {
-        document.getElementById('field-nightliner-hospitality').innerHTML = createFieldRow('Nightliner Parkplatz', uebersicht.nightlinerParkplatz === 'yes' ? 'Ja' : 'Nein');
+    // Hospitality Section - always show all fields
+    document.getElementById('field-travel-party-getin-hospitality').innerHTML = createFieldRow('Travel Party Get In', uebersicht.travelPartyGetIn);
+    document.getElementById('field-travel-party-tatsachlich-hospitality').innerHTML = createFieldRow('Travel Party Tatsächlich', uebersicht.travelPartyTatsachlich);
+    
+    // Nightliner Parkplatz - always show
+    const nightlinerValue = uebersicht.nightlinerParkplatz === 'yes' ? 'Ja' : (uebersicht.nightlinerParkplatz === 'no' ? 'Nein' : '-');
+    document.getElementById('field-nightliner-hospitality').innerHTML = createFieldRow('Nightliner Parkplatz', nightlinerValue);
+    
+    // Get In Catering - always show
+    const cateringMap = { 'no': 'Nein', 'kalt': 'Kalt', 'nur-snacks': 'Nur Snacks', 'warm': 'Warm', 'buyout': 'Buyout' };
+    const getInCateringValue = riderExtras.getInCatering ? (cateringMap[riderExtras.getInCatering] || riderExtras.getInCatering) : '-';
+    document.getElementById('field-getin-catering').innerHTML = createFieldRow('Get In Catering', getInCateringValue);
+    
+    // Dinner - always show
+    const dinnerMap = { 'no': 'Nein', 'warm': 'Warm', 'buyout': 'Buyout', 'caterer': 'Caterer' };
+    let dinnerValue = riderExtras.dinner ? (dinnerMap[riderExtras.dinner] || riderExtras.dinner) : '-';
+    
+    // Add disclaimer for caterer option only
+    if (riderExtras.dinner === 'caterer') {
+        dinnerValue += ' <span style="color: #e74c3c; font-style: italic;">(Nicht Standard)</span>';
     }
     
-    if (riderExtras.getInCatering) {
-        const cateringMap = { 'no': 'Nein', 'kalt': 'Kalt', 'nur-snacks': 'Nur Snacks', 'warm': 'Warm', 'buyout': 'Buyout' };
-        document.getElementById('field-getin-catering').innerHTML = createFieldRow('Get In Catering', cateringMap[riderExtras.getInCatering] || riderExtras.getInCatering);
-    }
-    if (riderExtras.dinner) {
-        const dinnerMap = { 'no': 'Nein', 'warm': 'Warm', 'buyout': 'Buyout', 'caterer': 'Caterer' };
-        let dinnerValue = dinnerMap[riderExtras.dinner] || riderExtras.dinner;
-        
-        // Add disclaimer for caterer option only
-        if (riderExtras.dinner === 'caterer') {
-            dinnerValue += ' <span style="color: #e74c3c; font-style: italic;">(Nicht Standard)</span>';
-        }
-        
-        document.getElementById('field-dinner').innerHTML = createFieldRow('Dinner', dinnerValue);
-    }
+    document.getElementById('field-dinner').innerHTML = createFieldRow('Dinner', dinnerValue);
     
     // Create invoice-like table for catering prices
     const cateringInvoiceItems = [];
@@ -337,17 +297,18 @@
         document.getElementById('buyout-groups-container').innerHTML = buyoutHtml;
     }
 
-    // Backstage Kühlschrank
+    // Backstage Kühlschrank - always show
+    const bestueckungMap = {
+        'leer': 'Leer',
+        'abgeschlossen': 'Abgeschlossen',
+        'standard-konzert': 'Standard Konzert',
+        'standard-tranzit': 'Standard Tranzit'
+    };
+    let bestueckungValue = riderExtras.standardbestueckung ? (bestueckungMap[riderExtras.standardbestueckung] || riderExtras.standardbestueckung) : '-';
+    const displayValue = bestueckungValue !== '-' ? `Backstage Kühlschrank: ${bestueckungValue}` : '-';
+    document.getElementById('field-backstage-kuehlschrank').innerHTML = createFieldRow('Backstage Kühlschrank', displayValue);
+    
     if (riderExtras.standardbestueckung) {
-        const bestueckungMap = {
-            'leer': 'Leer',
-            'abgeschlossen': 'Abgeschlossen',
-            'standard-konzert': 'Standard Konzert',
-            'standard-tranzit': 'Standard Tranzit'
-        };
-        let bestueckungValue = bestueckungMap[riderExtras.standardbestueckung] || riderExtras.standardbestueckung;
-        const displayValue = `Backstage Kühlschrank: ${bestueckungValue}`;
-        document.getElementById('field-backstage-kuehlschrank').innerHTML = createFieldRow('Backstage Kühlschrank', displayValue);
 
         // Fridge Items
         if (riderExtras.customizedFridgeItems && riderExtras.customizedFridgeItems.length > 0) {
@@ -461,11 +422,10 @@
     }
 
 
-    // Gäste
-    if (gaeste.paymentType) {
-        const paymentMap = { 'selbstzahler': 'Selbstzahler', 'pauschale': 'Pauschale' };
-        document.getElementById('field-payment-type').innerHTML = createFieldRow('Zahlungsart', paymentMap[gaeste.paymentType] || gaeste.paymentType);
-    }
+    // Gäste Section - always show payment type
+    const paymentMap = { 'selbstzahler': 'Selbstzahler', 'pauschale': 'Pauschale' };
+    const paymentTypeValue = gaeste.paymentType ? (paymentMap[gaeste.paymentType] || gaeste.paymentType) : '-';
+    document.getElementById('field-payment-type').innerHTML = createFieldRow('Zahlungsart', paymentTypeValue);
 
     if (gaeste.paymentType === 'pauschale' && gaeste.pauschaleOptions) {
         const options = [];
@@ -499,8 +459,11 @@
                 }
             }
         }
+        // Always show pauschale fields, even if empty
         if (options.length > 0) {
             document.getElementById('field-pauschale-options').innerHTML = createFieldRow('Pauschale Optionen', options.join(', '));
+        } else {
+            document.getElementById('field-pauschale-options').innerHTML = createFieldRow('Pauschale Optionen', '-');
         }
         if (prices.length > 0) {
             const total = prices.reduce((sum, priceStr) => {
@@ -510,7 +473,13 @@
             const pricesDisplay = prices.join(', ');
             const totalDisplay = total > 0 ? ` (Gesamt: €${total.toFixed(2)})` : '';
             document.getElementById('field-pauschale-prices').innerHTML = createFieldRow('Pauschale Preise', pricesDisplay + totalDisplay);
+        } else {
+            document.getElementById('field-pauschale-prices').innerHTML = createFieldRow('Pauschale Preise', '-');
         }
+    } else {
+        // Show pauschale fields with '-' if payment type is not pauschale or not set
+        document.getElementById('field-pauschale-options').innerHTML = createFieldRow('Pauschale Optionen', '-');
+        document.getElementById('field-pauschale-prices').innerHTML = createFieldRow('Pauschale Preise', '-');
     }
 
     if (gaeste.anzahlAbendkasse || gaeste.betragAbendkasse || gaeste.gaesteGesamt) {
@@ -621,7 +590,9 @@
             `;
         });
         document.getElementById('shift-notes-container').innerHTML = notesHtml;
-    } else {
+    }
+    
+    if (itemsArray.length === 0) {
         document.getElementById('shift-notes-section').style.display = 'none';
     }
 })();

@@ -1,3 +1,5 @@
+const { useEffect } = React;
+
 function MainContent({
   activeSection,
   formData,
@@ -6,6 +8,20 @@ function MainContent({
   handleFormDataChange,
   setPrintedTemplates
 }) {
+  // Automatically set Nightliner Parkplatz to "no" when event type is not "konzert"
+  useEffect(() => {
+    const eventType = formData.uebersicht?.eventType;
+    const nightlinerParkplatz = formData.uebersicht?.nightlinerParkplatz;
+    
+    // If event type is set and not "konzert", and nightliner is not already "no"
+    if (eventType && eventType !== 'konzert' && nightlinerParkplatz !== 'no') {
+      handleFormDataChange('uebersicht', {
+        ...formData.uebersicht,
+        nightlinerParkplatz: 'no'
+      });
+    }
+  }, [formData.uebersicht?.eventType]);
+
   const renderActiveSection = () => {
     switch (activeSection) {
       case 'uebersicht':

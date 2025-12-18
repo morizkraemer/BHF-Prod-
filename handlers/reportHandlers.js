@@ -2,11 +2,97 @@ const path = require('path');
 const fs = require('fs').promises;
 const { app } = require('electron');
 const { generateReportPDF } = require('../utils/pdfGenerator');
+const { PDFDocument } = require('pdf-lib');
 
 /**
  * IPC Handlers for Report Generation
  * Handles close-shift and report generation
  */
+
+/**
+ * Converts a string to camelCase folder name
+ * Removes invalid characters, removes spaces, and converts to camelCase
+ * @param {string} str - The string to convert
+ * @returns {string} - The camelCase string
+ */
+function toCamelCaseFolderName(str) {
+  if (!str) return 'unbekanntesEvent';
+  
+  // Remove invalid characters and replace with underscore
+  let sanitized = str.replace(/[<>:"/\\|?*]/g, '_');
+  
+  // Split by spaces, underscores, and hyphens, then convert to camelCase
+  const words = sanitized.split(/[\s_\-]+/).filter(word => word.length > 0);
+  
+  if (words.length === 0) return 'unbekanntesEvent';
+  
+  // First word lowercase, rest capitalize first letter
+  const camelCase = words.map((word, index) => {
+    const lowerWord = word.toLowerCase();
+    if (index === 0) {
+      return lowerWord;
+    }
+    return lowerWord.charAt(0).toUpperCase() + lowerWord.slice(1);
+  }).join('');
+  
+  return camelCase;
+}
+
+/**
+ * Determines the section name based on the source and scanName
+ * @param {string} source - The source section (e.g., 'tontechniker', 'secu', 'orderbird', 'rider-extras', 'gaeste')
+ * @param {string} scanName - The scanName from the document
+ * @returns {string} - The section name
+ */
+function getSectionName(source, scanName) {
+  if (source === 'tontechniker') {
+    return 'Technik';
+  }
+  if (source === 'secu') {
+    return 'Security';
+  }
+  if (source === 'orderbird') {
+    return 'Belege';
+  }
+  if (source === 'rider-extras') {
+    if (scanName === 'Handtuchzettel') {
+      return 'Handtucher';
+    }
+    if (scanName === 'Einkaufsbeleg') {
+      return 'Einkaufsbelege';
+    }
+    // Default for other rider-extras scans
+    return 'Handtucher';
+  }
+  if (source === 'gaeste') {
+    return 'Agentur';
+  }
+  // Default fallback
+  return 'Belege';
+}
+
+/**
+ * Merges multiple PDFs into one PDF
+ * @param {string[]} pdfPaths - Array of file paths to PDFs
+ * @returns {Promise<Buffer>} - Merged PDF as buffer
+ */
+async function mergePDFs(pdfPaths) {
+  const mergedPdf = await PDFDocument.create();
+  
+  for (const pdfPath of pdfPaths) {
+    try {
+      const pdfBytes = await fs.readFile(pdfPath);
+      const pdf = await PDFDocument.load(pdfBytes);
+      const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+      pages.forEach((page) => mergedPdf.addPage(page));
+    } catch (error) {
+      console.warn(`Could not merge PDF ${pdfPath}:`, error.message);
+      // Continue with other PDFs
+    }
+  }
+  
+  return await mergedPdf.save();
+}
 
 function registerReportHandlers(ipcMain, store) {
   // IPC Handler for close-shift
@@ -26,8 +112,8 @@ function registerReportHandlers(ipcMain, store) {
       const eventName = uebersicht.eventName || 'Unbekanntes Event';
       const eventDate = uebersicht.date || new Date().toISOString().split('T')[0];
       
-      // Sanitize folder name (remove invalid characters)
-      const sanitizedEventName = eventName.replace(/[<>:"/\\|?*]/g, '_');
+      // Convert to camelCase folder name (remove invalid characters and spaces)
+      const sanitizedEventName = toCamelCaseFolderName(eventName);
       const eventFolderName = `${eventDate}_${sanitizedEventName}`;
       const eventFolderPath = path.join(reportBaseFolder, eventFolderName);
       
@@ -74,108 +160,166 @@ function registerReportHandlers(ipcMain, store) {
       const pdfPath = path.join(eventFolderPath, pdfFileName);
       await fs.writeFile(pdfPath, pdfBuffer);
       
-      // Collect all scanned PDFs from all sections
-      const scannedPDFs = [];
+      // Collect all scanned PDFs from all sections with metadata
+      const scannedDocs = [];
       
       // From Ton/Lichttechnik
       if (formData.tontechniker?.scannedImages) {
         formData.tontechniker.scannedImages.forEach(doc => {
-          if (doc.filePath) scannedPDFs.push(doc.filePath);
+          if (doc.filePath) {
+            scannedDocs.push({
+              filePath: doc.filePath,
+              source: 'tontechniker',
+              scanName: doc.scanName || 'Technikzettel'
+            });
+          }
         });
       }
       
       // From Secu
       if (formData.secu?.scannedDocuments) {
         formData.secu.scannedDocuments.forEach(doc => {
-          if (doc.filePath) scannedPDFs.push(doc.filePath);
+          if (doc.filePath) {
+            scannedDocs.push({
+              filePath: doc.filePath,
+              source: 'secu',
+              scanName: doc.scanName || 'Securityzettel'
+            });
+          }
         });
       }
       
       // From Orderbird
       if (formData.orderbird?.receipts) {
         formData.orderbird.receipts.forEach(doc => {
-          if (doc.filePath) scannedPDFs.push(doc.filePath);
+          if (doc.filePath) {
+            scannedDocs.push({
+              filePath: doc.filePath,
+              source: 'orderbird',
+              scanName: doc.scanName || 'Orderbird-Belege'
+            });
+          }
         });
       }
       
-      // From Hospitality
+      // From Hospitality - scannedDocuments (Handtuchzettel)
       if (formData['rider-extras']?.scannedDocuments) {
         formData['rider-extras'].scannedDocuments.forEach(doc => {
-          if (doc.filePath) scannedPDFs.push(doc.filePath);
+          if (doc.filePath) {
+            scannedDocs.push({
+              filePath: doc.filePath,
+              source: 'rider-extras',
+              scanName: doc.scanName || 'Handtuchzettel'
+            });
+          }
         });
       }
+      
+      // From Hospitality - purchaseReceipts (Einkaufsbelege)
       if (formData['rider-extras']?.purchaseReceipts) {
         formData['rider-extras'].purchaseReceipts.forEach(doc => {
-          if (doc.filePath) scannedPDFs.push(doc.filePath);
+          if (doc.filePath) {
+            scannedDocs.push({
+              filePath: doc.filePath,
+              source: 'rider-extras',
+              scanName: doc.scanName || 'Einkaufsbeleg'
+            });
+          }
         });
       }
       
       // From Gäste
       if (formData.gaeste?.scannedDocuments) {
         formData.gaeste.scannedDocuments.forEach(doc => {
-          if (doc.filePath) scannedPDFs.push(doc.filePath);
+          if (doc.filePath) {
+            scannedDocs.push({
+              filePath: doc.filePath,
+              source: 'gaeste',
+              scanName: doc.scanName || 'Agenturzettel'
+            });
+          }
         });
       }
       
-      // Generate date/time string for file naming (YYYY-MM-DD_HH-MM format)
+      // Generate date string for file naming (YYYY-MM-DD format)
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const dateTimeStr = `${year}-${month}-${day}_${hours}-${minutes}`;
+      const dateStr = `${year}-${month}-${day}`;
       
-      // Copy all scanned PDFs to event folder with renamed files
-      for (const pdfPath of scannedPDFs) {
+      // Group scans by scanName
+      const scansByScanName = {};
+      scannedDocs.forEach(doc => {
+        const key = doc.scanName || 'unknown';
+        if (!scansByScanName[key]) {
+          scansByScanName[key] = [];
+        }
+        scansByScanName[key].push(doc);
+      });
+      
+      // Process each group of scans
+      for (const [scanName, docs] of Object.entries(scansByScanName)) {
+        if (docs.length === 0) continue;
+        
+        // Get section name from first document (all in group have same source)
+        const section = getSectionName(docs[0].source, docs[0].scanName);
+        
+        // Create filename: {section}-{date}-{eventname}.pdf
+        const fileName = `${section}-${dateStr}-${sanitizedEventName}.pdf`;
+        let destPath = path.join(eventFolderPath, fileName);
+        
+        // Check if destination file already exists and create unique name if needed
+        let finalDestPath = destPath;
+        let counter = 1;
+        while (true) {
+          try {
+            await fs.access(finalDestPath);
+            // File exists, add counter
+            const nameWithoutExt = path.basename(fileName, '.pdf');
+            finalDestPath = path.join(eventFolderPath, `${nameWithoutExt}_${counter}.pdf`);
+            counter++;
+          } catch {
+            // File doesn't exist, use this path
+            break;
+          }
+        }
+        
         try {
-          // Check if file exists
-          await fs.access(pdfPath);
-          const originalFileName = path.basename(pdfPath);
-          const ext = path.extname(originalFileName);
-          const originalBaseName = path.basename(originalFileName, ext);
+          // If multiple scans, merge them; otherwise just copy
+          if (docs.length > 1) {
+            // Merge multiple PDFs
+            const pdfPaths = docs.map(doc => doc.filePath).filter(p => p);
+            const mergedPdfBuffer = await mergePDFs(pdfPaths);
+            await fs.writeFile(finalDestPath, mergedPdfBuffer);
+          } else {
+            // Single PDF, just copy
+            await fs.copyFile(docs[0].filePath, finalDestPath);
+          }
           
-          // Create new filename: EventName_YYYY-MM-DD_HH-MM_originalname.pdf
-          const newFileName = `${sanitizedEventName}_${dateTimeStr}_${originalBaseName}${ext}`;
-          const destPath = path.join(eventFolderPath, newFileName);
-          
-          // Check if destination file already exists and create unique name if needed
-          let finalDestPath = destPath;
-          let counter = 1;
-          while (true) {
+          // Delete original files from temporary folder
+          for (const doc of docs) {
             try {
-              await fs.access(finalDestPath);
-              // File exists, add counter
-              const nameWithoutExt = path.basename(newFileName, ext);
-              finalDestPath = path.join(eventFolderPath, `${nameWithoutExt}_${counter}${ext}`);
-              counter++;
-            } catch {
-              // File doesn't exist, use this path
-              break;
+              await fs.unlink(doc.filePath);
+            } catch (deleteError) {
+              console.warn(`Could not delete original file ${doc.filePath}:`, deleteError.message);
+              // Continue even if deletion fails
             }
           }
-          
-          // Copy file to destination
-          await fs.copyFile(pdfPath, finalDestPath);
-          
-          // Delete original file from temporary folder
-          try {
-            await fs.unlink(pdfPath);
-          } catch (deleteError) {
-            console.warn(`Could not delete original file ${pdfPath}:`, deleteError.message);
-            // Continue even if deletion fails
-          }
         } catch (error) {
-          console.warn(`Could not copy scanned PDF ${pdfPath}:`, error.message);
-          // Continue with other files
+          console.warn(`Could not process scans for ${scanName}:`, error.message);
+          // Continue with other scan groups
         }
       }
+      
+      // Count consolidated PDFs (one per scanName group)
+      const consolidatedPDFsCount = Object.keys(scansByScanName).length;
       
       return {
         success: true,
         eventFolder: eventFolderPath,
         pdfPath: pdfPath,
-        scannedPDFsCount: scannedPDFs.length
+        scannedPDFsCount: consolidatedPDFsCount
       };
     } catch (error) {
       console.error('Error closing shift:', error);
