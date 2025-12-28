@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { settingsStore, shiftDataStore } = require('./config/store');
 const { checkNAPS2Installed, showNAPS2Error } = require('./utils/scannerUtils');
 const { registerCatalogHandlers } = require('./handlers/catalogHandlers');
@@ -23,11 +24,41 @@ if (process.argv.includes('--dev')) {
 
 let mainWindow;
 
+// Check if this is a debug build by examining the executable path or app name
+function isDebugBuild() {
+  // Check if debug file exists (most reliable - gets packaged with the app)
+  try {
+    const debugFilePath = path.join(__dirname, 'debug.flag');
+    if (fs.existsSync(debugFilePath)) {
+      return true;
+    }
+  } catch (e) {
+    // Ignore errors
+  }
+  
+  // Check executable path (works in packaged apps)
+  const execPath = process.execPath.toLowerCase();
+  if (execPath.includes('debug')) {
+    return true;
+  }
+  
+  // Check app name
+  const appName = app.getName().toLowerCase();
+  if (appName.includes('debug')) {
+    return true;
+  }
+  
+  return false;
+}
+
 function createWindow() {
+  const debugMode = isDebugBuild();
+  const appTitle = debugMode ? 'Produktionsübersicht (Debug)' : 'Produktionsübersicht';
+  
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    title: 'Produktionsübersicht',
+    title: appTitle,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -41,8 +72,8 @@ function createWindow() {
   // Maximize window on startup
   mainWindow.maximize();
 
-  // Open DevTools in development mode
-  if (process.argv.includes('--dev')) {
+  // Open DevTools in development mode or debug build
+  if (process.argv.includes('--dev') || debugMode) {
     mainWindow.webContents.openDevTools();
   }
 
@@ -53,13 +84,15 @@ function createWindow() {
 
 app.whenReady().then(() => {
   // Set app name for macOS (appears in menu bar and dock)
-  app.setName('Produktionsübersicht');
+  const debugMode = isDebugBuild();
+  const appTitle = debugMode ? 'Produktionsübersicht (Debug)' : 'Produktionsübersicht';
+  app.setName(appTitle);
   
   createWindow();
   
   // Set window title
   if (mainWindow) {
-    mainWindow.setTitle('Produktionsübersicht');
+    mainWindow.setTitle(appTitle);
   }
   
   // Register all IPC handlers
@@ -84,14 +117,11 @@ app.whenReady().then(() => {
       createWindow();
       // Set window title
       if (mainWindow) {
-        mainWindow.setTitle('Produktionsübersicht');
+        const debugMode = isDebugBuild();
+        const appTitle = debugMode ? 'Produktionsübersicht (Debug)' : 'Produktionsübersicht';
+        mainWindow.setTitle(appTitle);
       }
-      // Re-register handlers for new window context
-      registerCatalogHandlers(ipcMain, settingsStore);
-      registerSettingsHandlers(ipcMain, settingsStore, mainWindow, dialog, shell, shiftDataStore);
-      registerScannerHandlers(ipcMain, settingsStore, mainWindow, dialog);
-      registerReportHandlers(ipcMain, settingsStore);
-      registerDataHandlers(ipcMain, shiftDataStore, settingsStore);
+      // Note: IPC handlers are global and don't need to be re-registered
       // Check again when window is recreated
       if (process.platform === 'darwin') {
         setTimeout(() => {

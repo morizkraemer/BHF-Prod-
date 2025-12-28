@@ -7,5 +7,6 @@ output/
 *.pdf
 .vscode/
 .idea/
+debug.flag
 
 
