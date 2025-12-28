@@ -482,18 +482,40 @@
         document.getElementById('field-pauschale-prices').innerHTML = createFieldRow('Pauschale Preise', '-');
     }
 
-    if (gaeste.anzahlAbendkasse || gaeste.betragAbendkasse || gaeste.gaesteGesamt) {
+    if (gaeste.anzahlAbendkasse || gaeste.betragAbendkasse || gaeste.useTimeBasedPricing || gaeste.gaesteGesamt) {
         let gaesteHtml = '<div class="table-container"><table style="width: 100%; border-collapse: collapse;"><thead><tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;"><th style="text-align: left; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Kategorie</th><th style="text-align: right; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Wert</th></tr></thead><tbody>';
-        if (gaeste.anzahlAbendkasse) {
-            gaesteHtml += `<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px;">Anzahl Abendkasse</td><td style="text-align: right; padding: 10px;">${escapeHtml(String(gaeste.anzahlAbendkasse))}</td></tr>`;
+        
+        // Handle time-based pricing
+        if (gaeste.useTimeBasedPricing && gaeste.abendkasseTimeSlots && Array.isArray(gaeste.abendkasseTimeSlots) && gaeste.abendkasseTimeSlots.length > 0) {
+            gaesteHtml += '<tr style="border-bottom: 1px solid #eee; background-color: #f0f0f0;"><td style="padding: 10px; font-weight: 600;" colspan="2">Zeitbasierte Preise Abendkasse</td></tr>';
+            let timeSlotsTotal = 0;
+            gaeste.abendkasseTimeSlots.forEach((slot) => {
+                if (slot.time || slot.price || slot.count) {
+                    const price = parseFloat(slot.price || 0);
+                    const count = parseFloat(slot.count || 0);
+                    const slotTotal = price * count;
+                    timeSlotsTotal += slotTotal;
+                    const timeDisplay = slot.time || '-';
+                    gaesteHtml += `<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px;">Abendkasse ${escapeHtml(timeDisplay)} (${escapeHtml(String(slot.count || 0))} × €${escapeHtml(String(slot.price || 0))})</td><td style="text-align: right; padding: 10px;">€${escapeHtml(slotTotal.toFixed(2))}</td></tr>`;
+                }
+            });
+            if (timeSlotsTotal > 0) {
+                gaesteHtml += `<tr style="border-bottom: 1px solid #eee; background-color: #f9f9f9;"><td style="padding: 10px; font-weight: 600;">Total Abendkasse:</td><td style="text-align: right; padding: 10px; font-weight: 600;">€${escapeHtml(timeSlotsTotal.toFixed(2))}</td></tr>`;
+            }
+        } else {
+            // Handle simple pricing
+            if (gaeste.anzahlAbendkasse) {
+                gaesteHtml += `<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px;">Anzahl Abendkasse</td><td style="text-align: right; padding: 10px;">${escapeHtml(String(gaeste.anzahlAbendkasse))}</td></tr>`;
+            }
+            if (gaeste.betragAbendkasse) {
+                gaesteHtml += `<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px;">Betrag Abendkasse</td><td style="text-align: right; padding: 10px;">€${escapeHtml(String(gaeste.betragAbendkasse))}</td></tr>`;
+            }
+            if (gaeste.anzahlAbendkasse && gaeste.betragAbendkasse) {
+                const total = (parseFloat(gaeste.anzahlAbendkasse) * parseFloat(gaeste.betragAbendkasse)).toFixed(2);
+                gaesteHtml += `<tr style="border-bottom: 1px solid #eee; background-color: #f9f9f9;"><td style="padding: 10px; font-weight: 600;">Total:</td><td style="text-align: right; padding: 10px; font-weight: 600;">€${escapeHtml(total)}</td></tr>`;
+            }
         }
-        if (gaeste.betragAbendkasse) {
-            gaesteHtml += `<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px;">Betrag Abendkasse</td><td style="text-align: right; padding: 10px;">€${escapeHtml(String(gaeste.betragAbendkasse))}</td></tr>`;
-        }
-        if (gaeste.anzahlAbendkasse && gaeste.betragAbendkasse) {
-            const total = (parseFloat(gaeste.anzahlAbendkasse) * parseFloat(gaeste.betragAbendkasse)).toFixed(2);
-            gaesteHtml += `<tr style="border-bottom: 1px solid #eee; background-color: #f9f9f9;"><td style="padding: 10px; font-weight: 600;">Total:</td><td style="text-align: right; padding: 10px; font-weight: 600;">€${escapeHtml(total)}</td></tr>`;
-        }
+        
         if (gaeste.gaesteGesamt) {
             gaesteHtml += `<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px;">Gäste Gesamt</td><td style="text-align: right; padding: 10px;">${escapeHtml(String(gaeste.gaesteGesamt))}</td></tr>`;
         }
