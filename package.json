@@ -6,9 +6,9 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "build": "electron-packager . \"Produktionsübersicht\" --platform=darwin --arch=x64 --icon=assets/icons/icon.icns --out=dist --overwrite",
-    "build:mac": "electron-packager . \"Produktionsübersicht\" --platform=darwin --arch=x64 --icon=assets/icons/icon.icns --out=dist --overwrite",
-    "build:debug": "echo 'debug' > debug.flag && electron-packager . \"Produktionsübersicht-debug\" --platform=darwin --arch=x64 --icon=assets/icons/icon.icns --out=dist --overwrite",
+    "build": "rm -f .env.build && electron-packager . \"Produktionsübersicht\" --platform=darwin --arch=x64 --icon=assets/icons/icon.icns --out=dist --overwrite",
+    "build:mac": "rm -f .env.build && electron-packager . \"Produktionsübersicht\" --platform=darwin --arch=x64 --icon=assets/icons/icon.icns --out=dist --overwrite",
+    "build:debug": "echo 'DEBUG_MODE=true' > .env.build && electron-packager . \"Produktionsübersicht-debug\" --platform=darwin --arch=x64 --icon=assets/icons/icon.icns --out=dist --overwrite",
     "build:win": "electron-packager . \"Produktionsübersicht\" --platform=win32 --arch=x64 --icon=assets/icons/icon-1000px.png --out=dist --overwrite",
     "build:linux": "electron-packager . \"Produktionsübersicht\" --platform=linux --arch=x64 --icon=assets/icons/icon-1000px.png --out=dist --overwrite",
     "build:all": "npm run build:mac && npm run build:win && npm run build:linux",

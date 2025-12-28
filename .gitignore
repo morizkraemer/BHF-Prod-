@@ -8,5 +8,6 @@ output/
 .vscode/
 .idea/
 debug.flag
+.env.build
 
 

@@ -14,7 +14,7 @@ function GaesteForm({ formData, onDataChange, highlightedFields = [] }) {
     anzahlAbendkasse: formData?.anzahlAbendkasse || '',
     betragAbendkasse: formData?.betragAbendkasse || '',
     useTimeBasedPricing: formData?.useTimeBasedPricing || false,
-    abendkasseTimeSlots: formData?.abendkasseTimeSlots || [],
+    abendkasseTimeSlots: formData?.abendkasseTimeSlots || (formData?.useTimeBasedPricing ? [{ time: '', price: '', count: '' }, { time: '', price: '', count: '' }] : []),
     gaesteGesamt: formData?.gaesteGesamt || '',
     scannedDocuments: formData?.scannedDocuments || []
   });
@@ -36,6 +36,24 @@ function GaesteForm({ formData, onDataChange, highlightedFields = [] }) {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleTimeBasedPricingToggle = (checked) => {
+    setLocalData(prev => {
+      if (checked && (!prev.abendkasseTimeSlots || prev.abendkasseTimeSlots.length === 0)) {
+        // Add two default time slots when enabling time-based pricing
+        return {
+          ...prev,
+          useTimeBasedPricing: true,
+          abendkasseTimeSlots: [{ time: '', price: '', count: '' }, { time: '', price: '', count: '' }]
+        };
+      } else {
+        return {
+          ...prev,
+          useTimeBasedPricing: checked
+        };
+      }
+    });
   };
 
   // Calculate total
@@ -164,116 +182,121 @@ function GaesteForm({ formData, onDataChange, highlightedFields = [] }) {
 
         {/* Guest Count Fields */}
         <div className="form-row form-row-abendkasse">
-          {/* Anzahl and Betrag Abendkasse paired together */}
-          <div className="form-group-paired-container">
-            <div className="form-group form-group-paired-left">
-              <label htmlFor="anzahlAbendkasse">Anzahl Abendkasse</label>
+          {/* Checkbox for time-based pricing */}
+          <div className="form-group" style={{ gridColumn: '1 / -1', marginBottom: '10px' }}>
+            <label className="checkbox-label">
               <input
-                type="number"
-                id="anzahlAbendkasse"
-                value={localData.anzahlAbendkasse}
-                onChange={(e) => handleChange('anzahlAbendkasse', e.target.value)}
-                className="form-input"
-                min="0"
-                placeholder="0"
-                disabled={localData.useTimeBasedPricing}
+                type="checkbox"
+                checked={localData.useTimeBasedPricing}
+                onChange={(e) => handleTimeBasedPricingToggle(e.target.checked)}
+                className="rider-extras-checkbox"
               />
-            </div>
-            <div className="form-group form-group-paired-right">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '5px' }}>
-                <label htmlFor="betragAbendkasse" style={{ margin: 0, flex: 1 }}>Betrag Abendkasse</label>
-                <label className="checkbox-label" style={{ margin: 0, fontSize: '12px' }}>
-                  <input
-                    type="checkbox"
-                    checked={localData.useTimeBasedPricing}
-                    onChange={(e) => handleChange('useTimeBasedPricing', e.target.checked)}
-                    className="rider-extras-checkbox"
-                  />
-                  <span className="checkbox-custom"></span>
-                  <span className="checkbox-text">Zeitbasierte Preise</span>
-                </label>
-              </div>
-              <input
-                type="number"
-                id="betragAbendkasse"
-                value={localData.betragAbendkasse}
-                onChange={(e) => handleChange('betragAbendkasse', e.target.value)}
-                className="form-input"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                disabled={localData.useTimeBasedPricing}
-              />
-            </div>
+              <span className="checkbox-custom"></span>
+              <span className="checkbox-text">Zeitbasierte AK</span>
+            </label>
           </div>
+
+          {/* Anzahl and Betrag Abendkasse - only show when NOT using time-based pricing */}
+          {!localData.useTimeBasedPricing && (
+            <div className="form-group-paired-container" style={{ gridColumn: '1 / -1' }}>
+              <div className="form-group form-group-paired-left">
+                <label htmlFor="anzahlAbendkasse">Anzahl Abendkasse</label>
+                <input
+                  type="number"
+                  id="anzahlAbendkasse"
+                  value={localData.anzahlAbendkasse}
+                  onChange={(e) => handleChange('anzahlAbendkasse', e.target.value)}
+                  className="form-input"
+                  min="0"
+                  placeholder="0"
+                />
+              </div>
+              <div className="form-group form-group-paired-right">
+                <label htmlFor="betragAbendkasse">Betrag Abendkasse</label>
+                <input
+                  type="number"
+                  id="betragAbendkasse"
+                  value={localData.betragAbendkasse}
+                  onChange={(e) => handleChange('betragAbendkasse', e.target.value)}
+                  className="form-input"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Time-based pricing section */}
           {localData.useTimeBasedPricing && (
-            <div className="time-based-pricing-section" style={{ marginTop: '20px', padding: '15px', border: '1px solid #ddd', borderRadius: '4px', backgroundColor: '#f9f9f9' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <label style={{ fontWeight: '600', fontSize: '14px' }}>Zeitbasierte Preise</label>
+            <div className="time-based-pricing-section" style={{ marginTop: '20px', padding: '20px', border: '1px solid #ddd', borderRadius: '6px', backgroundColor: '#f9f9f9' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <label style={{ fontWeight: '600', fontSize: '16px', color: '#2c3e50' }}>Zeitbasierte AK</label>
                 <button
                   type="button"
                   onClick={handleAddTimeSlot}
                   className="settings-add-button"
-                  style={{ padding: '6px 12px', fontSize: '12px' }}
+                  style={{ padding: '8px 16px', fontSize: '14px' }}
                 >
                   Zeitfenster hinzufügen
                 </button>
               </div>
               {localData.abendkasseTimeSlots && localData.abendkasseTimeSlots.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                   {localData.abendkasseTimeSlots.map((slot, index) => (
-                    <div key={index} style={{ display: 'flex', gap: '10px', alignItems: 'center', padding: '10px', backgroundColor: '#fff', borderRadius: '4px', border: '1px solid #eee' }}>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: '12px', fontWeight: '500', marginBottom: '4px', display: 'block' }}>Zeit</label>
+                    <div key={index} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '15px', alignItems: 'end', padding: '15px', backgroundColor: '#fff', borderRadius: '6px', border: '1px solid #eee' }}>
+                      <div className="form-group">
+                        <label htmlFor={`time-slot-${index}-time`}>Zeit</label>
                         <input
                           type="time"
+                          id={`time-slot-${index}-time`}
                           value={slot.time || ''}
                           onChange={(e) => handleTimeSlotChange(index, 'time', e.target.value)}
                           className="form-input"
-                          style={{ fontSize: '14px' }}
                         />
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: '12px', fontWeight: '500', marginBottom: '4px', display: 'block' }}>Preis (€)</label>
+                      <div className="form-group">
+                        <label htmlFor={`time-slot-${index}-price`}>Preis (€)</label>
                         <input
                           type="number"
+                          id={`time-slot-${index}-price`}
                           value={slot.price || ''}
                           onChange={(e) => handleTimeSlotChange(index, 'price', e.target.value)}
                           className="form-input"
                           min="0"
                           step="0.01"
                           placeholder="0.00"
-                          style={{ fontSize: '14px' }}
                         />
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: '12px', fontWeight: '500', marginBottom: '4px', display: 'block' }}>Anzahl</label>
+                      <div className="form-group">
+                        <label htmlFor={`time-slot-${index}-count`}>Anzahl</label>
                         <input
                           type="number"
+                          id={`time-slot-${index}-count`}
                           value={slot.count || ''}
                           onChange={(e) => handleTimeSlotChange(index, 'count', e.target.value)}
                           className="form-input"
                           min="0"
                           placeholder="0"
-                          style={{ fontSize: '14px' }}
                         />
                       </div>
                       <button
                         type="button"
                         onClick={() => handleRemoveTimeSlot(index)}
                         style={{ 
-                          padding: '8px 12px', 
+                          padding: '10px 16px', 
                           backgroundColor: '#dc3545', 
                           color: 'white', 
                           border: 'none', 
-                          borderRadius: '4px', 
+                          borderRadius: '6px', 
                           cursor: 'pointer',
-                          fontSize: '12px',
-                          alignSelf: 'flex-end',
-                          marginTop: '20px'
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          whiteSpace: 'nowrap',
+                          transition: 'background-color 0.2s ease'
                         }}
+                        onMouseOver={(e) => e.target.style.backgroundColor = '#c82333'}
+                        onMouseOut={(e) => e.target.style.backgroundColor = '#dc3545'}
                       >
                         Entfernen
                       </button>
@@ -291,8 +314,10 @@ function GaesteForm({ formData, onDataChange, highlightedFields = [] }) {
               €{calculateTotal()}
             </div>
           </div>
+        </div>
 
-          {/* Gäste Gesamt */}
+        {/* Gäste Gesamt - on its own line below prices */}
+        <div className="form-row" style={{ marginTop: '20px' }}>
           <div className="form-group">
             <label htmlFor="gaesteGesamt">Gäste Gesamt (GL + VVK + AK) *</label>
             <input

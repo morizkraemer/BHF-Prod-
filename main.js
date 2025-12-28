@@ -24,25 +24,27 @@ if (process.argv.includes('--dev')) {
 
 let mainWindow;
 
-// Check if this is a debug build by examining the executable path or app name
+// Check if this is a debug build by reading .env.build file
 function isDebugBuild() {
-  // Check if debug file exists (most reliable - gets packaged with the app)
+  // Check environment variable first (for development)
+  if (process.env.DEBUG_MODE === 'true') {
+    return true;
+  }
+  
+  // Check .env.build file (packaged in the app)
   try {
-    const debugFilePath = path.join(__dirname, 'debug.flag');
-    if (fs.existsSync(debugFilePath)) {
-      return true;
+    const envBuildPath = path.join(__dirname, '.env.build');
+    if (fs.existsSync(envBuildPath)) {
+      const envContent = fs.readFileSync(envBuildPath, 'utf8');
+      if (envContent.includes('DEBUG_MODE=true')) {
+        return true;
+      }
     }
   } catch (e) {
     // Ignore errors
   }
   
-  // Check executable path (works in packaged apps)
-  const execPath = process.execPath.toLowerCase();
-  if (execPath.includes('debug')) {
-    return true;
-  }
-  
-  // Check app name
+  // Fallback: check app name (set by electron-packager)
   const appName = app.getName().toLowerCase();
   if (appName.includes('debug')) {
     return true;
