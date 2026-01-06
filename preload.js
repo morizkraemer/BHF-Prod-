@@ -23,6 +23,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getReportFolder: () => ipcRenderer.invoke('get-report-folder'),
   scanDocument: (source = 'glass', scanName = 'scan') => ipcRenderer.invoke('scan-document', source, scanName),
   selectScanFile: () => ipcRenderer.invoke('select-scan-file'),
+  checkScanInProgress: () => ipcRenderer.invoke('check-scan-in-progress'),
+  checkScanFolder: (scanName) => ipcRenderer.invoke('check-scan-folder', scanName),
   
   // Scanner messages
   onScanMessage: (callback) => {

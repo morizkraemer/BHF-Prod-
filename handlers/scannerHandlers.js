@@ -15,8 +15,93 @@ const {
  * Handles scanner listing, selection, scanning, and file operations
  */
 
+// Track scan state
+let scanInProgress = false;
+let currentScanInfo = null; // { scanName, startTime, outputPath }
+
 function registerScannerHandlers(ipcMain, store, mainWindow, dialog) {
   // IPC Handlers for Scanner
+  ipcMain.handle('check-scan-in-progress', () => {
+    return {
+      inProgress: scanInProgress,
+      scanInfo: currentScanInfo
+    };
+  });
+
+  ipcMain.handle('check-scan-folder', async (event, scanName) => {
+    try {
+      // Get scan folder from settings, or use default
+      let scanDir = store.get('scanFolder', null);
+      if (!scanDir) {
+        scanDir = path.join(app.getPath('documents'), 'NightclubScans');
+      }
+
+      // Check if folder exists
+      if (!fsSync.existsSync(scanDir)) {
+        return {
+          success: false,
+          found: false,
+          message: 'Scan-Ordner existiert nicht'
+        };
+      }
+
+      // Read directory and find files matching scanName pattern
+      const files = await fs.readdir(scanDir);
+      const matchingFiles = files
+        .filter(file => file.startsWith(scanName + '_') && (file.endsWith('.pdf') || file.endsWith('.png') || file.endsWith('.jpg') || file.endsWith('.jpeg')))
+        .map(file => ({
+          name: file,
+          path: path.join(scanDir, file)
+        }))
+        .map(file => {
+          try {
+            const stats = fsSync.statSync(file.path);
+            return {
+              ...file,
+              mtime: stats.mtime,
+              size: stats.size
+            };
+          } catch (e) {
+            return null;
+          }
+        })
+        .filter(file => file !== null && file.size > 0)
+        .sort((a, b) => b.mtime - a.mtime); // Sort by modification time, newest first
+
+      if (matchingFiles.length === 0) {
+        return {
+          success: true,
+          found: false,
+          message: 'Keine Scan-Dateien gefunden'
+        };
+      }
+
+      // Get the most recent file
+      const latestFile = matchingFiles[0];
+      const fileBuffer = await fs.readFile(latestFile.path);
+      const base64Data = fileBuffer.toString('base64');
+      const mimeType = latestFile.path.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg';
+      const fileType = latestFile.path.endsWith('.pdf') ? 'pdf' : 'image';
+
+      return {
+        success: true,
+        found: true,
+        filePath: latestFile.path,
+        base64: `data:${mimeType};base64,${base64Data}`,
+        type: fileType,
+        filename: latestFile.name,
+        scanName: scanName
+      };
+    } catch (error) {
+      console.error('Error checking scan folder:', error);
+      return {
+        success: false,
+        found: false,
+        message: 'Fehler beim Prüfen des Scan-Ordners: ' + error.message
+      };
+    }
+  });
+
   ipcMain.handle('list-scanners', async () => {
     try {
       if (process.platform === 'darwin') {
@@ -285,10 +370,34 @@ function registerScannerHandlers(ipcMain, store, mainWindow, dialog) {
           };
         }
         
+        // Check if a scan is already in progress
+        if (scanInProgress) {
+          return {
+            success: false,
+            error: {
+              type: 'scan_in_progress',
+              message: 'Ein Scan läuft bereits. Bitte warten Sie, bis der aktuelle Scan abgeschlossen ist.',
+              isRecoverable: false,
+              userFriendly: true
+            }
+          };
+        }
+
+        // Set scan in progress
+        scanInProgress = true;
+        const scanStartTime = Date.now();
+
         // Generate output filename with timestamp
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
         const outputFilename = `${scanName}_${timestamp}.pdf`; // NAPS2 defaults to PDF
         const outputPath = path.join(scanDir, outputFilename);
+
+        // Store current scan info
+        currentScanInfo = {
+          scanName: scanName,
+          startTime: scanStartTime,
+          outputPath: outputPath
+        };
         
         // Build NAPS2 CLI command arguments
         // Use execFile instead of exec for better argument handling
@@ -385,6 +494,10 @@ function registerScannerHandlers(ipcMain, store, mainWindow, dialog) {
             // Log file info (not the binary data!)
             console.log('Scan completed successfully:', outputFilename, `(${Math.round(stats.size / 1024)}KB)`);
             
+            // Reset scan state
+            scanInProgress = false;
+            currentScanInfo = null;
+
             // Notify renderer process with confirmation request
             if (mainWindow && !mainWindow.isDestroyed()) {
               mainWindow.webContents.send('scan-file-detected', {
@@ -405,6 +518,10 @@ function registerScannerHandlers(ipcMain, store, mainWindow, dialog) {
               filename: outputFilename
             };
           } catch (fileError) {
+            // Reset scan state on error
+            scanInProgress = false;
+            currentScanInfo = null;
+
             // Re-throw if it already has error classification
             if (fileError.errorType) {
               throw fileError;
@@ -418,6 +535,10 @@ function registerScannerHandlers(ipcMain, store, mainWindow, dialog) {
             throw error;
           }
         } catch (scanError) {
+          // Reset scan state on error
+          scanInProgress = false;
+          currentScanInfo = null;
+
           // If error already has classification, re-throw it
           if (scanError.errorType) {
             throw scanError;
@@ -446,6 +567,10 @@ function registerScannerHandlers(ipcMain, store, mainWindow, dialog) {
       }
       
     } catch (error) {
+      // Reset scan state on error
+      scanInProgress = false;
+      currentScanInfo = null;
+
       console.error('Scan error:', error);
       
       // If error already has classification, return structured error

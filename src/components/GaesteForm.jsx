@@ -1,6 +1,6 @@
 const { useState, useEffect } = React;
 
-function GaesteForm({ formData, onDataChange, highlightedFields = [] }) {
+function GaesteForm({ formData, onDataChange, highlightedFields = [], printedTemplates = {}, onTemplatePrinted = null }) {
   const shouldHighlight = (fieldName) => {
     return highlightedFields.includes(fieldName);
   };
@@ -342,6 +342,9 @@ function GaesteForm({ formData, onDataChange, highlightedFields = [] }) {
             defaultSource="glass"
             title="Agenturzettel scannen"
             scanName="Agenturzettel"
+            templateKey="uebersichtzettel"
+            printedTemplates={printedTemplates}
+            onTemplatePrinted={onTemplatePrinted}
           />
         </div>
       </div>

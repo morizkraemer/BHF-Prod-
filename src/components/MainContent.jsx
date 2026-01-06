@@ -91,6 +91,10 @@ function MainContent({
             formData={formData.gaeste}
             onDataChange={(data) => handleFormDataChange('gaeste', data)}
             highlightedFields={highlightedFields.gaeste || []}
+            printedTemplates={printedTemplates}
+            onTemplatePrinted={(templateKey) => {
+              setPrintedTemplates(prev => ({ ...prev, [templateKey]: true }));
+            }}
           />
         );
       case 'kassen':

@@ -18,6 +18,8 @@ function DocumentScanner({
   const [pendingScan, setPendingScan] = useState(null); // File waiting for confirmation
   const [previewDocument, setPreviewDocument] = useState(null); // Document to preview in popup
   const [scanSource, setScanSource] = useState(defaultSource); // 'glass' or 'feeder'
+  const [showGetScanButton, setShowGetScanButton] = useState(false); // Show "Get Scan" button after timeout
+  const [scanTimeoutId, setScanTimeoutId] = useState(null); // Timeout ID for showing button
   
   // Get print status from props
   const hasPrinted = templateKey ? (printedTemplates[templateKey] || false) : false;
@@ -38,6 +40,12 @@ function DocumentScanner({
           // Show confirmation popup instead of auto-importing
           setPendingScan(result);
           setIsScanning(false);
+          setShowGetScanButton(false);
+          // Clear timeout if confirmation appears
+          if (scanTimeoutId) {
+            clearTimeout(scanTimeoutId);
+            setScanTimeoutId(null);
+          }
         }
       };
       
@@ -49,7 +57,16 @@ function DocumentScanner({
         }
       };
     }
-  }, [scanName]); // Include scanName in dependencies
+  }, [scanName, scanTimeoutId]); // Include scanName and scanTimeoutId in dependencies
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (scanTimeoutId) {
+        clearTimeout(scanTimeoutId);
+      }
+    };
+  }, [scanTimeoutId]);
   
   const handleConfirmScan = () => {
     if (!pendingScan) return;
@@ -68,11 +85,21 @@ function DocumentScanner({
       onDocumentsChange(updatedDocuments);
     }
     setPendingScan(null);
+    setShowGetScanButton(false); // Hide button when scan is accepted
+    if (scanTimeoutId) {
+      clearTimeout(scanTimeoutId);
+      setScanTimeoutId(null);
+    }
   };
   
   const handleRejectScan = () => {
     setPendingScan(null);
     setIsScanning(false);
+    setShowGetScanButton(false); // Hide button when scan is rejected
+    if (scanTimeoutId) {
+      clearTimeout(scanTimeoutId);
+      setScanTimeoutId(null);
+    }
   };
 
   const handleScan = async () => {
@@ -84,15 +111,43 @@ function DocumentScanner({
     
     try {
       setIsScanning(true);
+      setShowGetScanButton(false);
+      // Clear any existing timeout
+      if (scanTimeoutId) {
+        clearTimeout(scanTimeoutId);
+        setScanTimeoutId(null);
+      }
+
       if (window.electronAPI && window.electronAPI.scanDocument) {
         const result = await window.electronAPI.scanDocument(scanSource, scanName);
         
         if (result && result.success) {
           // Scan completed - file will be detected via scan-file-detected event
           // Keep isScanning true - will be set to false when confirmation popup appears
+          // Show "Get Scan" button immediately for testing
+          setShowGetScanButton(true);
+          
+          // Also set timeout as fallback to check scan status periodically
+          const timeout = setTimeout(async () => {
+            // Check if scan is still in progress
+            if (window.electronAPI && window.electronAPI.checkScanInProgress) {
+              const scanStatus = await window.electronAPI.checkScanInProgress();
+              // If scan is still in progress, keep button visible
+              // If scan completed, button should already be visible
+              if (!scanStatus.inProgress && !showGetScanButton) {
+                setShowGetScanButton(true);
+              }
+            }
+          }, 2000); // Check after 2 seconds
+          setScanTimeoutId(timeout);
         } else if (result && result.error) {
           // Handle structured error response
           setIsScanning(false);
+          setShowGetScanButton(false);
+          if (scanTimeoutId) {
+            clearTimeout(scanTimeoutId);
+            setScanTimeoutId(null);
+          }
           const error = result.error;
           
           // Handle different error types with appropriate UI
@@ -102,6 +157,8 @@ function DocumentScanner({
           } else if (error.type === 'paper_jam' || error.type === 'cover_open') {
             // For recoverable errors, show with a helpful icon
             alert('⚠️ ' + error.message);
+          } else if (error.type === 'scan_in_progress') {
+            alert('ℹ️ ' + error.message);
           } else {
             // For other errors, show standard error alert
             alert('❌ ' + error.message);
@@ -111,13 +168,64 @@ function DocumentScanner({
           console.error('Error type:', error.type, 'Recoverable:', error.isRecoverable);
         } else {
           setIsScanning(false);
+          setShowGetScanButton(false);
+          if (scanTimeoutId) {
+            clearTimeout(scanTimeoutId);
+            setScanTimeoutId(null);
+          }
         }
       }
     } catch (error) {
       // Fallback for unexpected errors (shouldn't happen with new structure, but keep for safety)
       setIsScanning(false);
+      setShowGetScanButton(false);
+      if (scanTimeoutId) {
+        clearTimeout(scanTimeoutId);
+        setScanTimeoutId(null);
+      }
       alert('❌ Fehler: ' + (error.message || 'Unbekannter Fehler beim Scannen'));
       console.error('Scan error:', error);
+    }
+  };
+
+  const handleGetScan = async () => {
+    try {
+      // First check if scan is still in progress
+      if (window.electronAPI && window.electronAPI.checkScanInProgress) {
+        const scanStatus = await window.electronAPI.checkScanInProgress();
+        if (scanStatus.inProgress) {
+          alert('ℹ️ Scan läuft noch. Bitte warten Sie, bis der Scan abgeschlossen ist.');
+          return;
+        }
+      }
+
+      if (window.electronAPI && window.electronAPI.checkScanFolder) {
+        const result = await window.electronAPI.checkScanFolder(scanName);
+        
+        if (result && result.success && result.found) {
+          // Found a scan file - trigger the same confirmation flow
+          setPendingScan({
+            filePath: result.filePath,
+            base64: result.base64,
+            type: result.type,
+            filename: result.filename,
+            scanName: result.scanName
+          });
+          setIsScanning(false);
+          setShowGetScanButton(false);
+          if (scanTimeoutId) {
+            clearTimeout(scanTimeoutId);
+            setScanTimeoutId(null);
+          }
+        } else if (result && result.success && !result.found) {
+          alert('ℹ️ ' + (result.message || 'Keine Scan-Datei gefunden. Der Scan ist möglicherweise noch nicht abgeschlossen.'));
+        } else {
+          alert('❌ Fehler beim Prüfen des Scan-Ordners: ' + (result?.message || 'Unbekannter Fehler'));
+        }
+      }
+    } catch (error) {
+      alert('❌ Fehler: ' + (error.message || 'Unbekannter Fehler beim Prüfen des Scan-Ordners'));
+      console.error('Get scan error:', error);
     }
   };
 
@@ -274,8 +382,19 @@ function DocumentScanner({
         {scanSource === 'feeder' && !isScanning && !pendingScan && (
           <span style={{ fontSize: '12px', color: '#d97706' }}>⚠️ Dokumente im Einzug?</span>
         )}
-        {isScanning && (
+        {isScanning && !showGetScanButton && (
           <span style={{ fontSize: '12px', color: '#2563eb' }}>⏳ Scan läuft...</span>
+        )}
+        {showGetScanButton && (
+          <button
+            type="button"
+            onClick={handleGetScan}
+            className="scan-button scan-button-blue"
+            style={{ fontSize: '12px', padding: '6px 12px' }}
+            title="Scan-Datei manuell abrufen"
+          >
+            📥 Scan abrufen
+          </button>
         )}
       </div>
 
