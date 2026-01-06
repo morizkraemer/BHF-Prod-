@@ -53,7 +53,7 @@ function Sidebar({
             <i data-lucide="settings"></i>
           </button>
           <button className="close-shift-button-sidebar" onClick={onCloseShift}>
-            {currentPhase === 'VVA' ? 'FINISH VVA' : 'Close Shift'}
+            {currentPhase === 'VVA' ? 'FINISH VVA' : 'Schicht beenden'}
           </button>
         </div>
       </div>

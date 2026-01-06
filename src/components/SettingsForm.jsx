@@ -736,7 +736,7 @@ function SettingsForm() {
       <div className="settings-scanner-section">
         <h3>Report-Ordner</h3>
         <p className="settings-description">
-          Wählen Sie den Ordner aus, in dem die Shift-Reports und gescannten PDFs gespeichert werden sollen. Für jeden Shift wird ein Unterordner erstellt.
+          Wählen Sie den Ordner aus, in dem die Schicht-Reports und gescannten PDFs gespeichert werden sollen. Für jede Schicht wird ein Unterordner erstellt.
         </p>
         <div className="settings-scan-folder-form">
           <div className="settings-scan-folder-display">
@@ -1014,9 +1014,9 @@ function SettingsForm() {
 
   const handleResetShiftData = async () => {
     const confirmed = window.confirm(
-      'Möchten Sie wirklich den aktuellen Shift zurücksetzen?\n\n' +
+      'Möchten Sie wirklich die aktuelle Schicht zurücksetzen?\n\n' +
       'Dies wird gelöscht:\n' +
-      '• Alle aktuellen Shift-Daten\n' +
+      '• Alle aktuellen Schicht-Daten\n' +
       '• Tech-Namen (Sound Engineer & Lighting Tech)\n' +
       '• Aktuelle Phase wird auf VVA zurückgesetzt\n\n' +
       'Einstellungen und Templates bleiben erhalten.'
@@ -1030,7 +1030,7 @@ function SettingsForm() {
       if (window.electronAPI && window.electronAPI.clearShiftData) {
         const result = await window.electronAPI.clearShiftData();
         if (result.success) {
-          alert('Shift-Daten wurden erfolgreich zurückgesetzt. Die Seite wird neu geladen.');
+          alert('Schicht-Daten wurden erfolgreich zurückgesetzt. Die Seite wird neu geladen.');
           window.location.reload();
         } else {
           alert('Fehler beim Zurücksetzen: ' + (result.error || 'Unbekannter Fehler'));
@@ -1054,7 +1054,7 @@ function SettingsForm() {
       '• Tech-Namen\n' +
       '• Alle Templates\n' +
       '• Alle Bestückungslisten\n' +
-      '• Alle Shift-Daten\n\n' +
+      '• Alle Schicht-Daten\n\n' +
       'Diese Aktion kann nicht rückgängig gemacht werden!'
     );
 
@@ -1104,7 +1104,7 @@ function SettingsForm() {
   const handleFillTestData = async () => {
     const confirmed = window.confirm(
       'Möchten Sie wirklich alle Felder mit Test-Daten füllen?\n\n' +
-      'Dies wird alle aktuellen Shift-Daten überschreiben.'
+      'Dies wird alle aktuellen Schicht-Daten überschreiben.'
     );
 
     if (!confirmed) {
@@ -1366,7 +1366,7 @@ function SettingsForm() {
       <div className="settings-section">
         <h2>Daten zurücksetzen</h2>
         <p className="settings-description">
-          Setzen Sie Shift-Daten oder alle Einstellungen zurück.
+          Setzen Sie Schicht-Daten oder alle Einstellungen zurück.
         </p>
         <div style={{ marginTop: '30px', marginBottom: '30px' }}>
           <h3 style={{ fontSize: '18px', marginBottom: '10px' }}>Test-Daten</h3>
@@ -1393,9 +1393,9 @@ function SettingsForm() {
           </button>
         </div>
         <div style={{ marginTop: '30px', marginBottom: '30px' }}>
-          <h3 style={{ fontSize: '18px', marginBottom: '10px' }}>Shift zurücksetzen</h3>
+          <h3 style={{ fontSize: '18px', marginBottom: '10px' }}>Schicht zurücksetzen</h3>
           <p className="settings-description">
-            Setzt nur die aktuellen Shift-Daten zurück. Einstellungen und Templates bleiben erhalten.
+            Setzt nur die aktuellen Schicht-Daten zurück. Einstellungen und Templates bleiben erhalten.
           </p>
           <button
             type="button"
@@ -1413,7 +1413,7 @@ function SettingsForm() {
               marginTop: '10px'
             }}
           >
-            Shift zurücksetzen
+            Schicht zurücksetzen
           </button>
         </div>
         <div style={{ marginTop: '30px' }}>
@@ -1431,7 +1431,7 @@ function SettingsForm() {
             <li>Tech-Namen (Sound Engineer & Lighting Tech)</li>
             <li>Alle Templates</li>
             <li>Alle Bestückungslisten</li>
-            <li>Alle aktuellen Shift-Daten</li>
+            <li>Alle aktuellen Schicht-Daten</li>
           </ul>
           <div style={{ marginTop: '15px' }}>
             <a

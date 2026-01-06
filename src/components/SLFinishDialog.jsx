@@ -204,7 +204,7 @@ function SLFinishDialog({ isOpen, onConfirm, onCancel, missingFields = [], formD
     <div className="vva-missing-fields-overlay">
       <div className="vva-missing-fields-dialog">
         <h2 className="vva-missing-fields-title">
-          {isOnConfirmationStep ? 'SHIFT BEENDEN' : (hasMissingFields ? 'Fehlende Felder' : 'SHIFT BEENDEN')}
+          {isOnConfirmationStep ? 'SCHICHT BEENDEN' : (hasMissingFields ? 'Fehlende Felder' : 'SCHICHT BEENDEN')}
         </h2>
         
         {/* Step Indicator */}
@@ -312,7 +312,7 @@ function SLFinishDialog({ isOpen, onConfirm, onCancel, missingFields = [], formD
                   />
                   <span className="close-shift-confirmation-checkbox-custom"></span>
                   <span className="close-shift-confirmation-checkbox-text">
-                    Ich bestätige, dass alle Daten vollständig sind und der Shift beendet werden kann
+                    Ich bestätige, dass alle Daten vollständig sind und die Schicht beendet werden kann
                   </span>
                 </label>
               </div>
@@ -423,7 +423,7 @@ function SLFinishDialog({ isOpen, onConfirm, onCancel, missingFields = [], formD
             disabled={!canProceed()}
             className={isOnConfirmationStep ? "close-shift-confirmation-button close-shift-confirmation-button-confirm" : "vva-missing-fields-button vva-missing-fields-button-continue"}
           >
-            {isOnConfirmationStep ? 'Shift beenden' : (isOnEinkaufsbelegStep ? 'Weiter' : (isOnSummaryStep ? 'Weiter' : 'Weiter'))}
+            {isOnConfirmationStep ? 'Schicht beenden' : (isOnEinkaufsbelegStep ? 'Weiter' : (isOnSummaryStep ? 'Weiter' : 'Weiter'))}
           </button>
         </div>
       </div>
