@@ -1057,6 +1057,145 @@ function SettingsForm() {
     }
   };
 
+  const handleFillTestData = async () => {
+    const confirmed = window.confirm(
+      'Möchten Sie wirklich alle Felder mit Test-Daten füllen?\n\n' +
+      'Dies wird alle aktuellen Shift-Daten überschreiben.'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      // Get current date for test data
+      const today = new Date();
+      const dateStr = today.toISOString().split('T')[0];
+
+      // Generate comprehensive test data
+      const testData = {
+        uebersicht: {
+          date: dateStr,
+          eventName: 'Test Event 2024',
+          eventType: 'konzert',
+          getInTime: '14:00',
+          getInTatsachlich: '14:15',
+          doorsTime: '19:00',
+          doorsTatsachlich: '19:10',
+          travelPartyGetIn: '8',
+          travelPartyTatsachlich: '8',
+          konzertende: '23:00',
+          konzertendeTatsachlich: '23:15',
+          backstageCurfew: '01:00',
+          backstageCurfewTatsachlich: '01:00',
+          nightLead: 'Max Mustermann',
+          agentur: 'Test Agentur GmbH',
+          agenturAPName: 'Test Agentur AP',
+          vva: 'VVA-12345',
+          companyName: '',
+          nightlinerParkplatz: 'yes',
+          notes: 'Test Notizen für Übersicht'
+        },
+        'rider-extras': {
+          items: [
+            {
+              amount: '2',
+              text: 'Red Bull',
+              price: '3.50',
+              discount: '',
+              originalPrice: '3.50',
+              ekPrice: null,
+              checked: true
+            },
+            {
+              amount: '1',
+              text: 'Wasser',
+              price: '2.00',
+              discount: '50',
+              originalPrice: '2.00',
+              ekPrice: null,
+              checked: false
+            },
+            {
+              amount: '3',
+              text: 'Bier',
+              price: '4.00',
+              discount: '',
+              originalPrice: '4.00',
+              ekPrice: null,
+              checked: true
+            }
+          ],
+          standardbestueckung: 'standard-konzert',
+          getInCatering: 'kalt',
+          dinner: 'warm',
+          buyoutProvider: '',
+          buyoutGroups: [{ people: '', perPerson: '' }],
+          scannedDocuments: [],
+          purchaseReceipts: [],
+          notes: 'Test Notizen für Rider Extras',
+          customizedFridgeItems: []
+        },
+        tontechniker: {
+          soundEngineerEnabled: true,
+          soundEngineerName: 'Hans Sound',
+          soundEngineerStartTime: '13:00',
+          soundEngineerEndTime: '00:30',
+          lightingTechEnabled: true,
+          lightingTechName: 'Peter Licht',
+          lightingTechStartTime: '15:00',
+          lightingTechEndTime: '01:00',
+          scannedImages: []
+        },
+        secu: {
+          securityPersonnel: [
+            { name: 'Security Person 1', startTime: '18:00', endTime: '02:00' },
+            { name: 'Security Person 2', startTime: '18:00', endTime: '02:00' },
+            { name: 'Security Person 3', startTime: '20:00', endTime: '02:00' }
+          ],
+          scannedDocuments: []
+        },
+        'andere-mitarbeiter': {
+          mitarbeiter: [
+            { name: 'Kasse Person 1', startTime: '18:00', endTime: '02:00', category: 'Kasse' },
+            { name: 'WC Person 1', startTime: '19:00', endTime: '02:00', category: 'WC' },
+            { name: 'Stage Hand 1', startTime: '14:00', endTime: '00:00', category: 'Stage Hand' }
+          ]
+        },
+        gaeste: {
+          paymentType: 'selbstzahler',
+          pauschaleOptions: {
+            standard: true,
+            longdrinks: false,
+            shots: false
+          },
+          anzahlAbendkasse: '150',
+          betragAbendkasse: '15.00',
+          useTimeBasedPricing: false,
+          abendkasseTimeSlots: [],
+          gaesteGesamt: '350',
+          scannedDocuments: []
+        },
+        kassen: {
+          receipts: [],
+          abrechnungen: []
+        }
+      };
+
+      // Save test data
+      if (window.electronAPI && window.electronAPI.saveData) {
+        await window.electronAPI.saveData('currentShiftData', testData);
+        alert('Test-Daten wurden erfolgreich eingefügt. Die Seite wird neu geladen.');
+        window.location.reload();
+      } else {
+        alert('Fehler: Electron API nicht verfügbar.');
+      }
+    } catch (error) {
+      console.error('Error filling test data:', error);
+      alert('Fehler beim Füllen der Test-Daten: ' + error.message);
+    }
+  };
+
   const renderTemplatesSection = () => (
     <>
       <div className="settings-section">
@@ -1185,6 +1324,30 @@ function SettingsForm() {
         <p className="settings-description">
           Setzen Sie Shift-Daten oder alle Einstellungen zurück.
         </p>
+        <div style={{ marginTop: '30px', marginBottom: '30px' }}>
+          <h3 style={{ fontSize: '18px', marginBottom: '10px' }}>Test-Daten</h3>
+          <p className="settings-description">
+            Füllt alle Formularfelder mit Test-Daten für Testzwecke.
+          </p>
+          <button
+            type="button"
+            onClick={handleFillTestData}
+            className="settings-add-button"
+            style={{
+              padding: '12px 24px',
+              fontSize: '16px',
+              backgroundColor: '#1976d2',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              marginTop: '10px'
+            }}
+          >
+            Test Daten füllen
+          </button>
+        </div>
         <div style={{ marginTop: '30px', marginBottom: '30px' }}>
           <h3 style={{ fontSize: '18px', marginBottom: '10px' }}>Shift zurücksetzen</h3>
           <p className="settings-description">

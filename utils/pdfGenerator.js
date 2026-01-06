@@ -74,8 +74,8 @@ async function generateReportPDF(formData) {
       const pdfBuffer = await printWindow.webContents.printToPDF({
         printBackground: true,
         margins: {
-          top: 0.4,
-          bottom: 0.4,
+          top: 0.6,
+          bottom: 0.6,
           left: 0.4,
           right: 0.4
         },
