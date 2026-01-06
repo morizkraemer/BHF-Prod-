@@ -118,43 +118,22 @@ function App() {
         setPrintedTemplates={shiftState.setPrintedTemplates}
       />
 
-      {/* VVA Missing Fields Dialog */}
-      <VVAMissingFieldsDialog
-        isOpen={shiftState.showVVAMissingFields}
-        onFinishAnyway={(fieldNotes, fieldConfirmations, allFieldsNote) => 
-          handlers.handleVVAMissingFieldsFinishAnyway(fieldNotes, fieldConfirmations, allFieldsNote, shiftState.vvaMissingFields)
-        }
-        onCancel={() => handlers.handleVVAMissingFieldsCancel(shiftState.vvaMissingFields)}
-        missingFields={shiftState.vvaMissingFields}
-        formData={formData}
-      />
-
-      {/* SL Missing Fields Dialog */}
-      <VVAMissingFieldsDialog
-        isOpen={shiftState.showSLMissingFields}
-        onFinishAnyway={(fieldNotes, fieldConfirmations, allFieldsNote) => 
-          handlers.handleSLMissingFieldsFinishAnyway(fieldNotes, fieldConfirmations, allFieldsNote, shiftState.slMissingFields)
-        }
-        onCancel={() => handlers.handleSLMissingFieldsCancel(shiftState.slMissingFields)}
-        missingFields={shiftState.slMissingFields}
-        title="Fehlende Felder"
-        formData={formData}
-      />
-
-      {/* VVA Confirmation Dialog */}
-      <VVAConfirmationDialog
+      {/* VVA Finish Dialog - combines missing fields flow + confirmation */}
+      <VVAFinishDialog
         isOpen={shiftState.showVVAConfirmation}
         onConfirm={handlers.handleVVAConfirm}
         onCancel={handlers.handleVVACancel}
+        missingFields={shiftState.vvaMissingFields}
         hasExtras={window.AppValidation.hasHospitalityExtras(formData)}
         formData={formData}
       />
 
-      {/* Close Shift Confirmation Dialog */}
-      <CloseShiftConfirmationDialog
+      {/* SL Finish Dialog - combines missing fields flow + confirmation */}
+      <SLFinishDialog
         isOpen={shiftState.showCloseShiftConfirmation}
         onConfirm={handlers.handleCloseShiftConfirm}
         onCancel={handlers.handleCloseShiftCancel}
+        missingFields={shiftState.slMissingFields}
         formData={formData}
       />
     </div>

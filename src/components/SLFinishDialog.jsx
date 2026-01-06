@@ -1,65 +1,61 @@
 const { useState, useEffect } = React;
 
-function VVAMissingFieldsDialog({ isOpen, onFinishAnyway, onCancel, missingFields, title = 'Fehlende VVA Felder', formData }) {
+function SLFinishDialog({ isOpen, onConfirm, onCancel, missingFields = [], formData }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [fieldNotes, setFieldNotes] = useState({});
   const [allFieldsNote, setAllFieldsNote] = useState('');
-  const [showFieldStatusSummary, setShowFieldStatusSummary] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const [confirmationNote, setConfirmationNote] = useState('');
 
-  // Determine if this is VVA or SL phase based on title
-  const isVVA = title === 'Fehlende VVA Felder';
+  const hasMissingFields = missingFields.length > 0;
+  const confirmationStepIndex = hasMissingFields ? missingFields.length + 1 : 0; // +1 for summary step, +1 for confirmation
+  const isOnConfirmationStep = currentStep === confirmationStepIndex;
+  const isOnSummaryStep = hasMissingFields && currentStep === missingFields.length;
+  const isIndividualFieldStep = hasMissingFields && currentStep < missingFields.length;
 
   // Reset state when dialog opens/closes
   useEffect(() => {
     if (isOpen) {
-      setCurrentStep(0);
+      setCurrentStep(hasMissingFields ? 0 : confirmationStepIndex);
       setFieldNotes({});
       setAllFieldsNote('');
-      setShowFieldStatusSummary(false);
+      setConfirmed(false);
+      setConfirmationNote('');
     }
-  }, [isOpen, missingFields]);
+  }, [isOpen, missingFields, hasMissingFields, confirmationStepIndex]);
 
-  if (!isOpen || missingFields.length === 0) return null;
+  if (!isOpen) return null;
 
-  // Check if we're on the summary step (one step after all individual fields)
-  const isSummaryStep = currentStep === missingFields.length;
-  const isIndividualFieldStep = currentStep < missingFields.length;
-  
-  // Get current field (only if not on summary step)
+  // Get current field (only if on individual field step)
   const currentField = isIndividualFieldStep ? missingFields[currentStep] : null;
   const fieldKey = currentField ? `${currentField.section}_${currentField.field}_${currentStep}` : '';
   const currentNote = fieldKey ? (fieldNotes[fieldKey] || '') : '';
-  
-  const isLastStep = currentStep === missingFields.length; // Summary step is the last step
+
   const isFirstStep = currentStep === 0;
-  const totalSteps = missingFields.length + 1; // Individual fields + summary step
-  
-  // Check if this is a scan field (only if currentField exists)
+  const totalSteps = hasMissingFields ? missingFields.length + 2 : 1; // Individual fields + summary + confirmation, or just confirmation
+
+  // Check if this is a scan field
   const isScanField = currentField ? (currentField.field.includes('Scan') || 
                       currentField.field.includes('Gescannte') ||
                       currentField.field.includes('gescannt')) : false;
-  
+
   // Extract scan name from field name
   const getScanName = (fieldName) => {
-    // Handle specific cases first
     if (fieldName === 'Gescannte Bilder') {
       return 'Technikzettel';
     }
     if (fieldName === 'Gescannte Dokumente') {
       return 'Secu-Dokumente';
     }
-    // Remove "Scan" or "Scans" from the end
     let name = fieldName.replace(/\s+Scan(s)?$/i, '');
     return name;
   };
-  
+
   // Determine article (der/die) for scan name
   const getScanArticle = (scanName) => {
-    // "Belege" is plural, so use "die"
     if (scanName === 'Belege') {
       return 'die';
     }
-    // Default to "den" for singular masculine/neuter
     return 'den';
   };
 
@@ -73,27 +69,32 @@ function VVAMissingFieldsDialog({ isOpen, onFinishAnyway, onCancel, missingField
 
   // Check if current step can proceed
   const canProceed = () => {
-    if (isSummaryStep) {
+    if (isOnSummaryStep) {
       // On summary step, need either all-fields note OR all individual notes
       if (allFieldsNote.trim() !== '') {
-        return true; // All-fields note is filled
+        return true;
       }
-      // Check if all individual notes are filled
       return missingFields.every((field, index) => {
         const key = `${field.section}_${field.field}_${index}`;
         return fieldNotes[key] && fieldNotes[key].trim() !== '';
       });
+    } else if (isOnConfirmationStep) {
+      // On confirmation step, need confirmation checked
+      return confirmed;
     } else {
-      // On individual field step, note is optional (can skip to next)
-      return true; // Always allow proceeding (note is optional)
+      // On individual field step, note is optional
+      return true;
     }
   };
 
   // Handle continue to next step
   const handleContinue = () => {
-    if (isSummaryStep) {
-      // On summary step, show field status summary dialog instead of finishing immediately
-      setShowFieldStatusSummary(true);
+    if (isOnSummaryStep) {
+      // Move from summary to confirmation step
+      setCurrentStep(confirmationStepIndex);
+    } else if (isOnConfirmationStep) {
+      // On confirmation step, finish
+      handleFinish();
     } else if (currentStep === missingFields.length - 1) {
       // Last individual field, move to summary
       setCurrentStep(prev => prev + 1);
@@ -102,16 +103,28 @@ function VVAMissingFieldsDialog({ isOpen, onFinishAnyway, onCancel, missingField
       setCurrentStep(prev => prev + 1);
     }
   };
-  
-  // Handle confirm from field status summary
-  const handleFieldStatusConfirm = () => {
-    setShowFieldStatusSummary(false);
-    onFinishAnyway(fieldNotes, {}, allFieldsNote);
-  };
-  
-  // Handle cancel from field status summary
-  const handleFieldStatusCancel = () => {
-    setShowFieldStatusSummary(false);
+
+  // Handle finish - combine missing fields notes and confirmation note
+  const handleFinish = () => {
+    // Combine missing fields notes if any
+    let combinedMissingFieldsNote = '';
+    if (hasMissingFields) {
+      if (allFieldsNote && allFieldsNote.trim() !== '') {
+        combinedMissingFieldsNote = allFieldsNote.trim();
+      } else {
+        combinedMissingFieldsNote = Object.entries(fieldNotes)
+          .map(([key, note]) => {
+            const parts = key.split('_');
+            const section = parts[0];
+            const field = parts.slice(1, -1).join('_');
+            return `${section} - ${field}: ${note}`;
+          })
+          .join('\n\n');
+      }
+    }
+
+    // Call onConfirm with notes and individual field notes
+    onConfirm(combinedMissingFieldsNote, confirmationNote.trim() || null, fieldNotes);
   };
 
   // Handle go back
@@ -121,18 +134,85 @@ function VVAMissingFieldsDialog({ isOpen, onFinishAnyway, onCancel, missingField
     }
   };
 
+  // Get field status summary
+  const fieldStatus = formData ? window.AppValidation.getAllFieldsStatus(formData) : [];
+  const fieldsBySection = {};
+  fieldStatus.forEach(field => {
+    if (!fieldsBySection[field.section]) {
+      fieldsBySection[field.section] = [];
+    }
+    fieldsBySection[field.section].push(field);
+  });
+
   return (
     <div className="vva-missing-fields-overlay">
       <div className="vva-missing-fields-dialog">
-        <h2 className="vva-missing-fields-title">{title}</h2>
+        <h2 className="vva-missing-fields-title">
+          {isOnConfirmationStep ? 'SHIFT BEENDEN' : (hasMissingFields ? 'Fehlende Felder' : 'SHIFT BEENDEN')}
+        </h2>
         
         {/* Step Indicator */}
-        <div className="vva-missing-fields-step-indicator">
-          Schritt {currentStep + 1} von {totalSteps}
-        </div>
+        {hasMissingFields && (
+          <div className="vva-missing-fields-step-indicator">
+            Schritt {currentStep + 1} von {totalSteps}
+          </div>
+        )}
 
         <div className="vva-missing-fields-content">
-          {isSummaryStep ? (
+          {isOnConfirmationStep ? (
+            /* Confirmation Step */
+            <div className="close-shift-confirmation-content">
+              {/* Field Status Summary */}
+              {fieldStatus.length > 0 && (
+                <div className="field-status-summary">
+                  <h3 className="field-status-summary-title">Feld-Status Übersicht</h3>
+                  <div className="field-status-summary-content">
+                    {Object.entries(fieldsBySection).map(([section, fields]) => (
+                      <div key={section} className="field-status-section">
+                        <div className="field-status-section-header">{section}</div>
+                        <div className="field-status-fields">
+                          {fields.map((field, index) => (
+                            <div key={index} className="field-status-item">
+                              <span className={`field-status-icon ${field.isFilled ? 'field-status-filled' : 'field-status-missing'}`}>
+                                {field.isFilled ? '✓' : '✗'}
+                              </span>
+                              <span className="field-status-label">{field.field}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className="close-shift-confirmation-checkbox-group">
+                <label className="close-shift-confirmation-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={confirmed}
+                    onChange={(e) => setConfirmed(e.target.checked)}
+                    className="close-shift-confirmation-checkbox"
+                  />
+                  <span className="close-shift-confirmation-checkbox-custom"></span>
+                  <span className="close-shift-confirmation-checkbox-text">
+                    Ich bestätige, dass alle Daten vollständig sind und der Shift beendet werden kann
+                  </span>
+                </label>
+              </div>
+              
+              <div className="close-shift-confirmation-note">
+                <label className="close-shift-confirmation-note-label">Notiz (optional):</label>
+                <textarea
+                  className="close-shift-confirmation-note-textarea"
+                  value={confirmationNote}
+                  onChange={(e) => setConfirmationNote(e.target.value)}
+                  placeholder="Optionale Notiz hinzufügen..."
+                  rows={3}
+                />
+              </div>
+            </div>
+          ) : isOnSummaryStep ? (
             /* Summary Step - Show all missing fields and single note */
             <div className="vva-missing-fields-summary">
               <div className="vva-missing-fields-summary-title">
@@ -225,21 +305,13 @@ function VVAMissingFieldsDialog({ isOpen, onFinishAnyway, onCancel, missingField
             type="button"
             onClick={handleContinue}
             disabled={!canProceed()}
-            className="vva-missing-fields-button vva-missing-fields-button-continue"
+            className={isOnConfirmationStep ? "close-shift-confirmation-button close-shift-confirmation-button-confirm" : "vva-missing-fields-button vva-missing-fields-button-continue"}
           >
-            {isLastStep ? 'Trotzdem Beenden' : (isSummaryStep ? 'Trotzdem Beenden' : 'Weiter')}
+            {isOnConfirmationStep ? 'Shift beenden' : (isOnSummaryStep ? 'Weiter' : 'Weiter')}
           </button>
         </div>
       </div>
-      
-      {/* Field Status Summary Dialog */}
-      <FieldStatusSummaryDialog
-        isOpen={showFieldStatusSummary}
-        onConfirm={handleFieldStatusConfirm}
-        onCancel={handleFieldStatusCancel}
-        formData={formData}
-        isVVA={isVVA}
-      />
     </div>
   );
 }
+

@@ -17,8 +17,13 @@ const createShiftHandlers = ({
   setHighlightedFields,
   setActiveSection
 }) => {
-  const handleVVAConfirm = (note) => {
-    setShiftNotes(prev => ({ ...prev, vvaConfirmationNote: note }));
+  const handleVVAConfirm = (missingFieldsNote, confirmationNote, fieldNotes = {}) => {
+    setShiftNotes(prev => ({ 
+      ...prev, 
+      vvaConfirmationNote: confirmationNote,
+      vvaMissingFieldsNote: missingFieldsNote || prev.vvaMissingFieldsNote,
+      vvaFieldNotes: Object.keys(fieldNotes).length > 0 ? fieldNotes : (prev.vvaFieldNotes || {})
+    }));
     setCurrentPhase('SL');
     setShowVVAConfirmation(false);
     alert('VVA Phase abgeschlossen. Sie können nun mit der SL Phase fortfahren.');
@@ -28,8 +33,13 @@ const createShiftHandlers = ({
     setShowVVAConfirmation(false);
   };
 
-  const handleCloseShiftConfirm = (note) => {
-    setShiftNotes(prev => ({ ...prev, closeShiftConfirmationNote: note }));
+  const handleCloseShiftConfirm = (missingFieldsNote, confirmationNote, fieldNotes = {}) => {
+    setShiftNotes(prev => ({ 
+      ...prev, 
+      closeShiftConfirmationNote: confirmationNote,
+      slMissingFieldsNote: missingFieldsNote || prev.slMissingFieldsNote,
+      slFieldNotes: Object.keys(fieldNotes).length > 0 ? fieldNotes : (prev.slFieldNotes || {})
+    }));
     setShowCloseShiftConfirmation(false);
     handleCloseShiftSave();
   };
@@ -38,38 +48,11 @@ const createShiftHandlers = ({
     setShowCloseShiftConfirmation(false);
   };
 
+  // This handler is no longer needed - VVAFinishDialog handles everything internally
+  // Keeping for backwards compatibility but it should not be called
   const handleVVAMissingFieldsFinishAnyway = (fieldNotes, fieldConfirmations, allFieldsNote, vvaMissingFields) => {
-    // Use all-fields note if provided, otherwise combine individual field notes
-    let combinedNote = '';
-    if (allFieldsNote && allFieldsNote.trim() !== '') {
-      combinedNote = allFieldsNote.trim();
-    } else {
-      // Combine all field notes into a single note string
-      combinedNote = Object.entries(fieldNotes)
-        .map(([key, note]) => {
-          // Extract field info from key (section_field_index)
-          const parts = key.split('_');
-          const section = parts[0];
-          const field = parts.slice(1, -1).join('_');
-          return `${section} - ${field}: ${note}`;
-        })
-        .join('\n\n');
-    }
-    
-    setShiftNotes(prev => ({ 
-      ...prev, 
-      vvaMissingFieldsNote: combinedNote,
-      vvaMissingFields: vvaMissingFields,
-      vvaFieldConfirmations: fieldConfirmations,
-      vvaFieldNotes: fieldNotes // Store individual notes too
-    }));
-    setShowVVAMissingFields(false);
-    // Clear highlights
-    setHighlightedFields({});
-    
-    // Since note is required, if we get here there's always a note - switch directly to SL phase
-    setCurrentPhase('SL');
-    alert('VVA Phase abgeschlossen. Sie können nun mit der SL Phase fortfahren.');
+    // This should not be called anymore - VVAFinishDialog handles the flow internally
+    console.warn('handleVVAMissingFieldsFinishAnyway should not be called - use VVAFinishDialog instead');
   };
 
   const handleVVAMissingFieldsCancel = (vvaMissingFields) => {
@@ -90,72 +73,11 @@ const createShiftHandlers = ({
     setHighlightedFields(highlightMapArrays);
   };
 
-  const handleSLMissingFieldsFinishAnyway = async (fieldNotes, fieldConfirmations, allFieldsNote, slMissingFields) => {
-    // Use all-fields note if provided, otherwise combine individual field notes
-    let combinedNote = '';
-    if (allFieldsNote && allFieldsNote.trim() !== '') {
-      combinedNote = allFieldsNote.trim();
-    } else {
-      // Combine all field notes into a single note string
-      combinedNote = Object.entries(fieldNotes)
-        .map(([key, note]) => {
-          // Extract field info from key (section_field_index)
-          const parts = key.split('_');
-          const section = parts[0];
-          const field = parts.slice(1, -1).join('_');
-          return `${section} - ${field}: ${note}`;
-        })
-        .join('\n\n');
-    }
-    
-    setShiftNotes(prev => ({ 
-      ...prev, 
-      slMissingFieldsNote: combinedNote,
-      slMissingFields: slMissingFields,
-      slFieldConfirmations: fieldConfirmations,
-      slFieldNotes: fieldNotes // Store individual notes too
-    }));
-    setShowSLMissingFields(false);
-    // Clear highlights
-    setHighlightedFields({});
-    
-    // Since note is required, proceed with saving
-    try {
-      if (window.electronAPI && window.electronAPI.closeShift) {
-        // Add shift notes to formData before closing
-        const formDataWithNotes = {
-          ...formData,
-          shiftNotes: {
-            ...shiftNotes,
-            slMissingFieldsNote: combinedNote,
-            slMissingFields: slMissingFields,
-            slFieldConfirmations: fieldConfirmations
-          }
-        };
-        const result = await window.electronAPI.closeShift(formDataWithNotes);
-        if (result.success) {
-          // Clear shift data after successful close
-          if (window.electronAPI && window.electronAPI.clearShiftData) {
-            await window.electronAPI.clearShiftData();
-          }
-          
-          // Reset form data and phase
-          setFormData(window.AppConstants.getInitialFormData());
-          setShiftNotes(window.AppConstants.getInitialShiftNotes());
-          setCurrentPhase('VVA');
-          setShiftStarted(false);
-      
-          alert(`Shift erfolgreich beendet!\n\nReport gespeichert in:\n${result.eventFolder}\n\nPDF: ${result.pdfPath.split('/').pop()}\nGescannte PDFs: ${result.scannedPDFsCount}`);
-        } else {
-          alert('Fehler beim Speichern des Shifts.');
-        }
-      } else {
-        alert('Fehler: Electron API nicht verfügbar.');
-      }
-    } catch (error) {
-      console.error('Error closing shift:', error);
-      alert('Fehler beim Schließen des Shifts: ' + error.message);
-    }
+  // This handler is no longer needed - SLFinishDialog handles everything internally
+  // Keeping for backwards compatibility but it should not be called
+  const handleSLMissingFieldsFinishAnyway = (fieldNotes, fieldConfirmations, allFieldsNote, slMissingFields) => {
+    // This should not be called anymore - SLFinishDialog handles the flow internally
+    console.warn('handleSLMissingFieldsFinishAnyway should not be called - use SLFinishDialog instead');
   };
 
   const handleSLMissingFieldsCancel = (slMissingFields) => {
@@ -215,24 +137,16 @@ const createShiftHandlers = ({
       // Validate VVA -> SL transition
       const vvaErrors = window.AppValidation.validateVVAtoSL(formData);
       
-      if (vvaErrors.length > 0) {
-        // Show missing fields dialog instead of alert
-        setVvaMissingFields(vvaErrors);
-        setShowVVAMissingFields(true);
-        // Clear previous highlights when opening dialog
-        setHighlightedFields({});
-        
-        // Highlight the first section with errors
-        if (vvaErrors.length > 0) {
-          setActiveSection(vvaErrors[0].sectionId);
-        }
-        
-        return; // Stop execution if validation fails
-      }
-      
-      // All VVA validations passed - clear highlights and show confirmation dialog
-      setHighlightedFields({});
+      // Show unified VVA finish dialog (handles both missing fields and confirmation)
+      setVvaMissingFields(vvaErrors);
       setShowVVAConfirmation(true);
+      // Clear previous highlights when opening dialog
+      setHighlightedFields({});
+      
+      // Highlight the first section with errors if any
+      if (vvaErrors.length > 0) {
+        setActiveSection(vvaErrors[0].sectionId);
+      }
       
     } else {
       // SL phase - validate all required fields with detailed errors
@@ -254,24 +168,16 @@ const createShiftHandlers = ({
         return !matchingKey;
       });
       
-      if (filteredSlErrors.length > 0) {
-        // Show missing fields dialog instead of alert
-        setSlMissingFields(filteredSlErrors);
-        setShowSLMissingFields(true);
-        // Clear previous highlights when opening dialog
-        setHighlightedFields({});
-        
-        // Highlight the first section with errors
-        if (filteredSlErrors.length > 0) {
-          setActiveSection(filteredSlErrors[0].sectionId);
-        }
-        
-        return; // Stop execution if validation fails
-      }
-      
-      // All validation passed - show confirmation dialog
-      setHighlightedFields({});
+      // Show unified SL finish dialog (handles both missing fields and confirmation)
+      setSlMissingFields(filteredSlErrors);
       setShowCloseShiftConfirmation(true);
+      // Clear previous highlights when opening dialog
+      setHighlightedFields({});
+      
+      // Highlight the first section with errors if any
+      if (filteredSlErrors.length > 0) {
+        setActiveSection(filteredSlErrors[0].sectionId);
+      }
     }
   };
 
