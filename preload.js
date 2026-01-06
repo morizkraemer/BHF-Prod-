@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   checkScanInProgress: () => ipcRenderer.invoke('check-scan-in-progress'),
   checkScanFolder: (scanName) => ipcRenderer.invoke('check-scan-folder', scanName),
   copyEinkaufsbeleg: (filePath, scanName) => ipcRenderer.invoke('copy-einkaufsbeleg', filePath, scanName),
+  readFileAsBase64: (filePath) => ipcRenderer.invoke('read-file-as-base64', filePath),
   
   // Scanner messages
   onScanMessage: (callback) => {

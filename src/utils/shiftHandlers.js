@@ -33,12 +33,13 @@ const createShiftHandlers = ({
     setShowVVAConfirmation(false);
   };
 
-  const handleCloseShiftConfirm = (missingFieldsNote, confirmationNote, fieldNotes = {}) => {
+  const handleCloseShiftConfirm = (missingFieldsNote, confirmationNote, fieldNotes = {}, einkaufsbelegPaid = null) => {
     setShiftNotes(prev => ({ 
       ...prev, 
       closeShiftConfirmationNote: confirmationNote,
       slMissingFieldsNote: missingFieldsNote || prev.slMissingFieldsNote,
-      slFieldNotes: Object.keys(fieldNotes).length > 0 ? fieldNotes : (prev.slFieldNotes || {})
+      slFieldNotes: Object.keys(fieldNotes).length > 0 ? fieldNotes : (prev.slFieldNotes || {}),
+      einkaufsbelegPaid: einkaufsbelegPaid
     }));
     setShowCloseShiftConfirmation(false);
     handleCloseShiftSave();

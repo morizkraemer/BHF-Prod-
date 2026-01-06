@@ -6,23 +6,62 @@ function SLFinishDialog({ isOpen, onConfirm, onCancel, missingFields = [], formD
   const [allFieldsNote, setAllFieldsNote] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const [confirmationNote, setConfirmationNote] = useState('');
+  const [einkaufsbelegPaid, setEinkaufsbelegPaid] = useState(null); // null = not answered, true = paid, false = unpaid
+  const [einkaufsbelegPreviews, setEinkaufsbelegPreviews] = useState([]); // Store base64 previews for receipts
 
   const hasMissingFields = missingFields.length > 0;
-  const confirmationStepIndex = hasMissingFields ? missingFields.length + 1 : 0; // +1 for summary step, +1 for confirmation
+  const hasEinkaufsbeleg = formData?.['rider-extras']?.purchaseReceipts && formData['rider-extras'].purchaseReceipts.length > 0;
+  const purchaseReceipts = formData?.['rider-extras']?.purchaseReceipts || [];
+  const einkaufsbelegStepIndex = hasMissingFields ? missingFields.length + 1 : 0; // After missing fields (or at start if no missing fields)
+  const confirmationStepIndex = hasEinkaufsbeleg ? einkaufsbelegStepIndex + 1 : (hasMissingFields ? missingFields.length + 1 : 0);
+  const isOnEinkaufsbelegStep = hasEinkaufsbeleg && currentStep === einkaufsbelegStepIndex;
   const isOnConfirmationStep = currentStep === confirmationStepIndex;
   const isOnSummaryStep = hasMissingFields && currentStep === missingFields.length;
   const isIndividualFieldStep = hasMissingFields && currentStep < missingFields.length;
 
+  // Load PDF previews for purchase receipts when dialog opens or einkaufsbeleg step is reached
+  useEffect(() => {
+    if (hasEinkaufsbeleg && purchaseReceipts.length > 0) {
+      const loadPreviews = async () => {
+        const previews = await Promise.all(
+          purchaseReceipts.map(async (receipt) => {
+            // If preview is already a base64 data URL, use it
+            if (receipt.preview && receipt.preview.startsWith('data:')) {
+              return receipt.preview;
+            }
+            // If we have filePath, try to load it
+            if (receipt.filePath && window.electronAPI && window.electronAPI.readFileAsBase64) {
+              try {
+                const base64 = await window.electronAPI.readFileAsBase64(receipt.filePath);
+                return `data:application/pdf;base64,${base64}`;
+              } catch (error) {
+                console.error('Error loading receipt preview:', error);
+                return null;
+              }
+            }
+            return null;
+          })
+        );
+        setEinkaufsbelegPreviews(previews.filter(p => p !== null));
+      };
+      loadPreviews();
+    } else {
+      setEinkaufsbelegPreviews([]);
+    }
+  }, [hasEinkaufsbeleg, purchaseReceipts, isOpen]);
+
   // Reset state when dialog opens/closes
   useEffect(() => {
     if (isOpen) {
-      setCurrentStep(hasMissingFields ? 0 : confirmationStepIndex);
+      const startStep = hasMissingFields ? 0 : (hasEinkaufsbeleg ? einkaufsbelegStepIndex : confirmationStepIndex);
+      setCurrentStep(startStep);
       setFieldNotes({});
       setAllFieldsNote('');
       setConfirmed(false);
       setConfirmationNote('');
+      setEinkaufsbelegPaid(null);
     }
-  }, [isOpen, missingFields, hasMissingFields, confirmationStepIndex]);
+  }, [isOpen, missingFields, hasMissingFields, hasEinkaufsbeleg, einkaufsbelegStepIndex, confirmationStepIndex]);
 
   if (!isOpen) return null;
 
@@ -32,7 +71,14 @@ function SLFinishDialog({ isOpen, onConfirm, onCancel, missingFields = [], formD
   const currentNote = fieldKey ? (fieldNotes[fieldKey] || '') : '';
 
   const isFirstStep = currentStep === 0;
-  const totalSteps = hasMissingFields ? missingFields.length + 2 : 1; // Individual fields + summary + confirmation, or just confirmation
+  // Calculate total steps: missing fields + summary (if missing fields) + einkaufsbeleg step (if has einkaufsbeleg) + confirmation
+  let totalSteps = 1; // At least confirmation step
+  if (hasMissingFields) {
+    totalSteps += missingFields.length + 1; // Individual fields + summary
+  }
+  if (hasEinkaufsbeleg) {
+    totalSteps += 1; // Einkaufsbeleg payment step
+  }
 
   // Check if this is a scan field
   const isScanField = currentField ? (currentField.field.includes('Scan') || 
@@ -78,6 +124,9 @@ function SLFinishDialog({ isOpen, onConfirm, onCancel, missingFields = [], formD
         const key = `${field.section}_${field.field}_${index}`;
         return fieldNotes[key] && fieldNotes[key].trim() !== '';
       });
+    } else if (isOnEinkaufsbelegStep) {
+      // On einkaufsbeleg step, need to answer the question
+      return einkaufsbelegPaid !== null;
     } else if (isOnConfirmationStep) {
       // On confirmation step, need confirmation checked
       return confirmed;
@@ -90,7 +139,14 @@ function SLFinishDialog({ isOpen, onConfirm, onCancel, missingFields = [], formD
   // Handle continue to next step
   const handleContinue = () => {
     if (isOnSummaryStep) {
-      // Move from summary to confirmation step
+      // Move from summary to einkaufsbeleg step (if exists) or confirmation step
+      if (hasEinkaufsbeleg) {
+        setCurrentStep(einkaufsbelegStepIndex);
+      } else {
+        setCurrentStep(confirmationStepIndex);
+      }
+    } else if (isOnEinkaufsbelegStep) {
+      // Move from einkaufsbeleg step to confirmation step
       setCurrentStep(confirmationStepIndex);
     } else if (isOnConfirmationStep) {
       // On confirmation step, finish
@@ -123,8 +179,8 @@ function SLFinishDialog({ isOpen, onConfirm, onCancel, missingFields = [], formD
       }
     }
 
-    // Call onConfirm with notes and individual field notes
-    onConfirm(combinedMissingFieldsNote, confirmationNote.trim() || null, fieldNotes);
+    // Call onConfirm with notes, individual field notes, and einkaufsbeleg payment status
+    onConfirm(combinedMissingFieldsNote, confirmationNote.trim() || null, fieldNotes, einkaufsbelegPaid);
   };
 
   // Handle go back
@@ -152,14 +208,74 @@ function SLFinishDialog({ isOpen, onConfirm, onCancel, missingFields = [], formD
         </h2>
         
         {/* Step Indicator */}
-        {hasMissingFields && (
+        {(hasMissingFields || hasEinkaufsbeleg) && (
           <div className="vva-missing-fields-step-indicator">
             Schritt {currentStep + 1} von {totalSteps}
           </div>
         )}
 
         <div className="vva-missing-fields-content">
-          {isOnConfirmationStep ? (
+          {isOnEinkaufsbelegStep ? (
+            /* Einkaufsbeleg Payment Step */
+            <div className="vva-missing-fields-current-field">
+              <div className="vva-missing-fields-field-description-text">
+                Wurde der Einkaufsbeleg bereits bezahlt? (Geld aus der Ausgabenkasse rausgegeben)
+              </div>
+              
+              {/* PDF Preview */}
+              {einkaufsbelegPreviews.length > 0 && (
+                <div style={{ marginTop: '20px', marginBottom: '20px' }}>
+                  <div style={{ marginBottom: '10px', fontSize: '14px', fontWeight: '500', color: '#2c3e50' }}>
+                    Einkaufsbeleg Vorschau:
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxHeight: '400px', overflowY: 'auto' }}>
+                    {einkaufsbelegPreviews.map((preview, index) => (
+                      <div key={index} style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '10px', backgroundColor: '#f9f9f9' }}>
+                        {window.pdfjsLib ? (
+                          <PDFViewer 
+                            base64Data={preview} 
+                            style={{ width: '100%', maxHeight: '300px' }}
+                          />
+                        ) : (
+                          <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+                            PDF.js wird geladen...
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className="vva-confirmation-checkbox-group" style={{ marginTop: '20px' }}>
+                <label className="vva-confirmation-checkbox-label">
+                  <input
+                    type="radio"
+                    name="einkaufsbeleg-paid"
+                    checked={einkaufsbelegPaid === true}
+                    onChange={() => setEinkaufsbelegPaid(true)}
+                    className="vva-confirmation-checkbox"
+                  />
+                  <span className="vva-confirmation-checkbox-custom"></span>
+                  <span className="vva-confirmation-checkbox-text">Ja, bereits bezahlt</span>
+                </label>
+              </div>
+              
+              <div className="vva-confirmation-checkbox-group">
+                <label className="vva-confirmation-checkbox-label">
+                  <input
+                    type="radio"
+                    name="einkaufsbeleg-paid"
+                    checked={einkaufsbelegPaid === false}
+                    onChange={() => setEinkaufsbelegPaid(false)}
+                    className="vva-confirmation-checkbox"
+                  />
+                  <span className="vva-confirmation-checkbox-custom"></span>
+                  <span className="vva-confirmation-checkbox-text">Nein, noch nicht bezahlt</span>
+                </label>
+              </div>
+            </div>
+          ) : isOnConfirmationStep ? (
             /* Confirmation Step */
             <div className="close-shift-confirmation-content">
               {/* Field Status Summary */}
@@ -307,7 +423,7 @@ function SLFinishDialog({ isOpen, onConfirm, onCancel, missingFields = [], formD
             disabled={!canProceed()}
             className={isOnConfirmationStep ? "close-shift-confirmation-button close-shift-confirmation-button-confirm" : "vva-missing-fields-button vva-missing-fields-button-continue"}
           >
-            {isOnConfirmationStep ? 'Shift beenden' : (isOnSummaryStep ? 'Weiter' : 'Weiter')}
+            {isOnConfirmationStep ? 'Shift beenden' : (isOnEinkaufsbelegStep ? 'Weiter' : (isOnSummaryStep ? 'Weiter' : 'Weiter'))}
           </button>
         </div>
       </div>

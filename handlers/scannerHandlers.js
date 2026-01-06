@@ -607,6 +607,19 @@ function registerScannerHandlers(ipcMain, store, mainWindow, dialog) {
     }
   });
 
+  // IPC Handler to read file as base64
+  ipcMain.handle('read-file-as-base64', async (event, filePath) => {
+    try {
+      const fileBuffer = await fs.readFile(filePath);
+      const base64Data = fileBuffer.toString('base64');
+      const mimeType = filePath.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg';
+      return `data:${mimeType};base64,${base64Data}`;
+    } catch (error) {
+      console.error('Error reading file as base64:', error);
+      throw error;
+    }
+  });
+
   // IPC Handler to copy Einkaufsbeleg to year-month folder after user confirmation
   ipcMain.handle('copy-einkaufsbeleg', async (event, filePath, scanName) => {
     try {

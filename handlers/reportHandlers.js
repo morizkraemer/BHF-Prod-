@@ -232,13 +232,16 @@ function registerReportHandlers(ipcMain, store) {
       }
       
       // From Hospitality - purchaseReceipts (Einkaufsbelege)
+      // Get payment status from shiftNotes
+      const einkaufsbelegPaid = formData.shiftNotes?.einkaufsbelegPaid;
       if (formData['rider-extras']?.purchaseReceipts) {
         formData['rider-extras'].purchaseReceipts.forEach(doc => {
           if (doc.filePath) {
             scannedDocs.push({
               filePath: doc.filePath,
               source: 'rider-extras',
-              scanName: doc.scanName || 'Einkaufsbeleg'
+              scanName: doc.scanName || 'Einkaufsbeleg',
+              einkaufsbelegPaid: einkaufsbelegPaid // Pass payment status with the document
             });
           }
         });
@@ -278,11 +281,76 @@ function registerReportHandlers(ipcMain, store) {
       for (const [scanName, docs] of Object.entries(scansByScanName)) {
         if (docs.length === 0) continue;
         
+        // Check if this is an Einkaufsbeleg and get payment status
+        const isEinkaufsbeleg = scanName === 'Einkaufsbeleg' || scanName.toLowerCase().includes('einkaufsbeleg');
+        const einkaufsbelegPaidStatus = docs[0].einkaufsbelegPaid;
+        
+        // Handle Einkaufsbeleg separately based on payment status
+        if (isEinkaufsbeleg && einkaufsbelegPaidStatus === true) {
+          // Paid: Copy to einkaufsbelege folder (year-month structure)
+          try {
+            const einkaufsbelegeFolder = store.get('einkaufsbelegeFolder', null);
+            if (einkaufsbelegeFolder) {
+              // Get current date for year-month folder
+              const now = new Date();
+              const year = now.getFullYear();
+              const month = String(now.getMonth() + 1).padStart(2, '0');
+              const yearMonthFolder = path.join(einkaufsbelegeFolder, `${year}-${month}`);
+              
+              // Create year-month folder if it doesn't exist
+              await fs.mkdir(yearMonthFolder, { recursive: true });
+              
+              // Process each document
+              for (const doc of docs) {
+                const filename = path.basename(doc.filePath);
+                const destPath = path.join(yearMonthFolder, filename);
+                
+                // Check if file already exists and create unique name if needed
+                let finalDestPath = destPath;
+                let counter = 1;
+                while (true) {
+                  try {
+                    await fs.access(finalDestPath);
+                    const nameWithoutExt = path.basename(filename, '.pdf');
+                    finalDestPath = path.join(yearMonthFolder, `${nameWithoutExt}_${counter}.pdf`);
+                    counter++;
+                  } catch {
+                    break;
+                  }
+                }
+                
+                await fs.copyFile(doc.filePath, finalDestPath);
+                console.log('Einkaufsbeleg (paid) copied to:', finalDestPath);
+              }
+            }
+          } catch (error) {
+            console.warn('Error copying paid Einkaufsbeleg to folder:', error.message);
+          }
+          
+          // Delete original files from temporary folder
+          for (const doc of docs) {
+            try {
+              await fs.unlink(doc.filePath);
+            } catch (deleteError) {
+              console.warn(`Could not delete original file ${doc.filePath}:`, deleteError.message);
+            }
+          }
+          
+          // Skip normal processing for paid einkaufsbeleg
+          continue;
+        }
+        
         // Get section name from first document (all in group have same source)
         const section = getSectionName(docs[0].source, docs[0].scanName);
         
         // Create filename: {section}-{date}-{eventname}.pdf
-        const fileName = `${section}-${dateStr}-${sanitizedEventName}.pdf`;
+        // For unpaid einkaufsbeleg, prefix with UNBEZAHLT_EINKAUFSBELEG_
+        let fileName;
+        if (isEinkaufsbeleg && einkaufsbelegPaidStatus === false) {
+          fileName = `UNBEZAHLT_EINKAUFSBELEG_${section}-${dateStr}-${sanitizedEventName}.pdf`;
+        } else {
+          fileName = `${section}-${dateStr}-${sanitizedEventName}.pdf`;
+        }
         let destPath = path.join(eventFolderPath, fileName);
         
         // Check if destination file already exists and create unique name if needed
