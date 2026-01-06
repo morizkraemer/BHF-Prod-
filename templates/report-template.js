@@ -97,8 +97,18 @@
     document.getElementById('field-agentur').innerHTML = createFieldRow('Agentur', uebersicht.agentur);
     document.getElementById('field-agentur-ap').innerHTML = createFieldRow('Agentur AP Name', uebersicht.agenturAPName);
     document.getElementById('field-veranstalter-name').innerHTML = createFieldRow('Veranstalter Name', uebersicht.veranstalterName);
-    document.getElementById('field-veranstalter-ap').innerHTML = createFieldRow('Veranstalter AP Name', uebersicht.veranstalterAPName);
-    document.getElementById('field-company-name').innerHTML = createFieldRow('Company Name', uebersicht.companyName);
+    // Only show veranstalter-ap if it has a value
+    if (uebersicht.veranstalterAPName && uebersicht.veranstalterAPName.trim() !== '') {
+        document.getElementById('field-veranstalter-ap').innerHTML = createFieldRow('Veranstalter AP Name', uebersicht.veranstalterAPName);
+    } else {
+        document.getElementById('field-veranstalter-ap').innerHTML = '';
+    }
+    // Only show company-name if it has a value
+    if (uebersicht.companyName && uebersicht.companyName.trim() !== '') {
+        document.getElementById('field-company-name').innerHTML = createFieldRow('Company Name', uebersicht.companyName);
+    } else {
+        document.getElementById('field-company-name').innerHTML = '';
+    }
     document.getElementById('field-vva').innerHTML = createFieldRow('VVA', uebersicht.vva);
 
     // Positionen
@@ -275,9 +285,9 @@
         document.getElementById('field-buyout-provider').innerHTML = createFieldRow('Buyout Provider', providerDisplay);
     }
 
-    // Buyout Groups (only show if buyout is selected)
-    if (riderExtras.dinner === 'buyout' && riderExtras.buyoutGroups && riderExtras.buyoutGroups.length > 0) {
-        let buyoutHtml = '<div class="subsection-header">Buyout Gruppen:</div><div class="table-container"><table style="width: 100%; border-collapse: collapse;"><thead><tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;"><th style="text-align: left; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Gruppe</th><th style="text-align: right; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Personen</th><th style="text-align: right; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Pro Person</th><th style="text-align: right; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Gesamt</th></tr></thead><tbody>';
+    // Buyout Groups (only show if buyout ueber bahnhof is selected)
+    if (riderExtras.buyoutProvider === 'uber-bahnhof-pauli' && riderExtras.buyoutGroups && riderExtras.buyoutGroups.length > 0) {
+        let buyoutHtml = '<div class="subsection-header">Buyout Gruppen:</div><div class="table-container"><table style="width: 100%; border-collapse: collapse;"><thead><tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;"><th style="text-align: right; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Personen</th><th style="text-align: right; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Pro Person</th><th style="text-align: right; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Gesamt</th></tr></thead><tbody>';
         let grandTotal = 0;
         riderExtras.buyoutGroups.forEach((group, idx) => {
             if (group.people || group.perPerson) {
@@ -285,12 +295,12 @@
                 const perPerson = parseFloat(group.perPerson) || 0;
                 const total = people * perPerson;
                 grandTotal += total;
-                buyoutHtml += `<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px;">Gruppe ${idx + 1}</td><td style="text-align: right; padding: 10px;">${escapeHtml(String(group.people || 0))}</td><td style="text-align: right; padding: 10px;">€${escapeHtml(String(group.perPerson || '0.00'))}</td><td style="text-align: right; padding: 10px; font-weight: 600;">€${total.toFixed(2)}</td></tr>`;
+                buyoutHtml += `<tr style="border-bottom: 1px solid #eee;"><td style="text-align: right; padding: 10px;">${escapeHtml(String(group.people || 0))}</td><td style="text-align: right; padding: 10px;">€${escapeHtml(String(group.perPerson || '0.00'))}</td><td style="text-align: right; padding: 10px; font-weight: 600;">€${total.toFixed(2)}</td></tr>`;
             }
         });
         buyoutHtml += '</tbody>';
         buyoutHtml += '<tfoot><tr style="background-color: #f9f9f9; border-top: 2px solid #ddd;">';
-        buyoutHtml += '<td colspan="3" style="text-align: right; padding: 10px; font-weight: 600;">Gesamtsumme:</td>';
+        buyoutHtml += '<td colspan="2" style="text-align: right; padding: 10px; font-weight: 600;">Gesamtsumme:</td>';
         buyoutHtml += `<td style="text-align: right; padding: 10px; font-weight: 700; font-size: 16px;">€${grandTotal.toFixed(2)}</td>`;
         buyoutHtml += '</tr></tfoot>';
         buyoutHtml += '</table></div>';
@@ -459,7 +469,7 @@
                 }
             }
         }
-        // Always show pauschale fields, even if empty
+        // Show pauschale fields only if pauschale is selected
         if (options.length > 0) {
             document.getElementById('field-pauschale-options').innerHTML = createFieldRow('Pauschale Optionen', options.join(', '));
         } else {
@@ -477,9 +487,9 @@
             document.getElementById('field-pauschale-prices').innerHTML = createFieldRow('Pauschale Preise', '-');
         }
     } else {
-        // Show pauschale fields with '-' if payment type is not pauschale or not set
-        document.getElementById('field-pauschale-options').innerHTML = createFieldRow('Pauschale Optionen', '-');
-        document.getElementById('field-pauschale-prices').innerHTML = createFieldRow('Pauschale Preise', '-');
+        // Hide pauschale fields if payment type is not pauschale or not set
+        document.getElementById('field-pauschale-options').innerHTML = '';
+        document.getElementById('field-pauschale-prices').innerHTML = '';
     }
 
     if (gaeste.anzahlAbendkasse || gaeste.betragAbendkasse || gaeste.useTimeBasedPricing || gaeste.gaesteGesamt) {

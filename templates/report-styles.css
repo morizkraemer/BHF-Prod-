@@ -20,7 +20,7 @@ body {
 .page {
     width: 100%;
     min-height: 100%;
-    padding: 0;
+    padding: 0 20mm;
     margin: 0;
     background: white;
     page-break-after: always;
@@ -74,7 +74,7 @@ body {
 }
 
 .section-content {
-    padding: 0 5px;
+    padding: 0;
 }
 
 /* Field Rows */

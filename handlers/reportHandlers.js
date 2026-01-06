@@ -159,7 +159,7 @@ function registerReportHandlers(ipcMain, store) {
       
       // Generate PDF
       const pdfBuffer = await generateReportPDF(formDataWithSettings);
-      const pdfFileName = `${eventDate}_${sanitizedEventName}_Report.pdf`;
+      const pdfFileName = `report-${eventDate}-${sanitizedEventName}.pdf`;
       const pdfPath = path.join(eventFolderPath, pdfFileName);
       await fs.writeFile(pdfPath, pdfBuffer);
       
