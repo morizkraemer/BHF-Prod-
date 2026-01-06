@@ -15,7 +15,10 @@ const createShiftHandlers = ({
   setSlMissingFields,
   setShowCloseShiftConfirmation,
   setHighlightedFields,
-  setActiveSection
+  setActiveSection,
+  setShowDateConfirmation,
+  shiftStartTime,
+  setShiftStartTime
 }) => {
   const handleVVAConfirm = (missingFieldsNote, confirmationNote, fieldNotes = {}) => {
     setShiftNotes(prev => ({ 
@@ -119,21 +122,32 @@ const createShiftHandlers = ({
           setShiftNotes(window.AppConstants.getInitialShiftNotes());
           setCurrentPhase('VVA');
           setShiftStarted(false);
+          setShiftStartTime(null);
           
-          alert(`Shift erfolgreich beendet!\n\nReport gespeichert in:\n${result.eventFolder}\n\nPDF: ${result.pdfPath.split('/').pop()}\nGescannte PDFs: ${result.scannedPDFsCount}`);
+          alert(`Schicht erfolgreich beendet!\n\nReport gespeichert in:\n${result.eventFolder}\n\nPDF: ${result.pdfPath.split('/').pop()}\nGescannte PDFs: ${result.scannedPDFsCount}`);
         } else {
-          alert('Fehler beim Speichern des Shifts.');
+          alert('Fehler beim Speichern der Schicht.');
         }
       } else {
         alert('Fehler: Electron API nicht verfügbar.');
       }
     } catch (error) {
       console.error('Error closing shift:', error);
-      alert('Fehler beim Schließen des Shifts: ' + error.message);
+      alert('Fehler beim Schließen der Schicht: ' + error.message);
     }
   };
 
-  const handleCloseShift = () => {
+  // Check if shift was started between 00:00 and 08:00
+  const shouldShowDateConfirmation = () => {
+    if (!shiftStartTime) return false;
+    const startDate = new Date(shiftStartTime);
+    const hours = startDate.getHours();
+    // Check if started between 00:00 (midnight) and 08:00
+    return hours >= 0 && hours < 8;
+  };
+
+  // Proceed to missing fields dialog after date confirmation
+  const proceedToMissingFieldsDialog = () => {
     if (currentPhase === 'VVA') {
       // Validate VVA -> SL transition
       const vvaErrors = window.AppValidation.validateVVAtoSL(formData);
@@ -182,10 +196,47 @@ const createShiftHandlers = ({
     }
   };
 
+  const handleCloseShift = () => {
+    // Check if we should show date confirmation dialog first
+    if (shouldShowDateConfirmation()) {
+      setShowDateConfirmation(true);
+    } else {
+      // Proceed directly to missing fields dialog
+      proceedToMissingFieldsDialog();
+    }
+  };
+
+  const handleDateConfirm = () => {
+    // Date is correct, proceed to missing fields dialog
+    setShowDateConfirmation(false);
+    proceedToMissingFieldsDialog();
+  };
+
+  const handleDateChange = (newDate) => {
+    // Update the date in formData
+    setFormData(prev => ({
+      ...prev,
+      uebersicht: {
+        ...prev.uebersicht,
+        date: newDate
+      }
+    }));
+    // Close date dialog and proceed to missing fields dialog
+    setShowDateConfirmation(false);
+    proceedToMissingFieldsDialog();
+  };
+
+  const handleDateCancel = () => {
+    setShowDateConfirmation(false);
+  };
+
 
   const handleStartShift = () => {
     // Mark shift as started
     setShiftStarted(true);
+    
+    // Store the current timestamp when shift starts
+    setShiftStartTime(new Date().toISOString());
     
     // Reset all form data to defaults
     setFormData(window.AppConstants.getInitialFormData());
@@ -214,7 +265,10 @@ const createShiftHandlers = ({
     handleSLMissingFieldsCancel,
     handleCloseShiftSave,
     handleCloseShift,
-    handleStartShift
+    handleStartShift,
+    handleDateConfirm,
+    handleDateChange,
+    handleDateCancel
   };
 };
 

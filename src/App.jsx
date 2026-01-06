@@ -25,7 +25,10 @@ function App() {
     setSlMissingFields: shiftState.setSlMissingFields,
     setShowCloseShiftConfirmation: shiftState.setShowCloseShiftConfirmation,
     setHighlightedFields: shiftState.setHighlightedFields,
-    setActiveSection
+    setActiveSection,
+    setShowDateConfirmation: shiftState.setShowDateConfirmation,
+    shiftStartTime: shiftState.shiftStartTime,
+    setShiftStartTime: shiftState.setShiftStartTime
   });
 
   // Re-initialize icons when active section changes
@@ -116,6 +119,16 @@ function App() {
         printedTemplates={shiftState.printedTemplates}
         handleFormDataChange={handleFormDataChange}
         setPrintedTemplates={shiftState.setPrintedTemplates}
+      />
+
+      {/* Date Confirmation Dialog - shown before missing fields if shift started between 00:00-08:00 */}
+      <DateConfirmationDialog
+        isOpen={shiftState.showDateConfirmation}
+        onConfirm={handlers.handleDateConfirm}
+        onCancel={handlers.handleDateCancel}
+        onDateChange={handlers.handleDateChange}
+        currentDate={formData.uebersicht?.date}
+        shiftStartTime={shiftState.shiftStartTime}
       />
 
       {/* VVA Finish Dialog - combines missing fields flow + confirmation */}

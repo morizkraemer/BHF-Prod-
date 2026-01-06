@@ -14,8 +14,12 @@ function useShiftState() {
   const [showSLMissingFields, setShowSLMissingFields] = useState(false);
   const [slMissingFields, setSlMissingFields] = useState([]);
   const [showCloseShiftConfirmation, setShowCloseShiftConfirmation] = useState(false);
+  const [showDateConfirmation, setShowDateConfirmation] = useState(false);
+  
+  // Track shift start time
+  const [shiftStartTime, setShiftStartTime] = useState(null);
 
-  // Load current phase on mount
+  // Load current phase and shift start time on mount
   useEffect(() => {
     const loadPhase = async () => {
       if (window.electronAPI && window.electronAPI.loadData) {
@@ -24,8 +28,14 @@ function useShiftState() {
           if (phaseResult.success && phaseResult.data) {
             setCurrentPhase(phaseResult.data);
           }
+          
+          // Load shift start time
+          const startTimeResult = await window.electronAPI.loadData('shiftStartTime');
+          if (startTimeResult.success && startTimeResult.data) {
+            setShiftStartTime(startTimeResult.data);
+          }
         } catch (error) {
-          console.error('Error loading current phase:', error);
+          console.error('Error loading shift state:', error);
         }
       }
     };
@@ -41,6 +51,15 @@ function useShiftState() {
       });
     }
   }, [currentPhase]);
+
+  // Auto-save shift start time when it changes
+  useEffect(() => {
+    if (window.electronAPI && window.electronAPI.saveData && shiftStartTime) {
+      window.electronAPI.saveData('shiftStartTime', shiftStartTime).catch(error => {
+        console.error('Error saving shift start time:', error);
+      });
+    }
+  }, [shiftStartTime]);
 
   return {
     shiftStarted,
@@ -64,7 +83,11 @@ function useShiftState() {
     slMissingFields,
     setSlMissingFields,
     showCloseShiftConfirmation,
-    setShowCloseShiftConfirmation
+    setShowCloseShiftConfirmation,
+    showDateConfirmation,
+    setShowDateConfirmation,
+    shiftStartTime,
+    setShiftStartTime
   };
 }
 
