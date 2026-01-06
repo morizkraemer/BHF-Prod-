@@ -24,6 +24,7 @@ function SettingsForm() {
   const [loadingScanners, setLoadingScanners] = useState(false);
   const [scanFolder, setScanFolder] = useState(null);
   const [reportFolder, setReportFolder] = useState(null);
+  const [einkaufsbelegeFolder, setEinkaufsbelegeFolder] = useState(null);
   const [scannerAvailable, setScannerAvailable] = useState(false);
   const [templates, setTemplates] = useState({
     securityzettel: null,
@@ -72,6 +73,7 @@ function SettingsForm() {
     loadSelectedScanner();
     loadScanFolder();
     loadReportFolder();
+    loadEinkaufsbelegeFolder();
     loadTemplates();
     loadBestueckungLists();
     checkScannerAvailability();
@@ -92,6 +94,13 @@ function SettingsForm() {
     if (window.electronAPI && window.electronAPI.getReportFolder) {
       const folder = await window.electronAPI.getReportFolder();
       setReportFolder(folder);
+    }
+  };
+
+  const loadEinkaufsbelegeFolder = async () => {
+    if (window.electronAPI && window.electronAPI.getEinkaufsbelegeFolder) {
+      const folder = await window.electronAPI.getEinkaufsbelegeFolder();
+      setEinkaufsbelegeFolder(folder);
     }
   };
 
@@ -143,6 +152,15 @@ function SettingsForm() {
       const folder = await window.electronAPI.setReportFolder();
       if (folder) {
         setReportFolder(folder);
+      }
+    }
+  };
+
+  const handleSelectEinkaufsbelegeFolder = async () => {
+    if (window.electronAPI && window.electronAPI.setEinkaufsbelegeFolder) {
+      const folder = await window.electronAPI.setEinkaufsbelegeFolder();
+      if (folder) {
+        setEinkaufsbelegeFolder(folder);
       }
     }
   };
@@ -738,6 +756,31 @@ function SettingsForm() {
           <p className="settings-empty">Bitte wählen Sie einen Ordner aus. Standardmäßig wird ~/Documents/NightclubReports verwendet.</p>
         )}
       </div>
+
+      {/* Einkaufsbelege Folder Selection */}
+      <div className="settings-scanner-section">
+        <h3>Einkaufsbelege Ordner</h3>
+        <p className="settings-description">
+          Wählen Sie den Ordner aus, in dem Kopien der gescannten Einkaufsbelege gespeichert werden sollen. Die App erstellt automatisch Unterordner im Format {`{Jahr}-{Monat}`} (z.B. 2024-01).
+        </p>
+        <div className="settings-scan-folder-form">
+          <div className="settings-scan-folder-display">
+            <span className="settings-scan-folder-path">
+              {einkaufsbelegeFolder || 'Kein Ordner ausgewählt'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleSelectEinkaufsbelegeFolder}
+            className="settings-select-folder-button"
+          >
+            Ordner auswählen
+          </button>
+        </div>
+        {!einkaufsbelegeFolder && (
+          <p className="settings-empty">Optional: Wenn kein Ordner ausgewählt ist, werden keine Kopien der Einkaufsbelege erstellt.</p>
+        )}
+      </div>
     </>
   );
 
@@ -1041,6 +1084,7 @@ function SettingsForm() {
           loadSelectedScanner();
           loadScanFolder();
           loadReportFolder();
+          loadEinkaufsbelegeFolder();
           loadTemplates();
           loadBestueckungLists();
           // Optionally reload the page

@@ -606,6 +606,50 @@ function registerScannerHandlers(ipcMain, store, mainWindow, dialog) {
       };
     }
   });
+
+  // IPC Handler to copy Einkaufsbeleg to year-month folder after user confirmation
+  ipcMain.handle('copy-einkaufsbeleg', async (event, filePath, scanName) => {
+    try {
+      // Only copy if this is an Einkaufsbeleg
+      if (scanName !== 'Einkaufsbeleg' && !scanName.toLowerCase().includes('einkaufsbeleg')) {
+        return { success: false, message: 'Not an Einkaufsbeleg scan' };
+      }
+
+      const einkaufsbelegeFolder = store.get('einkaufsbelegeFolder', null);
+      if (!einkaufsbelegeFolder) {
+        return { success: false, message: 'Einkaufsbelege folder not configured' };
+      }
+
+      // Check if file exists
+      try {
+        await fs.access(filePath);
+      } catch (error) {
+        return { success: false, message: 'Source file does not exist' };
+      }
+
+      // Get current date for year-month folder
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const yearMonthFolder = path.join(einkaufsbelegeFolder, `${year}-${month}`);
+      
+      // Create year-month folder if it doesn't exist
+      await fs.mkdir(yearMonthFolder, { recursive: true });
+      
+      // Get filename from filePath
+      const filename = path.basename(filePath);
+      
+      // Copy the PDF to the year-month folder
+      const destPath = path.join(yearMonthFolder, filename);
+      await fs.copyFile(filePath, destPath);
+      
+      console.log('Einkaufsbeleg copied to:', destPath);
+      return { success: true, destPath };
+    } catch (copyError) {
+      console.error('Error copying Einkaufsbeleg to folder:', copyError.message);
+      return { success: false, message: copyError.message };
+    }
+  });
 }
 
 module.exports = { registerScannerHandlers };

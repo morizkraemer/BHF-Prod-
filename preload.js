@@ -21,10 +21,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getScanFolder: () => ipcRenderer.invoke('get-scan-folder'),
   setReportFolder: () => ipcRenderer.invoke('set-report-folder'),
   getReportFolder: () => ipcRenderer.invoke('get-report-folder'),
+  setEinkaufsbelegeFolder: () => ipcRenderer.invoke('set-einkaufsbelege-folder'),
+  getEinkaufsbelegeFolder: () => ipcRenderer.invoke('get-einkaufsbelege-folder'),
   scanDocument: (source = 'glass', scanName = 'scan') => ipcRenderer.invoke('scan-document', source, scanName),
   selectScanFile: () => ipcRenderer.invoke('select-scan-file'),
   checkScanInProgress: () => ipcRenderer.invoke('check-scan-in-progress'),
   checkScanFolder: (scanName) => ipcRenderer.invoke('check-scan-folder', scanName),
+  copyEinkaufsbeleg: (filePath, scanName) => ipcRenderer.invoke('copy-einkaufsbeleg', filePath, scanName),
   
   // Scanner messages
   onScanMessage: (callback) => {

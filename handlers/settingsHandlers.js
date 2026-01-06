@@ -320,6 +320,24 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
     return store.get('reportFolder', null);
   });
 
+  // IPC Handlers for Einkaufsbelege Folder
+  ipcMain.handle('set-einkaufsbelege-folder', async () => {
+    const { filePaths } = await dialog.showOpenDialog(mainWindow, {
+      title: 'Einkaufsbelege Ordner auswählen',
+      properties: ['openDirectory']
+    });
+    
+    if (filePaths && filePaths.length > 0) {
+      store.set('einkaufsbelegeFolder', filePaths[0]);
+      return filePaths[0];
+    }
+    return null;
+  });
+
+  ipcMain.handle('get-einkaufsbelege-folder', () => {
+    return store.get('einkaufsbelegeFolder', null);
+  });
+
   // IPC Handlers for Catering Prices
   ipcMain.handle('get-catering-prices', () => {
     return store.get('cateringPrices', {
@@ -357,6 +375,7 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
       store.set('selectedScanner', null);
       store.set('scanFolder', null);
       store.set('reportFolder', null);
+      store.set('einkaufsbelegeFolder', null);
       store.set('techNames', {
         soundEngineerName: '',
         lightingTechName: ''

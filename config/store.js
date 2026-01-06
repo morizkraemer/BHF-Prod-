@@ -9,6 +9,7 @@ const settingsStore = new Store({
     selectedScanner: null,
     scanFolder: null, // Will default to ~/Documents/NightclubScans if not set
     reportFolder: null, // Will default to ~/Documents/NightclubReports if not set
+    einkaufsbelegeFolder: null, // Optional folder for copying Einkaufsbelege PDFs
     techNames: {
       soundEngineerName: '',
       lightingTechName: ''

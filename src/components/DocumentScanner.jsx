@@ -68,8 +68,20 @@ function DocumentScanner({
     };
   }, [scanTimeoutId]);
   
-  const handleConfirmScan = () => {
+  const handleConfirmScan = async () => {
     if (!pendingScan) return;
+    
+    // If this is an Einkaufsbeleg, copy it to the year-month folder after confirmation
+    if (scanName === 'Einkaufsbeleg' || scanName.toLowerCase().includes('einkaufsbeleg')) {
+      if (window.electronAPI && window.electronAPI.copyEinkaufsbeleg) {
+        try {
+          await window.electronAPI.copyEinkaufsbeleg(pendingScan.filePath, scanName);
+        } catch (error) {
+          // Log error but don't prevent adding the scan
+          console.error('Error copying Einkaufsbeleg:', error);
+        }
+      }
+    }
     
     const newScan = {
       id: Date.now().toString(),
