@@ -310,10 +310,11 @@ function registerReportHandlers(ipcMain, store) {
           try {
             const einkaufsbelegeFolder = store.get('einkaufsbelegeFolder', null);
             if (einkaufsbelegeFolder) {
-              // Get current date for year-month folder
+              // Get current date for year-month folder and filename
               const now = new Date();
               const year = now.getFullYear();
               const month = String(now.getMonth() + 1).padStart(2, '0');
+              const day = String(now.getDate()).padStart(2, '0');
               const yearMonthFolder = path.join(einkaufsbelegeFolder, `${year}-${month}`);
               
               // Create year-month folder if it doesn't exist
@@ -321,8 +322,9 @@ function registerReportHandlers(ipcMain, store) {
               
               // Process each document
               for (const doc of docs) {
-                const filename = path.basename(doc.filePath);
-                const destPath = path.join(yearMonthFolder, filename);
+                // Create filename: yyyy-mm-dd-bezahlt.pdf
+                let baseFilename = `${year}-${month}-${day}-bezahlt.pdf`;
+                let destPath = path.join(yearMonthFolder, baseFilename);
                 
                 // Check if file already exists and create unique name if needed
                 let finalDestPath = destPath;
@@ -330,7 +332,8 @@ function registerReportHandlers(ipcMain, store) {
                 while (true) {
                   try {
                     await fs.access(finalDestPath);
-                    const nameWithoutExt = path.basename(filename, '.pdf');
+                    // If file exists, add counter: yyyy-mm-dd-bezahlt_1.pdf, etc.
+                    const nameWithoutExt = `${year}-${month}-${day}-bezahlt`;
                     finalDestPath = path.join(yearMonthFolder, `${nameWithoutExt}_${counter}.pdf`);
                     counter++;
                   } catch {
@@ -357,6 +360,55 @@ function registerReportHandlers(ipcMain, store) {
           
           // Skip normal processing for paid einkaufsbeleg
           continue;
+        }
+        
+        // Handle unpaid Einkaufsbeleg - copy to einkaufsbelege folder, then also save to report folder
+        if (isEinkaufsbeleg && einkaufsbelegPaidStatus === false) {
+          // Unpaid: Copy to einkaufsbelege folder (year-month structure) with date-only format
+          try {
+            const einkaufsbelegeFolder = store.get('einkaufsbelegeFolder', null);
+            if (einkaufsbelegeFolder) {
+              // Get current date for year-month folder and filename
+              const now = new Date();
+              const year = now.getFullYear();
+              const month = String(now.getMonth() + 1).padStart(2, '0');
+              const day = String(now.getDate()).padStart(2, '0');
+              const yearMonthFolder = path.join(einkaufsbelegeFolder, `${year}-${month}`);
+              
+              // Create year-month folder if it doesn't exist
+              await fs.mkdir(yearMonthFolder, { recursive: true });
+              
+              // Process each document
+              for (const doc of docs) {
+                // Create filename: yyyy-mm-dd.pdf (unpaid, no "bezahlt" suffix)
+                let baseFilename = `${year}-${month}-${day}.pdf`;
+                let destPath = path.join(yearMonthFolder, baseFilename);
+                
+                // Check if file already exists and create unique name if needed
+                let finalDestPath = destPath;
+                let counter = 1;
+                while (true) {
+                  try {
+                    await fs.access(finalDestPath);
+                    // If file exists, add counter: yyyy-mm-dd_1.pdf, etc.
+                    const nameWithoutExt = `${year}-${month}-${day}`;
+                    finalDestPath = path.join(yearMonthFolder, `${nameWithoutExt}_${counter}.pdf`);
+                    counter++;
+                  } catch {
+                    break;
+                  }
+                }
+                
+                await fs.copyFile(doc.filePath, finalDestPath);
+                console.log('Einkaufsbeleg (unpaid) copied to:', finalDestPath);
+              }
+            }
+          } catch (error) {
+            console.warn('Error copying unpaid Einkaufsbeleg to folder:', error.message);
+          }
+          
+          // Continue to normal processing to also save to report folder
+          // (original files will be deleted after saving to report folder)
         }
         
         // Handle Buyout Quittung - copy to einkaufsbelege folder, then also save to report folder

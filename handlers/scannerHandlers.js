@@ -640,24 +640,40 @@ function registerScannerHandlers(ipcMain, store, mainWindow, dialog) {
         return { success: false, message: 'Source file does not exist' };
       }
 
-      // Get current date for year-month folder
+      // Get current date for year-month folder and filename
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
       const yearMonthFolder = path.join(einkaufsbelegeFolder, `${year}-${month}`);
       
       // Create year-month folder if it doesn't exist
       await fs.mkdir(yearMonthFolder, { recursive: true });
       
-      // Get filename from filePath
-      const filename = path.basename(filePath);
+      // Create filename: yyyy-mm-dd.pdf (payment status unknown at scan time)
+      let baseFilename = `${year}-${month}-${day}.pdf`;
+      let destPath = path.join(yearMonthFolder, baseFilename);
+      
+      // Check if file already exists and create unique name if needed
+      let finalDestPath = destPath;
+      let counter = 1;
+      while (true) {
+        try {
+          await fs.access(finalDestPath);
+          // If file exists, add counter: yyyy-mm-dd_1.pdf, etc.
+          const nameWithoutExt = `${year}-${month}-${day}`;
+          finalDestPath = path.join(yearMonthFolder, `${nameWithoutExt}_${counter}.pdf`);
+          counter++;
+        } catch {
+          break;
+        }
+      }
       
       // Copy the PDF to the year-month folder
-      const destPath = path.join(yearMonthFolder, filename);
-      await fs.copyFile(filePath, destPath);
+      await fs.copyFile(filePath, finalDestPath);
       
-      console.log('Einkaufsbeleg copied to:', destPath);
-      return { success: true, destPath };
+      console.log('Einkaufsbeleg copied to:', finalDestPath);
+      return { success: true, destPath: finalDestPath };
     } catch (copyError) {
       console.error('Error copying Einkaufsbeleg to folder:', copyError.message);
       return { success: false, message: copyError.message };
