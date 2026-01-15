@@ -62,6 +62,13 @@ const validateVVAtoSL = (formData) => {
           }
         });
       }
+      
+      // Buyout Quittung scan required when buyout provider is "uber-bahnhof-pauli"
+      const buyoutQuittungDocuments = riderExtrasData.buyoutQuittungDocuments || [];
+      const hasBuyoutQuittung = buyoutQuittungDocuments.length > 0;
+      if (!hasBuyoutQuittung) {
+        errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Buyout Quittung Scan' });
+      }
     }
   }
   
@@ -564,6 +571,16 @@ const getVVAFieldsStatus = (formData) => {
           });
         });
       }
+      
+      // Buyout Quittung scan (only when buyout provider is "uber-bahnhof-pauli")
+      const buyoutQuittungDocuments = riderExtrasData.buyoutQuittungDocuments || [];
+      const hasBuyoutQuittung = buyoutQuittungDocuments.length > 0;
+      fields.push({
+        section: 'Hospitality',
+        sectionId: 'rider-extras',
+        field: 'Buyout Quittung Scan',
+        isFilled: hasBuyoutQuittung
+      });
     }
   }
   

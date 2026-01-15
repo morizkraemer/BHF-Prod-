@@ -22,6 +22,7 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
   ]);
   const [scannedDocuments, setScannedDocuments] = useState(formData?.scannedDocuments || []);
   const [purchaseReceipts, setPurchaseReceipts] = useState(formData?.purchaseReceipts || []);
+  const [buyoutQuittungDocuments, setBuyoutQuittungDocuments] = useState(formData?.buyoutQuittungDocuments || []);
   const [notes, setNotes] = useState(formData?.notes || '');
   const [catalogItems, setCatalogItems] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState({});
@@ -90,11 +91,12 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
         buyoutGroups,
         scannedDocuments,
         purchaseReceipts,
+        buyoutQuittungDocuments,
         notes,
         customizedFridgeItems
       });
     }
-  }, [items, standardbestueckung, getInCatering, dinner, buyoutProvider, buyoutGroups, scannedDocuments, purchaseReceipts, notes, customizedFridgeItems]);
+  }, [items, standardbestueckung, getInCatering, dinner, buyoutProvider, buyoutGroups, scannedDocuments, purchaseReceipts, buyoutQuittungDocuments, notes, customizedFridgeItems]);
 
   useEffect(() => {
     if (window.lucide) {
@@ -241,6 +243,10 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
 
   const handlePurchaseReceiptsChange = (updatedDocuments) => {
     setPurchaseReceipts(updatedDocuments);
+  };
+
+  const handleBuyoutQuittungChange = (updatedDocuments) => {
+    setBuyoutQuittungDocuments(updatedDocuments);
   };
 
   const handleCheckboxChange = (index) => {
@@ -678,6 +684,20 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
               scanName="Einkaufsbeleg"
             />
           </div>
+
+          {dinner === 'buyout' && buyoutProvider === 'uber-bahnhof-pauli' && (
+            <div className="scanner-box">
+              <DocumentScanner
+                scannedDocuments={buyoutQuittungDocuments}
+                onDocumentsChange={handleBuyoutQuittungChange}
+                showScannedList={true}
+                className="rider-extras-scanner"
+                defaultSource="glass"
+                title="Buyout Quittung scannen"
+                scanName="Buyout Quittung"
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

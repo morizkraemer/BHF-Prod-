@@ -64,6 +64,9 @@ function getSectionName(source, scanName) {
     if (scanName === 'Einkaufsbeleg') {
       return 'Einkaufsbelege';
     }
+    if (scanName === 'Buyout Quittung') {
+      return 'Buyout Quittung';
+    }
     // Default for other rider-extras scans
     return 'Handtucher';
   }
@@ -247,6 +250,19 @@ function registerReportHandlers(ipcMain, store) {
         });
       }
       
+      // From Hospitality - buyoutQuittungDocuments (Buyout Quittung)
+      if (formData['rider-extras']?.buyoutQuittungDocuments) {
+        formData['rider-extras'].buyoutQuittungDocuments.forEach(doc => {
+          if (doc.filePath) {
+            scannedDocs.push({
+              filePath: doc.filePath,
+              source: 'rider-extras',
+              scanName: doc.scanName || 'Buyout Quittung'
+            });
+          }
+        });
+      }
+      
       // From Gäste
       if (formData.gaeste?.scannedDocuments) {
         formData.gaeste.scannedDocuments.forEach(doc => {
@@ -284,6 +300,9 @@ function registerReportHandlers(ipcMain, store) {
         // Check if this is an Einkaufsbeleg and get payment status
         const isEinkaufsbeleg = scanName === 'Einkaufsbeleg' || scanName.toLowerCase().includes('einkaufsbeleg');
         const einkaufsbelegPaidStatus = docs[0].einkaufsbelegPaid;
+        
+        // Check if this is a Buyout Quittung
+        const isBuyoutQuittung = scanName === 'Buyout Quittung' || scanName.toLowerCase().includes('buyout quittung');
         
         // Handle Einkaufsbeleg separately based on payment status
         if (isEinkaufsbeleg && einkaufsbelegPaidStatus === true) {
@@ -338,6 +357,51 @@ function registerReportHandlers(ipcMain, store) {
           
           // Skip normal processing for paid einkaufsbeleg
           continue;
+        }
+        
+        // Handle Buyout Quittung - copy to einkaufsbelege folder, then also save to report folder
+        if (isBuyoutQuittung) {
+          try {
+            const einkaufsbelegeFolder = store.get('einkaufsbelegeFolder', null);
+            if (einkaufsbelegeFolder) {
+              // Get current date for year-month folder
+              const now = new Date();
+              const year = now.getFullYear();
+              const month = String(now.getMonth() + 1).padStart(2, '0');
+              const yearMonthFolder = path.join(einkaufsbelegeFolder, `${year}-${month}`);
+              
+              // Create year-month folder if it doesn't exist
+              await fs.mkdir(yearMonthFolder, { recursive: true });
+              
+              // Process each document
+              for (const doc of docs) {
+                const filename = path.basename(doc.filePath);
+                const destPath = path.join(yearMonthFolder, filename);
+                
+                // Check if file already exists and create unique name if needed
+                let finalDestPath = destPath;
+                let counter = 1;
+                while (true) {
+                  try {
+                    await fs.access(finalDestPath);
+                    const nameWithoutExt = path.basename(filename, '.pdf');
+                    finalDestPath = path.join(yearMonthFolder, `${nameWithoutExt}_${counter}.pdf`);
+                    counter++;
+                  } catch {
+                    break;
+                  }
+                }
+                
+                await fs.copyFile(doc.filePath, finalDestPath);
+                console.log('Buyout Quittung copied to:', finalDestPath);
+              }
+            }
+          } catch (error) {
+            console.warn('Error copying Buyout Quittung to folder:', error.message);
+          }
+          
+          // Continue to normal processing to also save to report folder
+          // (original files will be deleted after saving to report folder)
         }
         
         // Get section name from first document (all in group have same source)
