@@ -6,6 +6,7 @@ function VVAFinishDialog({ isOpen, onConfirm, onCancel, missingFields = [], hasE
   const [allFieldsNote, setAllFieldsNote] = useState('');
   const [checklistChecked, setChecklistChecked] = useState(false);
   const [extrasConfirmed, setExtrasConfirmed] = useState(false);
+  const [gastelisteGeschrieben, setGastelisteGeschrieben] = useState(false);
   const [confirmationNote, setConfirmationNote] = useState('');
 
   const hasMissingFields = missingFields.length > 0;
@@ -22,6 +23,7 @@ function VVAFinishDialog({ isOpen, onConfirm, onCancel, missingFields = [], hasE
       setAllFieldsNote('');
       setChecklistChecked(false);
       setExtrasConfirmed(false);
+      setGastelisteGeschrieben(false);
       setConfirmationNote('');
     }
   }, [isOpen, missingFields, hasMissingFields, confirmationStepIndex]);
@@ -81,8 +83,8 @@ function VVAFinishDialog({ isOpen, onConfirm, onCancel, missingFields = [], hasE
         return fieldNotes[key] && fieldNotes[key].trim() !== '';
       });
     } else if (isOnConfirmationStep) {
-      // On confirmation step, need checklist checked and extras confirmed (if no extras)
-      return checklistChecked && (hasExtras || extrasConfirmed);
+      // On confirmation step, need checklist checked, extras confirmed (if no extras), and gasteliste geschrieben
+      return checklistChecked && (hasExtras || extrasConfirmed) && gastelisteGeschrieben;
     } else {
       // On individual field step, note is optional
       return true;
@@ -217,6 +219,19 @@ function VVAFinishDialog({ isOpen, onConfirm, onCancel, missingFields = [], hasE
                   </label>
                 </div>
               )}
+
+              <div className="vva-confirmation-checkbox-group">
+                <label className="vva-confirmation-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={gastelisteGeschrieben}
+                    onChange={(e) => setGastelisteGeschrieben(e.target.checked)}
+                    className="vva-confirmation-checkbox"
+                  />
+                  <span className="vva-confirmation-checkbox-custom"></span>
+                  <span className="vva-confirmation-checkbox-text">Gasteliste geschrieben</span>
+                </label>
+              </div>
               
               <div className="vva-confirmation-note">
                 <label className="vva-confirmation-note-label">Notiz (optional):</label>
