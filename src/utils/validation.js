@@ -72,15 +72,6 @@ const validateVVAtoSL = (formData) => {
     }
   }
   
-  // Handtuchzettel scan (scannedDocuments with scanName="Handtuchzettel") - only required for Konzert events
-  if (uebersichtData.eventType === 'konzert') {
-    const scannedDocuments = riderExtrasData.scannedDocuments || [];
-    const handtuchzettelScans = scannedDocuments.filter(doc => doc.scanName === 'Handtuchzettel');
-    if (handtuchzettelScans.length === 0) {
-      errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Handtuchzettel Scan' });
-    }
-  }
-  
   // Backstage Kühlschrank (standardbestueckung)
   if (!riderExtrasData.standardbestueckung || riderExtrasData.standardbestueckung === '') {
     errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Backstage Kühlschrank' });
@@ -373,16 +364,6 @@ const getRequiredFieldsCount = (sectionId, formData) => {
         return value !== undefined && value !== null && value !== '';
       }).length;
       
-      // Handtuchzettel scan - only required for Konzert events
-      if (uebersichtData.eventType === 'konzert') {
-        hospitalityRequired.push('handtuchzettelScan');
-        const scannedDocuments = data.scannedDocuments || [];
-        const hasHandtuchzettel = scannedDocuments.some(doc => doc.scanName === 'Handtuchzettel');
-        if (hasHandtuchzettel) {
-          hospitalityFilled++;
-        }
-      }
-      
       return { filled: hospitalityFilled, total: hospitalityRequired.length };
     
     case 'secu':
@@ -582,18 +563,6 @@ const getVVAFieldsStatus = (formData) => {
         isFilled: hasBuyoutQuittung
       });
     }
-  }
-  
-  // Handtuchzettel scan (only for Konzert events)
-  if (uebersichtData.eventType === 'konzert') {
-    const scannedDocuments = riderExtrasData.scannedDocuments || [];
-    const hasHandtuchzettel = scannedDocuments.some(doc => doc.scanName === 'Handtuchzettel');
-    fields.push({
-      section: 'Hospitality',
-      sectionId: 'rider-extras',
-      field: 'Handtuchzettel Scan',
-      isFilled: hasHandtuchzettel
-    });
   }
   
   // Backstage Kühlschrank

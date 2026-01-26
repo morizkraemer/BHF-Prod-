@@ -1,6 +1,7 @@
 const { BrowserWindow, app } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
+const { PDFDocument } = require('pdf-lib');
 
 /**
  * Generates a PDF report from form data using HTML template
@@ -102,7 +103,49 @@ async function generateReportPDF(formData) {
         console.warn('Failed to cleanup temp file:', cleanupError);
       }
 
-      resolve(pdfBuffer);
+      // Add fillable notes field to the PDF on a new page
+      const pdfDoc = await PDFDocument.load(pdfBuffer);
+      const pages = pdfDoc.getPages();
+      const lastPage = pages[pages.length - 1];
+      const { width, height } = lastPage.getSize();
+
+      // Convert mm to points (1 mm = 72/25.4 points)
+      const mmToPoints = (mm) => (mm * 72) / 25.4;
+      
+      // Add a new page for the notes field
+      const notesPage = pdfDoc.addPage([width, height]);
+      
+      // Position the notes field on the new page
+      // Position: centered horizontally, 50mm from top, width: 170mm, height: 150mm
+      const fieldWidth = mmToPoints(170); // 170mm wide
+      const fieldHeight = mmToPoints(150); // 150mm high (larger for more space)
+      const fieldX = (width - fieldWidth) / 2; // Centered horizontally
+      const fieldY = height - mmToPoints(50) - fieldHeight; // 50mm from top
+
+      // Get form and create a text field for notes
+      const form = pdfDoc.getForm();
+      const notesField = form.createTextField('notes');
+      notesField.setText('');
+      notesField.enableMultiline();
+      notesField.addToPage(notesPage, {
+        x: fieldX,
+        y: fieldY,
+        width: fieldWidth,
+        height: fieldHeight,
+      });
+
+      // Add label text above the field
+      const helveticaBoldFont = await pdfDoc.embedFont('Helvetica-Bold');
+      notesPage.drawText('Nachträgliche Notizen:', {
+        x: fieldX,
+        y: fieldY + fieldHeight + mmToPoints(5), // 5mm above the field
+        size: 14,
+        font: helveticaBoldFont,
+      });
+
+      // Save the modified PDF
+      const modifiedPdfBytes = await pdfDoc.save();
+      resolve(Buffer.from(modifiedPdfBytes));
     } catch (error) {
       if (printWindow) {
         printWindow.close();
