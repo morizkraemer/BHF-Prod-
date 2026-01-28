@@ -18,7 +18,8 @@ const settingsStore = new Store({
       securityzettel: null, // File path to template PDF
       handtuchzettel: null,
       technikzettel: null,
-      uebersichtzettel: null
+      uebersichtzettel: null,
+      gaesteliste: null // File path to Gästeliste Excel file (opened externally)
     },
     bestueckungLists: {
       'standard-konzert': [], // List of items for "Standard Konzert" - each item: {riderItemId, amount}

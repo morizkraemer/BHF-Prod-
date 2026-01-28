@@ -54,22 +54,35 @@ function UebersichtForm({ formData, onDataChange, highlightedFields = [], printe
   }, []);
 
   useEffect(() => {
-    // Render print button in the title row
+    // Render Gästeliste öffnen + print button in the title row
     const container = document.getElementById('uebersicht-print-button-container');
     if (container) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = `uebersicht-print-button ${zettelPrinted ? 'uebersicht-print-button-printed' : ''}`;
-      button.title = zettelPrinted ? 'Alle nochmal drucken' : 'Alle Vorlagen drucken';
-      button.innerHTML = `
+      container.innerHTML = '';
+      const gaestelisteBtn = document.createElement('button');
+      gaestelisteBtn.type = 'button';
+      gaestelisteBtn.className = 'uebersicht-print-button uebersicht-gaesteliste-button';
+      gaestelisteBtn.title = 'Gästeliste in Excel öffnen';
+      gaestelisteBtn.innerHTML = `
+        <i data-lucide="file-spreadsheet" style="width: 16px; height: 16px;"></i>
+        <span>Gästeliste öffnen</span>
+      `;
+      gaestelisteBtn.onclick = handleOpenGaesteliste;
+      const printBtn = document.createElement('button');
+      printBtn.type = 'button';
+      printBtn.className = `uebersicht-print-button ${zettelPrinted ? 'uebersicht-print-button-printed' : ''}`;
+      printBtn.title = zettelPrinted ? 'Alle nochmal drucken' : 'Alle Vorlagen drucken';
+      printBtn.innerHTML = `
         <i data-lucide="printer" style="width: 16px; height: 16px;"></i>
         <span>${zettelPrinted ? 'alle nochmal drucken' : 'alle Vorlagen drucken'}</span>
       `;
-      button.onclick = handlePrintZettel;
-      container.innerHTML = '';
-      container.appendChild(button);
+      printBtn.onclick = handlePrintZettel;
+      container.appendChild(gaestelisteBtn);
+      container.appendChild(printBtn);
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
     }
-  }, [zettelPrinted, handlePrintZettel]);
+  }, [zettelPrinted, handlePrintZettel, handleOpenGaesteliste]);
 
 
   useEffect(() => {
@@ -123,6 +136,19 @@ function UebersichtForm({ formData, onDataChange, highlightedFields = [], printe
       console.error('Print error:', error);
     }
   }, [onPrintAll]);
+
+  const handleOpenGaesteliste = useCallback(async () => {
+    try {
+      if (window.electronAPI && window.electronAPI.openGaesteliste) {
+        await window.electronAPI.openGaesteliste();
+      } else {
+        alert('Fehler: API nicht verfügbar.');
+      }
+    } catch (error) {
+      alert(error.message || 'Fehler beim Öffnen der Gästeliste.');
+      console.error('Open gaesteliste error:', error);
+    }
+  }, []);
 
   return (
     <div className="form-container">

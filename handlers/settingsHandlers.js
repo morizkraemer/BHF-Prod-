@@ -39,11 +39,17 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
   });
 
   ipcMain.handle('upload-template', async (event, templateKey) => {
+    const isGaesteliste = templateKey === 'gaesteliste';
     const result = await dialog.showOpenDialog(mainWindow, {
-      title: 'Template PDF auswählen',
-      filters: [
-        { name: 'PDF Files', extensions: ['pdf'] }
-      ],
+      title: isGaesteliste ? 'Gästeliste Excel-Datei auswählen' : 'Template PDF auswählen',
+      filters: isGaesteliste
+        ? [
+            { name: 'Excel Files', extensions: ['xlsx', 'xls'] },
+            { name: 'All Files', extensions: ['*'] }
+          ]
+        : [
+            { name: 'PDF Files', extensions: ['pdf'] }
+          ],
       properties: ['openFile']
     });
 
@@ -56,6 +62,24 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
     }
     
     return { success: false };
+  });
+
+  ipcMain.handle('open-gaesteliste', async () => {
+    const templates = store.get('templates', {});
+    const filePath = templates.gaesteliste;
+    if (!filePath || filePath.trim() === '') {
+      throw new Error('Keine Gästeliste-Datei hinterlegt. Bitte in den Einstellungen unter Templates eine Excel-Datei auswählen.');
+    }
+    try {
+      await fs.access(filePath);
+    } catch (err) {
+      throw new Error(`Gästeliste-Datei nicht gefunden: ${filePath}`);
+    }
+    const error = await shell.openPath(filePath);
+    if (error) {
+      throw new Error(`Datei konnte nicht geöffnet werden: ${error}`);
+    }
+    return { success: true };
   });
 
   ipcMain.handle('print-template', async (event, templateKey) => {
@@ -384,7 +408,8 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
         securityzettel: null,
         handtuchzettel: null,
         technikzettel: null,
-        uebersichtzettel: null
+        uebersichtzettel: null,
+        gaesteliste: null
       });
       store.set('bestueckungLists', {
         'standard-konzert': [],

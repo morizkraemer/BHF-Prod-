@@ -49,6 +49,12 @@
 }
 
 
+#uebersicht-print-button-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .uebersicht-print-button {
   padding: 6px 12px;
   background-color: #27ae60;
@@ -78,6 +84,14 @@
 
 .uebersicht-print-button-printed:hover {
   background-color: #c0392b;
+}
+
+.uebersicht-gaesteliste-button {
+  background-color: #2980b9;
+}
+
+.uebersicht-gaesteliste-button:hover {
+  background-color: #2471a3;
 }
 
 .uebersicht-print-button svg {

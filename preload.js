@@ -73,6 +73,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   uploadTemplate: (templateKey) => ipcRenderer.invoke('upload-template', templateKey),
   printTemplate: (templateKey) => ipcRenderer.invoke('print-template', templateKey),
   printAllTemplates: () => ipcRenderer.invoke('print-all-templates'),
+  openGaesteliste: () => ipcRenderer.invoke('open-gaesteliste'),
   
   // Bestückung Lists
   getBestueckungLists: () => ipcRenderer.invoke('get-bestueckung-lists'),

@@ -31,7 +31,8 @@ function SettingsForm() {
     handtuchzettel: null,
     technikzettel: null,
     uebersichtzettel: null,
-    kassenzettel: null
+    kassenzettel: null,
+    gaesteliste: null
   });
   const [bestueckungLists, setBestueckungLists] = useState({
     'standard-konzert': [],
@@ -111,12 +112,14 @@ function SettingsForm() {
       const technikzettel = await window.electronAPI.getTemplate('technikzettel');
       const uebersichtzettel = await window.electronAPI.getTemplate('uebersichtzettel');
       const kassenzettel = await window.electronAPI.getTemplate('kassenzettel');
+      const gaesteliste = await window.electronAPI.getTemplate('gaesteliste');
       setTemplates({
         securityzettel,
         handtuchzettel,
         technikzettel,
         uebersichtzettel,
-        kassenzettel
+        kassenzettel,
+        gaesteliste
       });
     }
   };
@@ -1355,6 +1358,28 @@ function SettingsForm() {
             className="settings-upload-template-button"
           >
             Template hochladen
+          </button>
+        </div>
+      </div>
+
+      {/* Gästeliste (Excel) */}
+      <div className="settings-scanner-section">
+        <h3>Gästeliste (Excel)</h3>
+        <p className="settings-description">
+          Excel-Datei, die beim Klick auf „Gästeliste öffnen“ auf der Übersicht mit der Standard-App (z. B. Excel) geöffnet wird.
+        </p>
+        <div className="settings-template-form">
+          <div className="settings-template-display">
+            <span className="settings-template-path">
+              {templates.gaesteliste ? templates.gaesteliste.split(/[/\\]/).pop() : 'Keine Datei ausgewählt'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleUploadTemplate('gaesteliste')}
+            className="settings-upload-template-button"
+          >
+            Datei auswählen
           </button>
         </div>
       </div>
