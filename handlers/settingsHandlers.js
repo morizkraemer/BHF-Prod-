@@ -12,8 +12,8 @@ const { PDFDocument } = require('pdf-lib');
  */
 
 function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shiftDataStore) {
-  // IPC Handlers for Tech Names
-  ipcMain.handle('get-tech-names', () => {
+  // IPC Handlers for saved Tech Names (settings object for form pre-fill; distinct from tech person catalog)
+  ipcMain.handle('get-saved-tech-names', () => {
     return store.get('techNames', {
       soundEngineerName: '',
       lightingTechName: ''

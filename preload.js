@@ -64,10 +64,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getPauschalePrices: () => ipcRenderer.invoke('get-pauschale-prices'),
   savePauschalePrices: (prices) => ipcRenderer.invoke('save-pauschale-prices', prices),
   
-  // Tech Names
-  getTechNames: () => ipcRenderer.invoke('get-tech-names'),
+  // Saved Tech Names (settings object for Ton/Licht form pre-fill)
+  getSavedTechNames: () => ipcRenderer.invoke('get-saved-tech-names'),
   saveTechNames: (names) => ipcRenderer.invoke('save-tech-names', names),
-  
+
+  // Person name catalogs (each returns { id, name }[])
+  getSecuNames: () => ipcRenderer.invoke('get-secu-names'),
+  addSecuName: (name) => ipcRenderer.invoke('add-secu-name', name),
+  getTechNames: () => ipcRenderer.invoke('get-tech-names'),
+  addTechName: (name) => ipcRenderer.invoke('add-tech-name', name),
+  getAndereMitarbeiterNames: () => ipcRenderer.invoke('get-andere-mitarbeiter-names'),
+  addAndereMitarbeiterName: (name) => ipcRenderer.invoke('add-andere-mitarbeiter-name', name),
+
   // Template management
   getTemplate: (templateKey) => ipcRenderer.invoke('get-template', templateKey),
   uploadTemplate: (templateKey) => ipcRenderer.invoke('upload-template', templateKey),

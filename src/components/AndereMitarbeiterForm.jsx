@@ -1,5 +1,7 @@
 const { useState, useEffect } = React;
 
+const PersonNameSelect = window.PersonNameSelect;
+
 function AndereMitarbeiterForm({ formData, onDataChange, highlightedFields = [] }) {
   const shouldHighlight = (fieldName) => {
     return highlightedFields.includes(fieldName);
@@ -60,14 +62,26 @@ function AndereMitarbeiterForm({ formData, onDataChange, highlightedFields = [] 
           ) : (
             mitarbeiter.map((person, index) => (
             <div key={index} className="andere-mitarbeiter-line">
-              <input
-                type="text"
-                value={person.name}
-                onChange={(e) => handleMitarbeiterChange(index, 'name', e.target.value)}
-                className={`andere-mitarbeiter-name ${shouldHighlight(`Andere Mitarbeiter Person ${index + 1} Name`) ? 'field-highlighted' : ''}`}
-                placeholder="Name *"
-                required
-              />
+              {PersonNameSelect ? (
+                <PersonNameSelect
+                  value={person.name}
+                  onChange={(name) => handleMitarbeiterChange(index, 'name', name)}
+                  getNames={window.electronAPI ? window.electronAPI.getAndereMitarbeiterNames : null}
+                  addName={window.electronAPI ? window.electronAPI.addAndereMitarbeiterName : null}
+                  placeholder="Name *"
+                  className={`andere-mitarbeiter-name ${shouldHighlight(`Andere Mitarbeiter Person ${index + 1} Name`) ? 'field-highlighted' : ''}`}
+                  required
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={person.name}
+                  onChange={(e) => handleMitarbeiterChange(index, 'name', e.target.value)}
+                  className={`andere-mitarbeiter-name ${shouldHighlight(`Andere Mitarbeiter Person ${index + 1} Name`) ? 'field-highlighted' : ''}`}
+                  placeholder="Name *"
+                  required
+                />
+              )}
               <input
                 type="time"
                 value={person.startTime}

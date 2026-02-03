@@ -609,3 +609,99 @@
   border-bottom: none;
 }
 
+/* PersonNameSelect – shared name dropdown */
+.person-name-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.person-name-select-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background-color: white;
+  box-sizing: border-box;
+}
+
+.person-name-select-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.person-name-select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.person-name-select-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.person-name-select-option {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s ease;
+  font-size: 14px;
+}
+
+.person-name-select-option:hover {
+  background-color: #f8f9fa;
+}
+
+.person-name-select-option:last-child {
+  border-bottom: none;
+}
+
+.person-name-select-similar {
+  padding: 8px 0 0 0;
+}
+
+.person-name-select-similar-label {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+}
+
+.person-name-select-add {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  background-color: #f0f7ff;
+  color: #2980b9;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.person-name-select-add:hover {
+  background-color: #e3f2fd;
+}
+
+.person-name-select-empty {
+  padding: 12px;
+  font-size: 13px;
+  color: #888;
+}
+

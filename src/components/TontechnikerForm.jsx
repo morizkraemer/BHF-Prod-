@@ -1,5 +1,7 @@
 const { useState, useEffect } = React;
 
+const PersonNameSelect = window.PersonNameSelect;
+
 function TontechnikerForm({ formData, onDataChange, highlightedFields = [], printedTemplates = {}, onTemplatePrinted }) {
   // Map display field names to field identifiers
   const fieldNameMap = {
@@ -30,8 +32,8 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
   // Load saved tech names on mount (only if formData doesn't have them)
   useEffect(() => {
     if (!formData?.soundEngineerName && !formData?.lightingTechName) {
-      if (window.electronAPI && window.electronAPI.getTechNames) {
-        window.electronAPI.getTechNames().then(savedNames => {
+      if (window.electronAPI && window.electronAPI.getSavedTechNames) {
+        window.electronAPI.getSavedTechNames().then(savedNames => {
           if (savedNames) {
             setLocalData(prev => ({
               ...prev,
@@ -96,16 +98,29 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
           </div>
           <div className="form-group form-group-tech-name">
             <label htmlFor="soundEngineerName">Tontechnik Name{localData.soundEngineerEnabled ? ' *' : ''}</label>
-            <input
-              type="text"
-              id="soundEngineerName"
-              value={localData.soundEngineerName}
-              onChange={(e) => handleChange('soundEngineerName', e.target.value)}
-              className={`form-input ${shouldHighlight('Sound Engineer Name') ? 'field-highlighted' : ''}`}
-              placeholder="Name"
-              required={localData.soundEngineerEnabled}
-              disabled={!localData.soundEngineerEnabled}
-            />
+            {PersonNameSelect ? (
+              <PersonNameSelect
+                value={localData.soundEngineerName}
+                onChange={(name) => handleChange('soundEngineerName', name)}
+                getNames={window.electronAPI ? window.electronAPI.getTechNames : null}
+                addName={window.electronAPI ? window.electronAPI.addTechName : null}
+                placeholder="Name"
+                className={`form-input ${shouldHighlight('Sound Engineer Name') ? 'field-highlighted' : ''}`}
+                required={localData.soundEngineerEnabled}
+                disabled={!localData.soundEngineerEnabled}
+              />
+            ) : (
+              <input
+                type="text"
+                id="soundEngineerName"
+                value={localData.soundEngineerName}
+                onChange={(e) => handleChange('soundEngineerName', e.target.value)}
+                className={`form-input ${shouldHighlight('Sound Engineer Name') ? 'field-highlighted' : ''}`}
+                placeholder="Name"
+                required={localData.soundEngineerEnabled}
+                disabled={!localData.soundEngineerEnabled}
+              />
+            )}
           </div>
           <div className="form-group form-group-time">
             <label htmlFor="soundEngineerStartTime">Start{localData.soundEngineerEnabled ? ' *' : ''}</label>
@@ -148,16 +163,29 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
           </div>
           <div className="form-group form-group-tech-name">
             <label htmlFor="lightingTechName">Lichttechnik Name{localData.lightingTechEnabled ? ' *' : ''}</label>
-            <input
-              type="text"
-              id="lightingTechName"
-              value={localData.lightingTechName}
-              onChange={(e) => handleChange('lightingTechName', e.target.value)}
-              className={`form-input ${shouldHighlight('Lighting Tech Name') ? 'field-highlighted' : ''}`}
-              placeholder="Name"
-              required={localData.lightingTechEnabled}
-              disabled={!localData.lightingTechEnabled}
-            />
+            {PersonNameSelect ? (
+              <PersonNameSelect
+                value={localData.lightingTechName}
+                onChange={(name) => handleChange('lightingTechName', name)}
+                getNames={window.electronAPI ? window.electronAPI.getTechNames : null}
+                addName={window.electronAPI ? window.electronAPI.addTechName : null}
+                placeholder="Name"
+                className={`form-input ${shouldHighlight('Lighting Tech Name') ? 'field-highlighted' : ''}`}
+                required={localData.lightingTechEnabled}
+                disabled={!localData.lightingTechEnabled}
+              />
+            ) : (
+              <input
+                type="text"
+                id="lightingTechName"
+                value={localData.lightingTechName}
+                onChange={(e) => handleChange('lightingTechName', e.target.value)}
+                className={`form-input ${shouldHighlight('Lighting Tech Name') ? 'field-highlighted' : ''}`}
+                placeholder="Name"
+                required={localData.lightingTechEnabled}
+                disabled={!localData.lightingTechEnabled}
+              />
+            )}
           </div>
           <div className="form-group form-group-time">
             <label htmlFor="lightingTechStartTime">Start{localData.lightingTechEnabled ? ' *' : ''}</label>

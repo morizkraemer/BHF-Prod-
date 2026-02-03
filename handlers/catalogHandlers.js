@@ -76,6 +76,33 @@ function registerCatalogHandlers(ipcMain, store) {
     return true;
   });
 
+  // Helper: get/add person names for a catalog (store key, returns { id, name }[])
+  function getPersonNames(storeKey) {
+    return store.get(storeKey, []);
+  }
+
+  function addPersonName(storeKey, name) {
+    const trimmed = (name || '').trim();
+    if (!trimmed) return null;
+    const list = store.get(storeKey, []);
+    const existing = list.find(item => item.name && item.name.toLowerCase() === trimmed.toLowerCase());
+    if (existing) return existing;
+    const newItem = { id: Date.now().toString(), name: trimmed };
+    list.push(newItem);
+    store.set(storeKey, list);
+    return newItem;
+  }
+
+  // Person name catalogs: Secu, Tech (Ton + Licht shared), Andere Mitarbeiter
+  ipcMain.handle('get-secu-names', () => getPersonNames('secuPersonNames'));
+  ipcMain.handle('add-secu-name', (event, name) => addPersonName('secuPersonNames', name));
+
+  ipcMain.handle('get-tech-names', () => getPersonNames('techPersonNames'));
+  ipcMain.handle('add-tech-name', (event, name) => addPersonName('techPersonNames', name));
+
+  ipcMain.handle('get-andere-mitarbeiter-names', () => getPersonNames('andereMitarbeiterNames'));
+  ipcMain.handle('add-andere-mitarbeiter-name', (event, name) => addPersonName('andereMitarbeiterNames', name));
+
   // IPC Handlers for Bestückung Lists
   ipcMain.handle('get-bestueckung-lists', () => {
     return store.get('bestueckungLists', {

@@ -1,5 +1,7 @@
 const { useState, useEffect } = React;
 
+const PersonNameSelect = window.PersonNameSelect;
+
 function SecuForm({ formData, onDataChange, highlightedFields = [], printedTemplates = {}, onTemplatePrinted }) {
   const shouldHighlight = (fieldName) => {
     return highlightedFields.includes(fieldName);
@@ -65,14 +67,26 @@ function SecuForm({ formData, onDataChange, highlightedFields = [], printedTempl
           ) : (
             securityPersonnel.map((person, index) => (
             <div key={index} className="secu-personnel-line">
-              <input
-                type="text"
-                value={person.name}
-                onChange={(e) => handlePersonnelChange(index, 'name', e.target.value)}
-                className={`secu-personnel-name ${shouldHighlight(`Secu Person ${index + 1} Name`) ? 'field-highlighted' : ''}`}
-                placeholder="Name *"
-                required
-              />
+              {PersonNameSelect ? (
+                <PersonNameSelect
+                  value={person.name}
+                  onChange={(name) => handlePersonnelChange(index, 'name', name)}
+                  getNames={window.electronAPI ? window.electronAPI.getSecuNames : null}
+                  addName={window.electronAPI ? window.electronAPI.addSecuName : null}
+                  placeholder="Name *"
+                  className={`secu-personnel-name ${shouldHighlight(`Secu Person ${index + 1} Name`) ? 'field-highlighted' : ''}`}
+                  required
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={person.name}
+                  onChange={(e) => handlePersonnelChange(index, 'name', e.target.value)}
+                  className={`secu-personnel-name ${shouldHighlight(`Secu Person ${index + 1} Name`) ? 'field-highlighted' : ''}`}
+                  placeholder="Name *"
+                  required
+                />
+              )}
               <input
                 type="time"
                 value={person.startTime}

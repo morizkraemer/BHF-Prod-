@@ -24,7 +24,11 @@ const settingsStore = new Store({
     bestueckungLists: {
       'standard-konzert': [], // List of items for "Standard Konzert" - each item: {riderItemId, amount}
       'standard-tranzit': [] // List of items for "Standard Tranzit" - each item: {riderItemId, amount}
-    }
+    },
+    // Person name catalogs (each item: { id, name })
+    secuPersonNames: [],
+    techPersonNames: [], // Shared pool for Tontechnik + Lichttechnik (Sound Engineer + Lighting Tech)
+    andereMitarbeiterNames: []
   }
 });
 
