@@ -14,6 +14,7 @@ const MIME = {
   '.css': 'text/css; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
   '.jsx': 'application/javascript; charset=utf-8',
+  '.png': 'image/png',
 };
 
 /**
@@ -187,6 +188,18 @@ function createLanFormServer(store, shiftStore) {
     let pathname = parsed.pathname || '/';
     if (pathname !== '/' && pathname.endsWith('/')) {
       pathname = pathname.slice(0, -1);
+    }
+
+    // Favicon (app icon for browser tab)
+    if (pathname === '/favicon.png' || pathname === '/icon.png') {
+      if (req.method !== 'GET') {
+        res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Method Not Allowed');
+        return;
+      }
+      const iconPath = path.join(projectRoot, 'assets', 'icons', 'icon.png');
+      await serveFile(res, iconPath);
+      return;
     }
 
     // Form selector: root

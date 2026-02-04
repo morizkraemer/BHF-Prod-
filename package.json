@@ -27,6 +27,7 @@
     "electron-reload": "^2.0.0-alpha.1"
   },
   "dependencies": {
+    "@babel/runtime": "^7.21.0",
     "date-fns": "^2.30.0",
     "electron-store": "^8.1.0",
     "exceljs": "^4.4.0",
