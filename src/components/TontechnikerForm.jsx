@@ -17,17 +17,26 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
   const shouldHighlight = (fieldName) => {
     return highlightedFields.includes(fieldName);
   };
+  const [wageOptions, setWageOptions] = useState([]);
   const [localData, setLocalData] = useState({
     soundEngineerEnabled: formData?.soundEngineerEnabled !== undefined ? formData.soundEngineerEnabled : true, // Default to checked
     soundEngineerName: formData?.soundEngineerName || '',
+    soundEngineerWage: formData?.soundEngineerWage || '',
     soundEngineerStartTime: formData?.soundEngineerStartTime || '',
     soundEngineerEndTime: formData?.soundEngineerEndTime || '',
     lightingTechEnabled: formData?.lightingTechEnabled !== undefined ? formData.lightingTechEnabled : false,
     lightingTechName: formData?.lightingTechName || '',
+    lightingTechWage: formData?.lightingTechWage || '',
     lightingTechStartTime: formData?.lightingTechStartTime || '',
     lightingTechEndTime: formData?.lightingTechEndTime || '',
     scannedImages: formData?.scannedImages || []
   });
+
+  useEffect(() => {
+    if (window.electronAPI?.getWageOptions) {
+      window.electronAPI.getWageOptions().then((opts) => setWageOptions(Array.isArray(opts) ? opts : []));
+    }
+  }, []);
 
   // Load saved tech names on mount (only if formData doesn't have them)
   useEffect(() => {
@@ -45,6 +54,31 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
       }
     }
   }, []);
+
+  // Load wage from store when name changes
+  useEffect(() => {
+    if (!window.electronAPI?.getPersonWage) return;
+    const name = (localData.soundEngineerName || '').trim();
+    if (!name) {
+      setLocalData(prev => ({ ...prev, soundEngineerWage: '' }));
+      return;
+    }
+    window.electronAPI.getPersonWage(name).then((w) => {
+      setLocalData(prev => ({ ...prev, soundEngineerWage: w || '' }));
+    });
+  }, [localData.soundEngineerName]);
+
+  useEffect(() => {
+    if (!window.electronAPI?.getPersonWage) return;
+    const name = (localData.lightingTechName || '').trim();
+    if (!name) {
+      setLocalData(prev => ({ ...prev, lightingTechWage: '' }));
+      return;
+    }
+    window.electronAPI.getPersonWage(name).then((w) => {
+      setLocalData(prev => ({ ...prev, lightingTechWage: w || '' }));
+    });
+  }, [localData.lightingTechName]);
 
   useEffect(() => {
     if (onDataChange) {
@@ -73,6 +107,14 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
     }));
   };
 
+  const handleWageChange = (nameField, wageField, value) => {
+    const name = localData[nameField]?.trim();
+    setLocalData(prev => ({ ...prev, [wageField]: value }));
+    if (name && window.electronAPI?.setPersonWage) {
+      window.electronAPI.setPersonWage(name, value);
+    }
+  };
+
   const handleDocumentsChange = (updatedDocuments) => {
     setLocalData(prev => ({
       ...prev,
@@ -96,31 +138,52 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
               <span className="checkbox-custom"></span>
             </label>
           </div>
-          <div className="form-group form-group-tech-name">
-            <label htmlFor="soundEngineerName">Tontechnik Name{localData.soundEngineerEnabled ? ' *' : ''}</label>
-            {PersonNameSelect ? (
-              <PersonNameSelect
-                value={localData.soundEngineerName}
-                onChange={(name) => handleChange('soundEngineerName', name)}
-                getNames={window.electronAPI ? window.electronAPI.getTechNames : null}
-                addName={window.electronAPI ? window.electronAPI.addTechName : null}
-                placeholder="Name"
-                className={`form-input ${shouldHighlight('Sound Engineer Name') ? 'field-highlighted' : ''}`}
-                required={localData.soundEngineerEnabled}
-                disabled={!localData.soundEngineerEnabled}
-              />
-            ) : (
-              <input
-                type="text"
-                id="soundEngineerName"
-                value={localData.soundEngineerName}
-                onChange={(e) => handleChange('soundEngineerName', e.target.value)}
-                className={`form-input ${shouldHighlight('Sound Engineer Name') ? 'field-highlighted' : ''}`}
-                placeholder="Name"
-                required={localData.soundEngineerEnabled}
-                disabled={!localData.soundEngineerEnabled}
-              />
-            )}
+          <div className="form-group name-wage-combo name-wage-combo-tech">
+            <label>Tontechnik Name / €/h{localData.soundEngineerEnabled ? ' *' : ''}</label>
+            <div className="name-wage-combo-inner">
+              <div className="name-wage-combo-name">
+                {PersonNameSelect ? (
+                  <PersonNameSelect
+                    value={localData.soundEngineerName}
+                    onChange={(name) => handleChange('soundEngineerName', name)}
+                    getNames={window.electronAPI ? window.electronAPI.getTechNames : null}
+                    addName={window.electronAPI ? window.electronAPI.addTechName : null}
+                    placeholder="Name"
+                    className={`form-input ${shouldHighlight('Sound Engineer Name') ? 'field-highlighted' : ''}`}
+                    required={localData.soundEngineerEnabled}
+                    disabled={!localData.soundEngineerEnabled}
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    id="soundEngineerName"
+                    value={localData.soundEngineerName}
+                    onChange={(e) => handleChange('soundEngineerName', e.target.value)}
+                    className={`form-input ${shouldHighlight('Sound Engineer Name') ? 'field-highlighted' : ''}`}
+                    placeholder="Name"
+                    required={localData.soundEngineerEnabled}
+                    disabled={!localData.soundEngineerEnabled}
+                  />
+                )}
+              </div>
+              <div className="name-wage-combo-wage">
+                <select
+                  id="soundEngineerWage"
+                  value={localData.soundEngineerWage ?? ''}
+                  onChange={(e) => handleWageChange('soundEngineerName', 'soundEngineerWage', e.target.value)}
+                  className="form-input form-input-wage"
+                  disabled={!localData.soundEngineerEnabled}
+                >
+                  <option value="">—</option>
+                  {wageOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                  {(localData.soundEngineerWage && wageOptions.indexOf(localData.soundEngineerWage) === -1) && (
+                    <option value={localData.soundEngineerWage}>{localData.soundEngineerWage}</option>
+                  )}
+                </select>
+              </div>
+            </div>
           </div>
           <div className="form-group form-group-time">
             <label htmlFor="soundEngineerStartTime">Start{localData.soundEngineerEnabled ? ' *' : ''}</label>
@@ -161,31 +224,52 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
               <span className="checkbox-custom"></span>
             </label>
           </div>
-          <div className="form-group form-group-tech-name">
-            <label htmlFor="lightingTechName">Lichttechnik Name{localData.lightingTechEnabled ? ' *' : ''}</label>
-            {PersonNameSelect ? (
-              <PersonNameSelect
-                value={localData.lightingTechName}
-                onChange={(name) => handleChange('lightingTechName', name)}
-                getNames={window.electronAPI ? window.electronAPI.getTechNames : null}
-                addName={window.electronAPI ? window.electronAPI.addTechName : null}
-                placeholder="Name"
-                className={`form-input ${shouldHighlight('Lighting Tech Name') ? 'field-highlighted' : ''}`}
-                required={localData.lightingTechEnabled}
-                disabled={!localData.lightingTechEnabled}
-              />
-            ) : (
-              <input
-                type="text"
-                id="lightingTechName"
-                value={localData.lightingTechName}
-                onChange={(e) => handleChange('lightingTechName', e.target.value)}
-                className={`form-input ${shouldHighlight('Lighting Tech Name') ? 'field-highlighted' : ''}`}
-                placeholder="Name"
-                required={localData.lightingTechEnabled}
-                disabled={!localData.lightingTechEnabled}
-              />
-            )}
+          <div className="form-group name-wage-combo name-wage-combo-tech">
+            <label>Lichttechnik Name / €/h{localData.lightingTechEnabled ? ' *' : ''}</label>
+            <div className="name-wage-combo-inner">
+              <div className="name-wage-combo-name">
+                {PersonNameSelect ? (
+                  <PersonNameSelect
+                    value={localData.lightingTechName}
+                    onChange={(name) => handleChange('lightingTechName', name)}
+                    getNames={window.electronAPI ? window.electronAPI.getTechNames : null}
+                    addName={window.electronAPI ? window.electronAPI.addTechName : null}
+                    placeholder="Name"
+                    className={`form-input ${shouldHighlight('Lighting Tech Name') ? 'field-highlighted' : ''}`}
+                    required={localData.lightingTechEnabled}
+                    disabled={!localData.lightingTechEnabled}
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    id="lightingTechName"
+                    value={localData.lightingTechName}
+                    onChange={(e) => handleChange('lightingTechName', e.target.value)}
+                    className={`form-input ${shouldHighlight('Lighting Tech Name') ? 'field-highlighted' : ''}`}
+                    placeholder="Name"
+                    required={localData.lightingTechEnabled}
+                    disabled={!localData.lightingTechEnabled}
+                  />
+                )}
+              </div>
+              <div className="name-wage-combo-wage">
+                <select
+                  id="lightingTechWage"
+                  value={localData.lightingTechWage ?? ''}
+                  onChange={(e) => handleWageChange('lightingTechName', 'lightingTechWage', e.target.value)}
+                  className="form-input form-input-wage"
+                  disabled={!localData.lightingTechEnabled}
+                >
+                  <option value="">—</option>
+                  {wageOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                  {(localData.lightingTechWage && wageOptions.indexOf(localData.lightingTechWage) === -1) && (
+                    <option value={localData.lightingTechWage}>{localData.lightingTechWage}</option>
+                  )}
+                </select>
+              </div>
+            </div>
           </div>
           <div className="form-group form-group-time">
             <label htmlFor="lightingTechStartTime">Start{localData.lightingTechEnabled ? ' *' : ''}</label>

@@ -6,9 +6,17 @@ function AndereMitarbeiterForm({ formData, onDataChange, highlightedFields = [] 
   const shouldHighlight = (fieldName) => {
     return highlightedFields.includes(fieldName);
   };
-  const [mitarbeiter, setMitarbeiter] = useState(
-    formData?.mitarbeiter || []
-  );
+  const [wageOptions, setWageOptions] = useState([]);
+  const [mitarbeiter, setMitarbeiter] = useState(() => {
+    const list = formData?.mitarbeiter || [];
+    return list.map(p => ({ name: p.name ?? '', startTime: p.startTime ?? '', endTime: p.endTime ?? '', category: p.category ?? '', wage: p.wage ?? '' }));
+  });
+
+  useEffect(() => {
+    if (window.electronAPI?.getWageOptions) {
+      window.electronAPI.getWageOptions().then((opts) => setWageOptions(Array.isArray(opts) ? opts : []));
+    }
+  }, []);
 
   // Call onDataChange on mount and whenever data changes
   useEffect(() => {
@@ -23,12 +31,38 @@ function AndereMitarbeiterForm({ formData, onDataChange, highlightedFields = [] 
     const newMitarbeiter = [...mitarbeiter];
     newMitarbeiter[index][field] = value;
     setMitarbeiter(newMitarbeiter);
+    if (field === 'wage' && window.electronAPI?.setPersonWage) {
+      const name = (newMitarbeiter[index]?.name || '').trim();
+      if (name) window.electronAPI.setPersonWage(name, value);
+    }
+    if (field === 'name' && window.electronAPI?.getPersonWage) {
+      const name = (value || '').trim();
+      if (name) {
+        window.electronAPI.getPersonWage(name).then((w) => {
+          setTimeout(() => {
+            setMitarbeiter(prev => {
+              const next = [...prev];
+              if (next[index] && (next[index].name || '').trim() === name) {
+                next[index] = { ...next[index], wage: w ?? '' };
+              }
+              return next;
+            });
+          }, 0);
+        });
+      } else {
+        setMitarbeiter(prev => {
+          const next = [...prev];
+          if (next[index]) next[index] = { ...next[index], wage: '' };
+          return next;
+        });
+      }
+    }
   };
 
   const handleAddMitarbeiter = () => {
     setMitarbeiter([
       ...mitarbeiter,
-      { name: '', startTime: '', endTime: '', category: '' }
+      { name: '', startTime: '', endTime: '', category: '', wage: '' }
     ]);
   };
 
@@ -49,7 +83,7 @@ function AndereMitarbeiterForm({ formData, onDataChange, highlightedFields = [] 
           </div>
           {/* Column Headers */}
           <div className="andere-mitarbeiter-header">
-            <div className="andere-mitarbeiter-header-name">Name</div>
+            <div className="andere-mitarbeiter-header-name-wage">Name / €/h</div>
             <div className="andere-mitarbeiter-header-start">Start</div>
             <div className="andere-mitarbeiter-header-end">Ende</div>
             <div className="andere-mitarbeiter-header-category">Kategorie</div>
@@ -62,26 +96,45 @@ function AndereMitarbeiterForm({ formData, onDataChange, highlightedFields = [] 
           ) : (
             mitarbeiter.map((person, index) => (
             <div key={index} className="andere-mitarbeiter-line">
-              {PersonNameSelect ? (
-                <PersonNameSelect
-                  value={person.name}
-                  onChange={(name) => handleMitarbeiterChange(index, 'name', name)}
-                  getNames={window.electronAPI ? window.electronAPI.getAndereMitarbeiterNames : null}
-                  addName={window.electronAPI ? window.electronAPI.addAndereMitarbeiterName : null}
-                  placeholder="Name *"
-                  className={`andere-mitarbeiter-name ${shouldHighlight(`Andere Mitarbeiter Person ${index + 1} Name`) ? 'field-highlighted' : ''}`}
-                  required
-                />
-              ) : (
-                <input
-                  type="text"
-                  value={person.name}
-                  onChange={(e) => handleMitarbeiterChange(index, 'name', e.target.value)}
-                  className={`andere-mitarbeiter-name ${shouldHighlight(`Andere Mitarbeiter Person ${index + 1} Name`) ? 'field-highlighted' : ''}`}
-                  placeholder="Name *"
-                  required
-                />
-              )}
+              <div className="andere-mitarbeiter-name-wage-combo">
+                <div className="andere-mitarbeiter-name-wage-combo-name">
+                  {PersonNameSelect ? (
+                    <PersonNameSelect
+                      value={person.name}
+                      onChange={(name) => handleMitarbeiterChange(index, 'name', name)}
+                      getNames={window.electronAPI ? window.electronAPI.getAndereMitarbeiterNames : null}
+                      addName={window.electronAPI ? window.electronAPI.addAndereMitarbeiterName : null}
+                      placeholder="Name *"
+                      className={`andere-mitarbeiter-name ${shouldHighlight(`Andere Mitarbeiter Person ${index + 1} Name`) ? 'field-highlighted' : ''}`}
+                      required
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={person.name}
+                      onChange={(e) => handleMitarbeiterChange(index, 'name', e.target.value)}
+                      className={`andere-mitarbeiter-name ${shouldHighlight(`Andere Mitarbeiter Person ${index + 1} Name`) ? 'field-highlighted' : ''}`}
+                      placeholder="Name *"
+                      required
+                    />
+                  )}
+                </div>
+                <div className="andere-mitarbeiter-name-wage-combo-wage">
+                  <select
+                    value={person.wage ?? ''}
+                    onChange={(e) => handleMitarbeiterChange(index, 'wage', e.target.value)}
+                    className="andere-mitarbeiter-wage"
+                  >
+                    <option value="">—</option>
+                    {wageOptions.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                    {(person.wage && wageOptions.indexOf(person.wage) === -1) && (
+                      <option value={person.wage}>{person.wage}</option>
+                    )}
+                  </select>
+                </div>
+              </div>
               <input
                 type="time"
                 value={person.startTime}

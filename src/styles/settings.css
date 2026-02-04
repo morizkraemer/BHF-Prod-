@@ -395,3 +395,42 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+/* Employees (Mitarbeiter) page */
+.settings-employees-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+}
+
+.settings-employees-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.settings-employees-table th,
+.settings-employees-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.settings-employees-table th {
+  font-weight: 600;
+  color: #2c3e50;
+  background: #f9f9f9;
+}
+
+.settings-employees-table tbody tr:hover {
+  background: #fafafa;
+}
+
+.settings-employees-table td select {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+}

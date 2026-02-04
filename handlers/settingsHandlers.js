@@ -362,6 +362,54 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
     return store.get('einkaufsbelegeFolder', null);
   });
 
+  // Wage options list (e.g. ["25 €/h", "30 €/h"])
+  ipcMain.handle('get-wage-options', () => {
+    return store.get('wageOptions', []);
+  });
+
+  ipcMain.handle('save-wage-options', (event, options) => {
+    store.set('wageOptions', Array.isArray(options) ? options : []);
+    return true;
+  });
+
+  // Person wage = selected option from wageOptions, keyed by name
+  ipcMain.handle('get-person-wage', (event, name) => {
+    const wages = store.get('personWages', {});
+    const key = (name || '').trim();
+    return key ? (wages[key] ?? '') : '';
+  });
+
+  ipcMain.handle('get-person-wages', () => {
+    return store.get('personWages', {});
+  });
+
+  ipcMain.handle('set-person-wage', (event, name, wageOption) => {
+    const key = (name || '').trim();
+    if (!key) return;
+    const wages = store.get('personWages', {});
+    wages[key] = (wageOption == null ? '' : String(wageOption).trim());
+    store.set('personWages', wages);
+    return true;
+  });
+
+  // IPC Handlers for Excel Zeiterfassung Folder
+  ipcMain.handle('set-zeiterfassung-excel-folder', async () => {
+    const { filePaths } = await dialog.showOpenDialog(mainWindow, {
+      title: 'Excel Zeiterfassung Ordner auswählen',
+      properties: ['openDirectory']
+    });
+
+    if (filePaths && filePaths.length > 0) {
+      store.set('zeiterfassungExcelFolder', filePaths[0]);
+      return filePaths[0];
+    }
+    return null;
+  });
+
+  ipcMain.handle('get-zeiterfassung-excel-folder', () => {
+    return store.get('zeiterfassungExcelFolder', null);
+  });
+
   // IPC Handlers for Catering Prices
   ipcMain.handle('get-catering-prices', () => {
     return store.get('cateringPrices', {
@@ -400,6 +448,9 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
       store.set('scanFolder', null);
       store.set('reportFolder', null);
       store.set('einkaufsbelegeFolder', null);
+      store.set('zeiterfassungExcelFolder', null);
+      store.set('wageOptions', []);
+      store.set('personWages', {});
       store.set('techNames', {
         soundEngineerName: '',
         lightingTechName: ''

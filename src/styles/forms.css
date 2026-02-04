@@ -462,8 +462,8 @@
 
 .form-row-tech-info {
   display: grid;
-  grid-template-columns: 60px 2fr 1fr 1fr;
-  gap: 15px;
+  grid-template-columns: 60px 1fr 0.33fr 0.33fr;
+  gap: 12px;
   align-items: end;
 }
 
@@ -533,11 +533,78 @@
 }
 
 .form-group-tech-name {
-  min-width: 200px;
+  min-width: 0;
 }
 
 .form-group-time {
-  min-width: 120px;
+  min-width: 0;
+}
+
+.form-group-wage {
+  min-width: 0;
+}
+
+.form-input-wage {
+  text-align: center;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Name + wage combo box (Ton/Licht) */
+.name-wage-combo-tech {
+  min-width: 0;
+}
+
+.name-wage-combo-inner {
+  display: flex;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: white;
+  overflow: visible;
+}
+
+.name-wage-combo-inner:focus-within {
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.name-wage-combo-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.name-wage-combo-name .form-input,
+.name-wage-combo-name input {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  width: 100%;
+  min-width: 0;
+}
+
+.name-wage-combo-name .form-input:focus,
+.name-wage-combo-name input:focus {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
+.name-wage-combo-wage {
+  flex-shrink: 0;
+  width: 56px;
+  border-left: 1px solid #ddd;
+}
+
+.name-wage-combo-wage .form-input {
+  border: none;
+  border-radius: 0;
+  text-align: center;
+  padding: 10px 6px;
+}
+
+.name-wage-combo-wage .form-input:focus {
+  outline: none;
+  box-shadow: none;
 }
 
 @media (max-width: 768px) {
@@ -558,7 +625,7 @@
   }
   
   .form-row-tech-info {
-    grid-template-columns: 1fr;
+    grid-template-columns: 60px 1fr 0.33fr 0.33fr;
   }
 }
 
@@ -704,4 +771,3 @@
   font-size: 13px;
   color: #888;
 }
-

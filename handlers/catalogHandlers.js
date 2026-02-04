@@ -93,6 +93,17 @@ function registerCatalogHandlers(ipcMain, store) {
     return newItem;
   }
 
+  function removePersonName(storeKey, name) {
+    const trimmed = (name || '').trim();
+    if (!trimmed) return false;
+    const list = store.get(storeKey, []);
+    const keyLower = trimmed.toLowerCase();
+    const filtered = list.filter(item => (item.name || '').trim().toLowerCase() !== keyLower);
+    if (filtered.length === list.length) return false;
+    store.set(storeKey, filtered);
+    return true;
+  }
+
   // Person name catalogs: Secu, Tech (Ton + Licht shared), Andere Mitarbeiter
   ipcMain.handle('get-secu-names', () => getPersonNames('secuPersonNames'));
   ipcMain.handle('add-secu-name', (event, name) => addPersonName('secuPersonNames', name));
@@ -102,6 +113,22 @@ function registerCatalogHandlers(ipcMain, store) {
 
   ipcMain.handle('get-andere-mitarbeiter-names', () => getPersonNames('andereMitarbeiterNames'));
   ipcMain.handle('add-andere-mitarbeiter-name', (event, name) => addPersonName('andereMitarbeiterNames', name));
+
+  // Remove person from all catalogs and clear their wage
+  ipcMain.handle('remove-person-from-catalogs', (event, name) => {
+    const trimmed = (name || '').trim();
+    if (!trimmed) return { removed: false };
+    removePersonName('secuPersonNames', trimmed);
+    removePersonName('techPersonNames', trimmed);
+    removePersonName('andereMitarbeiterNames', trimmed);
+    const wages = store.get('personWages', {});
+    const keyLower = trimmed.toLowerCase();
+    Object.keys(wages).forEach(k => {
+      if ((k || '').trim().toLowerCase() === keyLower) delete wages[k];
+    });
+    store.set('personWages', wages);
+    return { removed: true };
+  });
 
   // IPC Handlers for Bestückung Lists
   ipcMain.handle('get-bestueckung-lists', () => {

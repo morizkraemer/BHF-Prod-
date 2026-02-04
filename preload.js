@@ -23,6 +23,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getReportFolder: () => ipcRenderer.invoke('get-report-folder'),
   setEinkaufsbelegeFolder: () => ipcRenderer.invoke('set-einkaufsbelege-folder'),
   getEinkaufsbelegeFolder: () => ipcRenderer.invoke('get-einkaufsbelege-folder'),
+  setZeiterfassungExcelFolder: () => ipcRenderer.invoke('set-zeiterfassung-excel-folder'),
+  getZeiterfassungExcelFolder: () => ipcRenderer.invoke('get-zeiterfassung-excel-folder'),
   scanDocument: (source = 'glass', scanName = 'scan') => ipcRenderer.invoke('scan-document', source, scanName),
   selectScanFile: () => ipcRenderer.invoke('select-scan-file'),
   checkScanInProgress: () => ipcRenderer.invoke('check-scan-in-progress'),
@@ -75,6 +77,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   addTechName: (name) => ipcRenderer.invoke('add-tech-name', name),
   getAndereMitarbeiterNames: () => ipcRenderer.invoke('get-andere-mitarbeiter-names'),
   addAndereMitarbeiterName: (name) => ipcRenderer.invoke('add-andere-mitarbeiter-name', name),
+
+  getWageOptions: () => ipcRenderer.invoke('get-wage-options'),
+  saveWageOptions: (options) => ipcRenderer.invoke('save-wage-options', options),
+  getPersonWage: (name) => ipcRenderer.invoke('get-person-wage', name),
+  getPersonWages: () => ipcRenderer.invoke('get-person-wages'),
+  setPersonWage: (name, wageOption) => ipcRenderer.invoke('set-person-wage', name, wageOption),
+  removePersonFromCatalogs: (name) => ipcRenderer.invoke('remove-person-from-catalogs', name),
 
   // Template management
   getTemplate: (templateKey) => ipcRenderer.invoke('get-template', templateKey),

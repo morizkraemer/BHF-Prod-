@@ -10,6 +10,7 @@ const settingsStore = new Store({
     scanFolder: null, // Will default to ~/Documents/NightclubScans if not set
     reportFolder: null, // Will default to ~/Documents/NightclubReports if not set
     einkaufsbelegeFolder: null, // Optional folder for copying Einkaufsbelege PDFs
+    zeiterfassungExcelFolder: null, // Optional folder for saving Excel Zeiterfassung files
     techNames: {
       soundEngineerName: '',
       lightingTechName: ''
@@ -28,7 +29,11 @@ const settingsStore = new Store({
     // Person name catalogs (each item: { id, name })
     secuPersonNames: [],
     techPersonNames: [], // Shared pool for Tontechnik + Lichttechnik (Sound Engineer + Lighting Tech)
-    andereMitarbeiterNames: []
+    andereMitarbeiterNames: [],
+    // Wage options shown in combo (e.g. ["25 €/h", "30 €/h"])
+    wageOptions: [],
+    // Selected wage option per person by name (key: trimmed name, value: option string from wageOptions)
+    personWages: {}
   }
 });
 

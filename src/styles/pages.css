@@ -1,27 +1,27 @@
 /* Gaeste Form */
 .gaeste-form {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 20px;
 }
 
 /* Tontechniker Form */
 .tontechniker-form {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 20px;
 }
 
 /* Secu Form */
 .secu-form {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 20px;
 }
 
 .secu-personnel-section {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 12px;
 }
 
@@ -36,8 +36,8 @@
 
 .secu-personnel-header {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 40px;
-  gap: 12px;
+  grid-template-columns: 1fr 0.33fr 0.33fr 40px;
+  gap: 10px;
   padding: 8px 0;
   font-weight: 600;
   color: #2c3e50;
@@ -45,7 +45,7 @@
   border-bottom: 1px solid #e0e0e0;
 }
 
-.secu-header-name {
+.secu-header-name-wage {
   padding-left: 4px;
 }
 
@@ -56,30 +56,73 @@
 
 .secu-personnel-line {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 40px;
-  gap: 12px;
+  grid-template-columns: 1fr 0.33fr 0.33fr 40px;
+  gap: 10px;
   align-items: center;
   padding: 8px 0;
 }
 
-.secu-personnel-name {
-  padding: 10px 12px;
+.secu-name-wage-combo {
+  display: flex;
   border: 1px solid #ddd;
   border-radius: 6px;
-  font-size: 14px;
-  font-family: inherit;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   background-color: white;
+  overflow: visible;
+  min-width: 0;
 }
 
-.secu-personnel-name:focus {
-  outline: none;
+.secu-name-wage-combo:focus-within {
   border-color: #3498db;
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
-.secu-personnel-time {
+.secu-name-wage-combo-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.secu-name-wage-combo-name .secu-personnel-name,
+.secu-name-wage-combo-name .form-input,
+.secu-name-wage-combo-name input {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  width: 100%;
+}
+
+.secu-name-wage-combo-name .secu-personnel-name:focus,
+.secu-name-wage-combo-name input:focus {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
+.secu-name-wage-combo-wage {
+  flex-shrink: 0;
+  width: 56px;
+  border-left: 1px solid #ddd;
+}
+
+.secu-name-wage-combo-wage .secu-personnel-wage {
+  border: none;
+  border-radius: 0;
+  max-width: none;
+  width: 100%;
+}
+
+.secu-personnel-name {
   padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  background: transparent;
+}
+
+.secu-personnel-name:focus {
+  outline: none;
+}
+
+.secu-personnel-time {
+  padding: 10px 6px;
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
@@ -87,9 +130,27 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   background-color: white;
   text-align: center;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .secu-personnel-time:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.secu-personnel-wage {
+  padding: 10px 6px;
+  font-size: 14px;
+  font-family: inherit;
+  text-align: center;
+  background: transparent;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.secu-personnel-wage:focus {
   outline: none;
   border-color: #3498db;
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
@@ -103,14 +164,14 @@
 
 /* Andere Mitarbeiter Form */
 .andere-mitarbeiter-form {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 20px;
 }
 
 .andere-mitarbeiter-section {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 12px;
 }
 
@@ -124,8 +185,8 @@
 
 .andere-mitarbeiter-header {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1.5fr 40px;
-  gap: 12px;
+  grid-template-columns: 1fr 0.33fr 0.33fr 1.5fr 40px;
+  gap: 10px;
   padding: 8px 0;
   font-weight: 600;
   color: #2c3e50;
@@ -133,7 +194,7 @@
   border-bottom: 1px solid #e0e0e0;
 }
 
-.andere-mitarbeiter-header-name {
+.andere-mitarbeiter-header-name-wage {
   padding-left: 4px;
 }
 
@@ -148,30 +209,73 @@
 
 .andere-mitarbeiter-line {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1.5fr 40px;
-  gap: 12px;
+  grid-template-columns: 1fr 0.33fr 0.33fr 1.5fr 40px;
+  gap: 10px;
   align-items: center;
   padding: 8px 0;
 }
 
-.andere-mitarbeiter-name {
-  padding: 10px 12px;
+.andere-mitarbeiter-name-wage-combo {
+  display: flex;
   border: 1px solid #ddd;
   border-radius: 6px;
-  font-size: 14px;
-  font-family: inherit;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   background-color: white;
+  overflow: visible;
+  min-width: 0;
 }
 
-.andere-mitarbeiter-name:focus {
-  outline: none;
+.andere-mitarbeiter-name-wage-combo:focus-within {
   border-color: #3498db;
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
-.andere-mitarbeiter-time {
+.andere-mitarbeiter-name-wage-combo-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.andere-mitarbeiter-name-wage-combo-name .andere-mitarbeiter-name,
+.andere-mitarbeiter-name-wage-combo-name .form-input,
+.andere-mitarbeiter-name-wage-combo-name input {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  width: 100%;
+}
+
+.andere-mitarbeiter-name-wage-combo-name .andere-mitarbeiter-name:focus,
+.andere-mitarbeiter-name-wage-combo-name input:focus {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
+.andere-mitarbeiter-name-wage-combo-wage {
+  flex-shrink: 0;
+  width: 56px;
+  border-left: 1px solid #ddd;
+}
+
+.andere-mitarbeiter-name-wage-combo-wage .andere-mitarbeiter-wage {
+  border: none;
+  border-radius: 0;
+  max-width: none;
+  width: 100%;
+}
+
+.andere-mitarbeiter-name {
   padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  background: transparent;
+}
+
+.andere-mitarbeiter-name:focus {
+  outline: none;
+}
+
+.andere-mitarbeiter-time {
+  padding: 10px 6px;
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
@@ -179,9 +283,27 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   background-color: white;
   text-align: center;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .andere-mitarbeiter-time:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.andere-mitarbeiter-wage {
+  padding: 10px 6px;
+  font-size: 14px;
+  font-family: inherit;
+  text-align: center;
+  background: transparent;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.andere-mitarbeiter-wage:focus {
   outline: none;
   border-color: #3498db;
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
