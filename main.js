@@ -8,6 +8,7 @@ const { registerSettingsHandlers } = require('./handlers/settingsHandlers');
 const { registerScannerHandlers } = require('./handlers/scannerHandlers');
 const { registerReportHandlers } = require('./handlers/reportHandlers');
 const { registerDataHandlers } = require('./handlers/dataHandlers');
+const { createLanFormServer } = require('./server/secuFormServer');
 
 // Add V8 flags for macOS 15.6 compatibility
 app.commandLine.appendSwitch('--disable-features', 'VizDisplayCompositor');
@@ -103,7 +104,13 @@ app.whenReady().then(() => {
   registerScannerHandlers(ipcMain, settingsStore, mainWindow, dialog);
   registerReportHandlers(ipcMain, settingsStore);
   registerDataHandlers(ipcMain, shiftDataStore, settingsStore);
-  
+
+  try {
+    createLanFormServer(settingsStore, shiftDataStore);
+  } catch (err) {
+    console.error('LAN form server failed to start:', err);
+  }
+
   // Check if NAPS2 is installed (only on macOS)
   if (process.platform === 'darwin') {
     // Wait a moment for window to be ready, then check

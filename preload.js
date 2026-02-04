@@ -10,6 +10,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // PDF operations
   generatePDF: (data) => ipcRenderer.invoke('generate-pdf', data),
   closeShift: (formData) => ipcRenderer.invoke('close-shift', formData),
+  getSecuWebFormPdfs: (date) => ipcRenderer.invoke('get-lan-form-pdfs', 'secu', date),
+  getLanFormPdfs: (formTypeId, date) => ipcRenderer.invoke('get-lan-form-pdfs', formTypeId, date),
+  deleteLanFormPdf: (filePath) => ipcRenderer.invoke('delete-lan-form-pdf', filePath),
   
   // Scanner operations
   listScanners: () => ipcRenderer.invoke('list-scanners'),

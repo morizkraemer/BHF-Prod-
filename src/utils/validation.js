@@ -229,7 +229,8 @@ const validateAllSectionsDetailed = (formData) => {
       }
     });
     const secuScannedDocuments = secuData.scannedDocuments || [];
-    if (secuScannedDocuments.length === 0) {
+    const hasWebFormPdfs = !!secuData.hasWebFormPdfs;
+    if (secuScannedDocuments.length === 0 && !hasWebFormPdfs) {
       errors.push({ section: 'Secu', sectionId: 'secu', field: 'Gescannte Dokumente' });
     }
   }
@@ -384,10 +385,11 @@ const getRequiredFieldsCount = (sectionId, formData) => {
         if (person.endTime && person.endTime !== '') secuFilled++;
       });
       
-      // Scanned documents are also required if there are personnel
+      // Scanned documents (or web form PDFs) are also required if there are personnel
       const scannedDocuments = data.scannedDocuments || [];
+      const hasWebFormPdfs = !!data.hasWebFormPdfs;
       secuRequired += 1; // Add 1 for scanned documents
-      if (scannedDocuments.length > 0) {
+      if (scannedDocuments.length > 0 || hasWebFormPdfs) {
         secuFilled++;
       }
       
@@ -802,11 +804,12 @@ const getAllFieldsStatus = (formData) => {
       });
     });
     const secuScannedDocuments = secuData.scannedDocuments || [];
+    const hasWebFormPdfs = !!secuData.hasWebFormPdfs;
     fields.push({
       section: 'Secu',
       sectionId: 'secu',
       field: 'Gescannte Dokumente',
-      isFilled: secuScannedDocuments.length > 0
+      isFilled: secuScannedDocuments.length > 0 || hasWebFormPdfs
     });
   }
   

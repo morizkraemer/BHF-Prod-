@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Formular auswählen</title>
+  <link rel="stylesheet" href="/_selector/style.css">
+</head>
+<body>
+  <main>
+    <h1>Formular auswählen</h1>
+    <p class="form-selector-intro">Wählen Sie das gewünschte Formular:</p>
+    <div id="form-list" class="form-selector-list">
+      <p class="form-selector-loading">Laden…</p>
+    </div>
+  </main>
+  <script>
+    (function () {
+      var listEl = document.getElementById('form-list');
+      fetch('/api/forms')
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .catch(function () { return []; })
+        .then(function (forms) {
+          listEl.innerHTML = '';
+          if (!forms || forms.length === 0) {
+            listEl.innerHTML = '<p class="form-selector-empty">Keine Formulare verfügbar.</p>';
+            return;
+          }
+          forms.forEach(function (f) {
+            var a = document.createElement('a');
+            a.href = f.path;
+            a.className = 'form-selector-card';
+            a.textContent = f.name;
+            listEl.appendChild(a);
+          });
+        });
+    })();
+  </script>
+</body>
+</html>

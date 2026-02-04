@@ -4,6 +4,7 @@ const { useState, useEffect } = React;
 function DocumentScanner({ 
   scannedDocuments = [], 
   onDocumentsChange,
+  onRemoveReadOnlyDocument = null, // When removing a readOnly doc (e.g. web form PDF), call this with (doc) so parent can delete file and refresh
   showFileSelect = false,
   showScannedList = true,
   className = '',
@@ -269,11 +270,18 @@ function DocumentScanner({
   };
 
   const handleRemoveScan = (scanId) => {
+    const doc = scannedDocuments.find((scan) => scan.id === scanId);
+    if (doc && doc.readOnly === true && onRemoveReadOnlyDocument) {
+      onRemoveReadOnlyDocument(doc);
+      if (previewDocument && previewDocument.id === scanId) {
+        setPreviewDocument(null);
+      }
+      return;
+    }
     const updatedDocuments = scannedDocuments.filter(scan => scan.id !== scanId);
     if (onDocumentsChange) {
       onDocumentsChange(updatedDocuments);
     }
-    // Close preview if the removed document was being previewed
     if (previewDocument && previewDocument.id === scanId) {
       setPreviewDocument(null);
     }
@@ -282,6 +290,27 @@ function DocumentScanner({
   const handlePreviewDocument = (scan) => {
     setPreviewDocument(scan);
   };
+
+  // Load file as base64 when preview is opened for a doc that has filePath but no data URL (e.g. web form PDFs)
+  useEffect(() => {
+    const doc = previewDocument;
+    if (!doc || !doc.filePath) return;
+    const needsLoad = !doc.preview || doc.preview.startsWith('file:');
+    if (!needsLoad || !window.electronAPI?.readFileAsBase64) return;
+    let cancelled = false;
+    window.electronAPI.readFileAsBase64(doc.filePath)
+      .then((dataUrl) => {
+        if (!cancelled) {
+          setPreviewDocument((prev) => prev && prev.filePath === doc.filePath ? { ...prev, preview: dataUrl, previewLoadError: false } : prev);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPreviewDocument((prev) => prev && prev.filePath === doc.filePath ? { ...prev, previewLoadError: true } : prev);
+        }
+      });
+    return () => { cancelled = true; };
+  }, [previewDocument?.id, previewDocument?.filePath]);
 
   const handleClosePreview = () => {
     setPreviewDocument(null);
@@ -432,6 +461,17 @@ function DocumentScanner({
                     base64Data={previewDocument.preview} 
                     style={{ width: '100%', maxHeight: '80vh' }}
                   />
+                ) : previewDocument.previewLoadError ? (
+                  <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
+                    <p>PDF konnte nicht geladen werden.</p>
+                    {previewDocument.filePath && (
+                      <p style={{ fontSize: '12px', marginTop: '8px' }}>{previewDocument.filePath}</p>
+                    )}
+                  </div>
+                ) : previewDocument.filePath ? (
+                  <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
+                    <p>Laden…</p>
+                  </div>
                 ) : (
                   <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
                     <p>PDF-Vorschau nicht verfügbar</p>

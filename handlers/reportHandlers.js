@@ -3,6 +3,7 @@ const fs = require('fs').promises;
 const { app } = require('electron');
 const { generateReportPDF } = require('../utils/pdfGenerator');
 const { PDFDocument } = require('pdf-lib');
+const { getLanFormRegistry, getFormById } = require('../server/lanFormRegistry');
 const {
   buildZeiterfassungWorkbook,
   loadZeiterfassungWorkbook,
@@ -200,7 +201,33 @@ function registerReportHandlers(ipcMain, store) {
           }
         });
       }
-      
+
+      // From LAN form submissions (Secu, future Ton/Licht, Extern – stored in temp scan folder)
+      let scanFolder = store.get('scanFolder', null);
+      if (!scanFolder) {
+        scanFolder = path.join(app.getPath('documents'), 'NightclubScans');
+      }
+      const lanFormRegistry = getLanFormRegistry();
+      for (const formEntry of lanFormRegistry) {
+        const formDir = path.join(scanFolder, formEntry.folderName, eventDate);
+        try {
+          const entries = await fs.readdir(formDir, { withFileTypes: true });
+          for (const ent of entries) {
+            if (ent.isFile() && ent.name.toLowerCase().endsWith('.pdf')) {
+              scannedDocs.push({
+                filePath: path.join(formDir, ent.name),
+                source: formEntry.source,
+                scanName: formEntry.scanName
+              });
+            }
+          }
+        } catch (err) {
+          if (err.code !== 'ENOENT') {
+            console.warn(`${formEntry.folderName} folder read error:`, err.message);
+          }
+        }
+      }
+
       // From Kassen - Belege
       if (formData.kassen?.receipts) {
         formData.kassen.receipts.forEach(doc => {
@@ -553,6 +580,24 @@ function registerReportHandlers(ipcMain, store) {
         }
       }
 
+      // Remove LAN form PDFs from temp scan folder after merge
+      for (const formEntry of lanFormRegistry) {
+        try {
+          const formDirToClean = path.join(scanFolder, formEntry.folderName, eventDate);
+          const cleanEntries = await fs.readdir(formDirToClean, { withFileTypes: true });
+          for (const ent of cleanEntries) {
+            if (ent.isFile() && ent.name.toLowerCase().endsWith('.pdf')) {
+              await fs.unlink(path.join(formDirToClean, ent.name));
+            }
+          }
+          await fs.rmdir(formDirToClean).catch(() => {});
+        } catch (cleanErr) {
+          if (cleanErr.code !== 'ENOENT') {
+            console.warn(`${formEntry.folderName} cleanup error:`, cleanErr.message);
+          }
+        }
+      }
+
       return {
         success: true,
         eventFolder: eventFolderPath,
@@ -562,6 +607,77 @@ function registerReportHandlers(ipcMain, store) {
     } catch (error) {
       console.error('Error closing shift:', error);
       throw new Error('Fehler beim Schließen des Shifts: ' + error.message);
+    }
+  });
+
+  // List PDFs from a LAN form type for a given date – for display in app (temp scan folder)
+  ipcMain.handle('get-lan-form-pdfs', async (event, formTypeId, date) => {
+    const eventDate = typeof date === 'string' && date.trim() ? date.trim() : null;
+    if (!eventDate) return [];
+    const formEntry = getFormById(formTypeId);
+    if (!formEntry) return [];
+    let scanFolder = store.get('scanFolder', null);
+    if (!scanFolder) {
+      scanFolder = path.join(app.getPath('documents'), 'NightclubScans');
+    }
+    const formDir = path.join(scanFolder, formEntry.folderName, eventDate);
+    try {
+      const entries = await fs.readdir(formDir, { withFileTypes: true });
+      const result = [];
+      for (const ent of entries) {
+        if (ent.isFile() && ent.name.toLowerCase().endsWith('.pdf')) {
+          const filePath = path.join(formDir, ent.name);
+          result.push({
+            id: 'webform-' + filePath,
+            filePath,
+            filename: ent.name,
+            scanName: formEntry.scanName,
+            type: 'pdf',
+            readOnly: true,
+          });
+        }
+      }
+      return result;
+    } catch (err) {
+      if (err.code === 'ENOENT') return [];
+      console.warn(`LAN form ${formTypeId} PDFs list error:`, err.message);
+      return [];
+    }
+  });
+
+  // Delete a LAN form PDF file (e.g. web form PDF) – only allows paths under scanFolder/<folderName>/
+  ipcMain.handle('delete-lan-form-pdf', async (event, filePath) => {
+    if (typeof filePath !== 'string' || !filePath.trim()) {
+      return { ok: false, error: 'Ungültiger Pfad.' };
+    }
+    const normalizedPath = path.normalize(filePath.trim());
+    let scanFolder = store.get('scanFolder', null);
+    if (!scanFolder) {
+      scanFolder = path.join(app.getPath('documents'), 'NightclubScans');
+    }
+    const scanFolderResolved = path.resolve(scanFolder);
+    const fileResolved = path.resolve(normalizedPath);
+    if (!fileResolved.startsWith(scanFolderResolved + path.sep) && fileResolved !== scanFolderResolved) {
+      return { ok: false, error: 'Datei liegt nicht im Scan-Ordner.' };
+    }
+    const registry = getLanFormRegistry();
+    const relativeToScan = path.relative(scanFolderResolved, fileResolved);
+    const parts = relativeToScan.split(path.sep);
+    const folderName = parts[0];
+    const isAllowedFolder = registry.some((f) => f.folderName === folderName);
+    if (!isAllowedFolder || parts.length < 2) {
+      return { ok: false, error: 'Datei liegt nicht in einem LAN-Formular-Ordner.' };
+    }
+    if (!fileResolved.toLowerCase().endsWith('.pdf')) {
+      return { ok: false, error: 'Nur PDF-Dateien können gelöscht werden.' };
+    }
+    try {
+      await fs.unlink(fileResolved);
+      return { ok: true };
+    } catch (err) {
+      if (err.code === 'ENOENT') return { ok: true };
+      console.warn('delete-lan-form-pdf error:', err.message);
+      return { ok: false, error: err.message || 'Löschen fehlgeschlagen.' };
     }
   });
 }

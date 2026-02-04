@@ -2,7 +2,7 @@ const { useState, useEffect } = React;
 
 const PersonNameSelect = window.PersonNameSelect;
 
-function SecuForm({ formData, onDataChange, highlightedFields = [], printedTemplates = {}, onTemplatePrinted }) {
+function SecuForm({ formData, onDataChange, highlightedFields = [], printedTemplates = {}, onTemplatePrinted, shiftDate }) {
   const shouldHighlight = (fieldName) => {
     return highlightedFields.includes(fieldName);
   };
@@ -14,6 +14,7 @@ function SecuForm({ formData, onDataChange, highlightedFields = [], printedTempl
   const [scannedDocuments, setScannedDocuments] = useState(
     formData?.scannedDocuments || []
   );
+  const [webFormPdfs, setWebFormPdfs] = useState([]);
 
   useEffect(() => {
     if (window.electronAPI?.getWageOptions) {
@@ -21,15 +22,28 @@ function SecuForm({ formData, onDataChange, highlightedFields = [], printedTempl
     }
   }, []);
 
+  // Load Secu web form PDFs for current shift date (LAN form submissions)
+  useEffect(() => {
+    const date = typeof shiftDate === 'string' && shiftDate.trim() ? shiftDate.trim() : null;
+    if (!date || !window.electronAPI?.getSecuWebFormPdfs) {
+      setWebFormPdfs([]);
+      return;
+    }
+    window.electronAPI.getSecuWebFormPdfs(date).then((list) => {
+      setWebFormPdfs(Array.isArray(list) ? list : []);
+    }).catch(() => setWebFormPdfs([]));
+  }, [shiftDate]);
+
   // Call onDataChange on mount and whenever data changes
   useEffect(() => {
     if (onDataChange) {
       onDataChange({
         securityPersonnel,
-        scannedDocuments
+        scannedDocuments,
+        hasWebFormPdfs: webFormPdfs.length > 0
       });
     }
-  }, [securityPersonnel, scannedDocuments, onDataChange]);
+  }, [securityPersonnel, scannedDocuments, webFormPdfs.length, onDataChange]);
 
   const handlePersonnelChange = (index, field, value) => {
     const newPersonnel = [...securityPersonnel];
@@ -77,8 +91,21 @@ function SecuForm({ formData, onDataChange, highlightedFields = [], printedTempl
   };
 
   const handleDocumentsChange = (updatedDocuments) => {
-    setScannedDocuments(updatedDocuments);
+    setScannedDocuments(updatedDocuments.filter((d) => !d.readOnly));
   };
+
+  const handleRemoveReadOnlyDocument = (doc) => {
+    if (!doc || !doc.filePath || !window.electronAPI?.deleteLanFormPdf) return;
+    window.electronAPI.deleteLanFormPdf(doc.filePath).then((result) => {
+      if (result && result.ok) {
+        window.electronAPI.getSecuWebFormPdfs(shiftDate).then((list) => {
+          setWebFormPdfs(Array.isArray(list) ? list : []);
+        }).catch(() => setWebFormPdfs([]));
+      }
+    });
+  };
+
+  const displayDocuments = [...webFormPdfs, ...scannedDocuments];
 
   return (
     <div className="form-container">
@@ -178,8 +205,9 @@ function SecuForm({ formData, onDataChange, highlightedFields = [], printedTempl
         {/* Scanner Section */}
         <div className={`scanner-box ${shouldHighlight('Gescannte Dokumente') ? 'field-highlighted-group' : ''}`}>
           <DocumentScanner
-            scannedDocuments={scannedDocuments}
+            scannedDocuments={displayDocuments}
             onDocumentsChange={handleDocumentsChange}
+            onRemoveReadOnlyDocument={handleRemoveReadOnlyDocument}
             showScannedList={true}
             className="secu-scanner"
             defaultSource="glass"
