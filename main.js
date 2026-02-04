@@ -105,6 +105,11 @@ app.whenReady().then(() => {
   registerReportHandlers(ipcMain, settingsStore);
   registerDataHandlers(ipcMain, shiftDataStore, settingsStore);
 
+  ipcMain.handle('show-message-box', async (event, options) => {
+    const win = mainWindow && !mainWindow.isDestroyed() ? mainWindow : BrowserWindow.getFocusedWindow();
+    return dialog.showMessageBox(win || BrowserWindow.getAllWindows()[0], options);
+  });
+
   try {
     createLanFormServer(settingsStore, shiftDataStore);
   } catch (err) {

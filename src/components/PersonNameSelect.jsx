@@ -102,6 +102,9 @@ function PersonNameSelect({ value = '', onChange, getNames, addName, placeholder
       }).then(({ response }) => {
         if (response === 1) doAdd();
         else onCancel();
+      }).catch(() => {
+        if (window.confirm(message)) doAdd();
+        else onCancel();
       });
     } else {
       if (window.confirm(message)) doAdd();
