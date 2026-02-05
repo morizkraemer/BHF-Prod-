@@ -66,6 +66,7 @@ function toEvent(row) {
     eventDate: row.event_date != null ? row.event_date.toISOString().slice(0, 10) : null,
     doorsTime: row.doors_time ?? null,
     phase: row.phase ?? 'VVA',
+    abgeschlossen: row.abgeschlossen ?? false,
     formData: row.form_data ?? {},
     createdAt: row.created_at?.toISOString?.() ?? row.created_at,
     updatedAt: row.updated_at?.toISOString?.() ?? row.updated_at
@@ -76,7 +77,7 @@ function toEvent(row) {
 router.get('/', async (req, res) => {
   try {
     const r = await getPool().query(
-      'SELECT id, event_name, event_date, doors_time, phase, form_data, created_at, updated_at FROM events ORDER BY updated_at DESC'
+      'SELECT id, event_name, event_date, doors_time, phase, abgeschlossen, form_data, created_at, updated_at FROM events ORDER BY updated_at DESC'
     );
     res.json(r.rows.map(toEvent));
   } catch (err) {
@@ -89,7 +90,7 @@ router.get('/', async (req, res) => {
 router.get('/current', async (req, res) => {
   try {
     const r = await getPool().query(
-      `SELECT id, event_name, event_date, doors_time, phase, form_data, created_at, updated_at
+      `SELECT id, event_name, event_date, doors_time, phase, abgeschlossen, form_data, created_at, updated_at
        FROM events WHERE phase != 'closed' ORDER BY updated_at DESC LIMIT 1`
     );
     const row = r.rows[0];
@@ -146,7 +147,7 @@ router.get('/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const r = await getPool().query(
-      'SELECT id, event_name, event_date, doors_time, phase, form_data, created_at, updated_at FROM events WHERE id = $1',
+      'SELECT id, event_name, event_date, doors_time, phase, abgeschlossen, form_data, created_at, updated_at FROM events WHERE id = $1',
       [id]
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'Not found' });
@@ -163,6 +164,7 @@ router.patch('/:id', async (req, res) => {
   const body = req.body || {};
   const formData = body.formData ?? body.form_data;
   const phase = body.currentPhase ?? body.phase;
+  const abgeschlossen = body.abgeschlossen;
   try {
     const updates = [];
     const values = [id];
@@ -175,6 +177,10 @@ router.patch('/:id', async (req, res) => {
       updates.push(`phase = $${n++}`);
       values.push(phase);
     }
+    if (abgeschlossen !== undefined) {
+      updates.push(`abgeschlossen = $${n++}`);
+      values.push(!!abgeschlossen);
+    }
     if (formData !== undefined && formData?.uebersicht) {
       const u = formData.uebersicht;
       if (u.eventName !== undefined) { updates.push(`event_name = $${n++}`); values.push(u.eventName); }
@@ -184,14 +190,14 @@ router.patch('/:id', async (req, res) => {
     updates.push('updated_at = now()');
     if (values.length === 1) {
       const r = await getPool().query(
-        'SELECT id, event_name, event_date, doors_time, phase, form_data, created_at, updated_at FROM events WHERE id = $1',
+        'SELECT id, event_name, event_date, doors_time, phase, abgeschlossen, form_data, created_at, updated_at FROM events WHERE id = $1',
         [id]
       );
       if (r.rows.length === 0) return res.status(404).json({ error: 'Not found' });
       return res.json(toEvent(r.rows[0]));
     }
     const r = await getPool().query(
-      `UPDATE events SET ${updates.join(', ')} WHERE id = $1 RETURNING id, event_name, event_date, doors_time, phase, form_data, created_at, updated_at`,
+      `UPDATE events SET ${updates.join(', ')} WHERE id = $1 RETURNING id, event_name, event_date, doors_time, phase, abgeschlossen, form_data, created_at, updated_at`,
       values
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'Not found' });
