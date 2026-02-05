@@ -84,13 +84,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAndereMitarbeiterNames: () => ipcRenderer.invoke('get-andere-mitarbeiter-names'),
   addAndereMitarbeiterName: (name) => ipcRenderer.invoke('add-andere-mitarbeiter-name', name),
 
-  getWageOptions: () => ipcRenderer.invoke('get-wage-options'),
-  saveWageOptions: (options) => ipcRenderer.invoke('save-wage-options', options),
-  getPersonWage: (name) => ipcRenderer.invoke('get-person-wage', name),
-  getPersonWages: () => ipcRenderer.invoke('get-person-wages'),
-  setPersonWage: (name, wageOption) => ipcRenderer.invoke('set-person-wage', name, wageOption),
-  removePersonFromCatalogs: (name) => ipcRenderer.invoke('remove-person-from-catalogs', name),
-
   // Template management
   getTemplate: (templateKey) => ipcRenderer.invoke('get-template', templateKey),
   uploadTemplate: (templateKey) => ipcRenderer.invoke('upload-template', templateKey),

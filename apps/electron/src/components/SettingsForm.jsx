@@ -26,9 +26,6 @@ function SettingsForm() {
   const [scanFolder, setScanFolder] = useState(null);
   const [reportFolder, setReportFolder] = useState(null);
   const [einkaufsbelegeFolder, setEinkaufsbelegeFolder] = useState(null);
-  const [wageOptions, setWageOptions] = useState([]);
-  const [newWageOption, setNewWageOption] = useState('');
-  const [employeesList, setEmployeesList] = useState([]);
   const [scannerAvailable, setScannerAvailable] = useState(false);
   const [templates, setTemplates] = useState({
     securityzettel: null,
@@ -80,8 +77,6 @@ function SettingsForm() {
     loadScanFolder();
     loadReportFolder();
     loadEinkaufsbelegeFolder();
-    loadWageOptions();
-    loadEmployeesList();
     loadTemplates();
     loadBestueckungLists();
     checkScannerAvailability();
@@ -124,93 +119,6 @@ function SettingsForm() {
       setEinkaufsbelegeFolder(folder);
     }
   };
-
-  const loadWageOptions = async () => {
-    if (window.electronAPI && window.electronAPI.getWageOptions) {
-      const options = await window.electronAPI.getWageOptions();
-      setWageOptions(Array.isArray(options) ? options : []);
-    }
-  };
-
-  const wageValue = (opt) => (typeof opt === 'object' && opt !== null && 'label' in opt ? opt.label : String(opt));
-  const wageInOptions = (wage) => wageOptions.some((o) => wageValue(o) === wage);
-
-  const handleAddWageOption = async () => {
-    const label = (newWageOption || '').trim();
-    if (!label || !window.electronAPI?.saveWageOptions) return;
-    const next = [...wageOptions, label];
-    await window.electronAPI.saveWageOptions(next.map((o) => wageValue(o)));
-    setWageOptions(next);
-    setNewWageOption('');
-  };
-
-  const handleRemoveWageOption = async (index) => {
-    if (!window.electronAPI?.saveWageOptions) return;
-    const next = wageOptions.filter((_, i) => i !== index);
-    await window.electronAPI.saveWageOptions(next.map((o) => wageValue(o)));
-    setWageOptions(next);
-  };
-
-  const loadEmployeesList = async () => {
-    if (!window.electronAPI?.getSecuNames || !window.electronAPI?.getTechNames || !window.electronAPI?.getAndereMitarbeiterNames || !window.electronAPI?.getPersonWages) return;
-    try {
-      const [secu, tech, andere, personWages, shiftDataResult] = await Promise.all([
-        window.electronAPI.getSecuNames(),
-        window.electronAPI.getTechNames(),
-        window.electronAPI.getAndereMitarbeiterNames(),
-        window.electronAPI.getPersonWages(),
-        window.electronAPI.loadData ? window.electronAPI.loadData('currentShiftData') : Promise.resolve({ success: false })
-      ]);
-      const nameSet = new Map();
-      const add = (list) => {
-        (list || []).forEach((item) => {
-          const n = (item?.name || '').trim();
-          if (n && !nameSet.has(n.toLowerCase())) nameSet.set(n.toLowerCase(), n);
-        });
-      };
-      add(secu);
-      add(tech);
-      add(andere);
-      // Also include names from current shift (Ton/Licht, Secu, Andere Mitarbeiter)
-      const formData = (shiftDataResult && shiftDataResult.success && shiftDataResult.data) ? shiftDataResult.data : null;
-      if (formData) {
-        const ton = formData.tontechniker || {};
-        if (ton.soundEngineerEnabled && ton.soundEngineerName) add([{ name: ton.soundEngineerName }]);
-        if (ton.lightingTechEnabled && ton.lightingTechName) add([{ name: ton.lightingTechName }]);
-        const secuList = (formData.secu && formData.secu.securityPersonnel) || [];
-        add(secuList);
-        const andereList = (formData['andere-mitarbeiter'] && formData['andere-mitarbeiter'].mitarbeiter) || [];
-        add(andereList);
-      }
-      const names = Array.from(nameSet.values()).sort((a, b) => a.localeCompare(b));
-      const wages = personWages || {};
-      setEmployeesList(names.map((name) => ({ name, wage: wages[name] ?? '' })));
-    } catch (err) {
-      console.warn('loadEmployeesList failed (e.g. handler not registered):', err);
-      setEmployeesList([]);
-    }
-  };
-
-  const handleEmployeeWageChange = async (name, wageOption) => {
-    if (!window.electronAPI?.setPersonWage) return;
-    await window.electronAPI.setPersonWage(name, wageOption);
-    setEmployeesList((prev) => prev.map((e) => (e.name === name ? { ...e, wage: wageOption ?? '' } : e)));
-  };
-
-  const handleRemoveEmployee = async (name) => {
-    if (!window.electronAPI?.removePersonFromCatalogs) return;
-    if (!window.confirm(`"${name}" aus allen Namenslisten und Stundensatz entfernen?`)) return;
-    try {
-      await window.electronAPI.removePersonFromCatalogs(name);
-      setEmployeesList((prev) => prev.filter((e) => e.name !== name));
-    } catch (err) {
-      console.warn('removePersonFromCatalogs failed:', err);
-    }
-  };
-
-  useEffect(() => {
-    if (activeSettingsSection === 'employees') loadEmployeesList();
-  }, [activeSettingsSection]);
 
   const loadTemplates = async () => {
     if (window.electronAPI && window.electronAPI.getTemplate) {
@@ -1227,8 +1135,6 @@ function SettingsForm() {
           loadScanFolder();
           loadReportFolder();
           loadEinkaufsbelegeFolder();
-          loadWageOptions();
-          loadEmployeesList();
           loadTemplates();
           loadBestueckungLists();
           // Optionally reload the page
@@ -1643,113 +1549,6 @@ function SettingsForm() {
     </>
   );
 
-  const renderEmployeesSection = () => (
-    <>
-      <h2>Mitarbeiter</h2>
-      <p className="settings-description">
-        Stundensätze verwalten und alle Personen aus Ton/Licht, Secu und Andere Mitarbeiter mit ihrem gespeicherten Stundensatz anzeigen und anpassen.
-      </p>
-
-      {/* Wage options (Stundensätze) - same as on Printer/Scanner */}
-      <div className="settings-scanner-section">
-        <h3>Stundensätze</h3>
-        <p className="settings-description">
-          Liste der Lohnoptionen, die im Tool neben dem Namen auswählbar sind. Die Auswahl wird pro Person gespeichert.
-        </p>
-        <div className="settings-add-section" style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1', minWidth: '120px' }}>
-            <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Neuer Stundensatz</label>
-            <input
-              type="text"
-              value={newWageOption}
-              onChange={(e) => setNewWageOption(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddWageOption())}
-              placeholder="z.B. 25 €/h"
-              className="settings-input"
-              style={{ width: '100%' }}
-            />
-          </div>
-          <button type="button" onClick={handleAddWageOption} className="settings-add-button" disabled={!newWageOption?.trim()}>
-            Hinzufügen
-          </button>
-        </div>
-        {wageOptions.length > 0 ? (
-          <ul className="settings-list" style={{ marginTop: 12, paddingLeft: 20 }}>
-            {wageOptions.map((opt, index) => (
-              <li key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <span>{wageValue(opt)}</span>
-                <button type="button" onClick={() => handleRemoveWageOption(index)} className="settings-delete-button" style={{ padding: '4px 10px', fontSize: 13 }}>
-                  Entfernen
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="settings-empty" style={{ marginTop: 8 }}>Noch keine Stundensätze. Hinzufügen, um sie in Ton/Licht, Secu und Andere Mitarbeiter auswählen zu können.</p>
-        )}
-      </div>
-
-      <div className="settings-scanner-section" style={{ marginTop: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h3 style={{ margin: 0 }}>Übersicht</h3>
-          <button type="button" onClick={loadEmployeesList} className="settings-refresh-button">
-            Aktualisieren
-          </button>
-        </div>
-        {employeesList.length === 0 ? (
-          <p className="settings-empty">Noch keine Mitarbeiter. Personen werden hier angezeigt, sobald sie in Ton/Licht, Secu oder Andere Mitarbeiter hinzugefügt wurden.</p>
-        ) : (
-          <div className="settings-employees-table-wrapper">
-            <table className="settings-employees-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Stundensatz</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {employeesList.map((emp) => (
-                  <tr key={emp.name}>
-                    <td>{emp.name}</td>
-                    <td>
-                      <select
-                        value={emp.wage ?? ''}
-                        onChange={(e) => handleEmployeeWageChange(emp.name, e.target.value)}
-                        className="settings-input"
-                        style={{ minWidth: 140 }}
-                      >
-                        <option value="">—</option>
-                        {wageOptions.map((opt) => {
-                          const val = wageValue(opt);
-                          return <option key={val} value={val}>{val}</option>;
-                        })}
-                        {(emp.wage && !wageInOptions(emp.wage)) && (
-                          <option value={emp.wage}>{emp.wage}</option>
-                        )}
-                      </select>
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveEmployee(emp.name)}
-                        className="settings-delete-button"
-                        style={{ padding: '4px 10px', fontSize: 13 }}
-                        title="Aus Namenslisten und Stundensatz entfernen"
-                      >
-                        Entfernen
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </>
-  );
-
   return (
     <div className="form-container">
       <div className="settings-container">
@@ -1773,12 +1572,6 @@ function SettingsForm() {
               onClick={() => setActiveSettingsSection('bestueckung')}
             >
               Backstage Kühlschrank
-            </button>
-            <button
-              className={`settings-sidebar-item ${activeSettingsSection === 'employees' ? 'active' : ''}`}
-              onClick={() => setActiveSettingsSection('employees')}
-            >
-              Mitarbeiter
             </button>
             <button
               className={`settings-sidebar-item ${activeSettingsSection === 'scanner' ? 'active' : ''}`}
@@ -1807,7 +1600,6 @@ function SettingsForm() {
             {activeSettingsSection === 'rider' ? renderRiderSection() : 
              activeSettingsSection === 'catering-prices' ? renderCateringPricesSection() : 
              activeSettingsSection === 'bestueckung' ? renderBestueckungSection() :
-             activeSettingsSection === 'employees' ? renderEmployeesSection() :
              activeSettingsSection === 'templates' ? renderTemplatesSection() :
              activeSettingsSection === 'reset' ? renderResetSection() :
              renderScannerSection()}

@@ -251,41 +251,6 @@ function registerCatalogHandlers(ipcMain, store) {
     return addPersonName('andereMitarbeiterNames', name);
   });
 
-  // Remove person from all catalogs and clear their wage
-  ipcMain.handle('remove-person-from-catalogs', async (event, name) => {
-    const trimmed = (name || '').trim();
-    if (!trimmed) return { removed: false };
-    const baseUrl = getBaseUrl(store);
-    if (baseUrl) {
-      try {
-        await api.removePersonName(baseUrl, trimmed);
-        const wages = await api.getPersonWages(baseUrl);
-        const keyLower = trimmed.toLowerCase();
-        let changed = false;
-        for (const k of Object.keys(wages || {})) {
-          if ((k || '').trim().toLowerCase() === keyLower) {
-            delete wages[k];
-            changed = true;
-          }
-        }
-        if (changed) await api.putPersonWages(baseUrl, wages);
-        return { removed: true };
-      } catch (err) {
-        console.warn('API remove-person-from-catalogs fallback to store:', err.message);
-      }
-    }
-    removePersonName('secuPersonNames', trimmed);
-    removePersonName('techPersonNames', trimmed);
-    removePersonName('andereMitarbeiterNames', trimmed);
-    const wages = store.get('personWages', {});
-    const keyLower = trimmed.toLowerCase();
-    Object.keys(wages).forEach(k => {
-      if ((k || '').trim().toLowerCase() === keyLower) delete wages[k];
-    });
-    store.set('personWages', wages);
-    return { removed: true };
-  });
-
   // IPC Handlers for Bestückung Lists
   const BESTUECKUNG_KEYS = ['standard-konzert', 'standard-tranzit'];
   ipcMain.handle('get-bestueckung-lists', async () => {
@@ -467,84 +432,6 @@ function registerCatalogHandlers(ipcMain, store) {
     return true;
   });
 
-  // Wage options and person wages (catalogs on backend)
-  ipcMain.handle('get-wage-options', async () => {
-    const baseUrl = getBaseUrl(store);
-    if (baseUrl) {
-      try {
-        const list = await api.getWageOptions(baseUrl);
-        return Array.isArray(list) ? list : [];
-      } catch (err) {
-        console.warn('API get-wage-options fallback to store:', err.message);
-      }
-    }
-    return store.get('wageOptions', []);
-  });
-
-  ipcMain.handle('save-wage-options', async (event, options) => {
-    const baseUrl = getBaseUrl(store);
-    if (baseUrl) {
-      try {
-        await api.putWageOptions(baseUrl, Array.isArray(options) ? options : []);
-        return true;
-      } catch (err) {
-        console.warn('API save-wage-options fallback to store:', err.message);
-      }
-    }
-    store.set('wageOptions', Array.isArray(options) ? options : []);
-    return true;
-  });
-
-  ipcMain.handle('get-person-wage', async (event, name) => {
-    const baseUrl = getBaseUrl(store);
-    if (baseUrl) {
-      try {
-        const wages = await api.getPersonWages(baseUrl);
-        const key = (name || '').trim();
-        return key ? (wages && wages[key]) ?? '' : '';
-      } catch (err) {
-        console.warn('API get-person-wage fallback to store:', err.message);
-      }
-    }
-    const wages = store.get('personWages', {});
-    const key = (name || '').trim();
-    return key ? (wages[key] ?? '') : '';
-  });
-
-  ipcMain.handle('get-person-wages', async () => {
-    const baseUrl = getBaseUrl(store);
-    if (baseUrl) {
-      try {
-        return await api.getPersonWages(baseUrl) || {};
-      } catch (err) {
-        console.warn('API get-person-wages fallback to store:', err.message);
-      }
-    }
-    return store.get('personWages', {});
-  });
-
-  ipcMain.handle('set-person-wage', async (event, name, wageOption) => {
-    const baseUrl = getBaseUrl(store);
-    if (baseUrl) {
-      try {
-        const wages = await api.getPersonWages(baseUrl) || {};
-        const key = (name || '').trim();
-        if (key) {
-          wages[key] = (wageOption == null ? '' : String(wageOption).trim());
-          await api.putPersonWages(baseUrl, wages);
-        }
-        return true;
-      } catch (err) {
-        console.warn('API set-person-wage fallback to store:', err.message);
-      }
-    }
-    const key = (name || '').trim();
-    if (!key) return true;
-    const wages = store.get('personWages', {});
-    wages[key] = (wageOption == null ? '' : String(wageOption).trim());
-    store.set('personWages', wages);
-    return true;
-  });
 }
 
 module.exports = { registerCatalogHandlers };

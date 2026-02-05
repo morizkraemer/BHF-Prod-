@@ -6,9 +6,6 @@ function SecuForm({ formData, onDataChange, highlightedFields = [], printedTempl
   const shouldHighlight = (fieldName) => {
     return highlightedFields.includes(fieldName);
   };
-  const [wageOptions, setWageOptions] = useState([]);
-  const wageValue = (opt) => (typeof opt === 'object' && opt !== null && 'label' in opt ? opt.label : String(opt));
-  const wageInOptions = (wage) => wageOptions.some((o) => wageValue(o) === wage);
   const [securityPersonnel, setSecurityPersonnel] = useState(() => {
     const list = formData?.securityPersonnel || [{ name: '', startTime: '', endTime: '', wage: '' }];
     return list.map(p => ({ name: p.name ?? '', startTime: p.startTime ?? '', endTime: p.endTime ?? '', wage: p.wage ?? '' }));
@@ -17,12 +14,6 @@ function SecuForm({ formData, onDataChange, highlightedFields = [], printedTempl
     formData?.scannedDocuments || []
   );
   const [webFormPdfs, setWebFormPdfs] = useState([]);
-
-  useEffect(() => {
-    if (window.electronAPI?.getWageOptions) {
-      window.electronAPI.getWageOptions().then((opts) => setWageOptions(Array.isArray(opts) ? opts : []));
-    }
-  }, []);
 
   // Load Secu web form PDFs for current shift date (LAN form submissions)
   useEffect(() => {
@@ -51,32 +42,6 @@ function SecuForm({ formData, onDataChange, highlightedFields = [], printedTempl
     const newPersonnel = [...securityPersonnel];
     newPersonnel[index][field] = value;
     setSecurityPersonnel(newPersonnel);
-    if (field === 'wage' && window.electronAPI?.setPersonWage) {
-      const name = (newPersonnel[index]?.name || '').trim();
-      if (name) window.electronAPI.setPersonWage(name, value);
-    }
-    if (field === 'name' && window.electronAPI?.getPersonWage) {
-      const name = (value || '').trim();
-      if (name) {
-        window.electronAPI.getPersonWage(name).then((w) => {
-          setTimeout(() => {
-            setSecurityPersonnel(prev => {
-              const next = [...prev];
-              if (next[index] && (next[index].name || '').trim() === name) {
-                next[index] = { ...next[index], wage: w ?? '' };
-              }
-              return next;
-            });
-          }, 0);
-        });
-      } else {
-        setSecurityPersonnel(prev => {
-          const next = [...prev];
-          if (next[index]) next[index] = { ...next[index], wage: '' };
-          return next;
-        });
-      }
-    }
   };
 
   const handleAddPersonnel = () => {
@@ -116,7 +81,7 @@ function SecuForm({ formData, onDataChange, highlightedFields = [], printedTempl
         <div className="secu-personnel-section">
           {/* Column Headers */}
           <div className="secu-personnel-header">
-            <div className="secu-header-name-wage">Name / €/h</div>
+            <div className="secu-header-name">Name</div>
             <div className="secu-header-start">Start</div>
             <div className="secu-header-end">Ende</div>
             <div className="secu-header-actions"></div>
@@ -128,45 +93,27 @@ function SecuForm({ formData, onDataChange, highlightedFields = [], printedTempl
           ) : (
             securityPersonnel.map((person, index) => (
             <div key={index} className="secu-personnel-line">
-              <div className="secu-name-wage-combo">
-                <div className="secu-name-wage-combo-name">
-                  {PersonNameSelect ? (
-                    <PersonNameSelect
-                      value={person.name}
-                      onChange={(name) => handlePersonnelChange(index, 'name', name)}
-                      getNames={window.electronAPI ? window.electronAPI.getSecuNames : null}
-                      addName={window.electronAPI ? window.electronAPI.addSecuName : null}
-                      placeholder="Name *"
-                      className={`secu-personnel-name ${shouldHighlight(`Secu Person ${index + 1} Name`) ? 'field-highlighted' : ''}`}
-                      required
-                    />
-                  ) : (
-                    <input
-                      type="text"
-                      value={person.name}
-                      onChange={(e) => handlePersonnelChange(index, 'name', e.target.value)}
-                      className={`secu-personnel-name ${shouldHighlight(`Secu Person ${index + 1} Name`) ? 'field-highlighted' : ''}`}
-                      placeholder="Name *"
-                      required
-                    />
-                  )}
-                </div>
-                <div className="secu-name-wage-combo-wage">
-                  <select
-                    value={person.wage ?? ''}
-                    onChange={(e) => handlePersonnelChange(index, 'wage', e.target.value)}
-                    className="secu-personnel-wage"
-                  >
-                    <option value="">—</option>
-                    {wageOptions.map((opt) => {
-                      const val = wageValue(opt);
-                      return <option key={val} value={val}>{val}</option>;
-                    })}
-                    {(person.wage && !wageInOptions(person.wage)) && (
-                      <option value={person.wage}>{person.wage}</option>
-                    )}
-                  </select>
-                </div>
+              <div className="secu-name-combo">
+                {PersonNameSelect ? (
+                  <PersonNameSelect
+                    value={person.name}
+                    onChange={(name) => handlePersonnelChange(index, 'name', name)}
+                    getNames={window.electronAPI ? window.electronAPI.getSecuNames : null}
+                    addName={window.electronAPI ? window.electronAPI.addSecuName : null}
+                    placeholder="Name *"
+                    className={`secu-personnel-name ${shouldHighlight(`Secu Person ${index + 1} Name`) ? 'field-highlighted' : ''}`}
+                    required
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    value={person.name}
+                    onChange={(e) => handlePersonnelChange(index, 'name', e.target.value)}
+                    className={`secu-personnel-name ${shouldHighlight(`Secu Person ${index + 1} Name`) ? 'field-highlighted' : ''}`}
+                    placeholder="Name *"
+                    required
+                  />
+                )}
               </div>
               <input
                 type="time"

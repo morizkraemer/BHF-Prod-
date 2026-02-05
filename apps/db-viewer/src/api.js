@@ -66,3 +66,37 @@ export function getDocumentUrl(documentId) {
   const b = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
   return `${b}/api/documents/${documentId}`;
 }
+
+// --- Catalogs: wage options, person wages, person names ---
+export async function getWageOptions() {
+  return request('/api/catalogs/wage-options');
+}
+
+export async function putWageOptions(labels) {
+  return request('/api/catalogs/wage-options', {
+    method: 'PUT',
+    body: JSON.stringify(Array.isArray(labels) ? labels : []),
+  });
+}
+
+export async function getPersonWages() {
+  return request('/api/catalogs/person-wages');
+}
+
+export async function putPersonWages(wages) {
+  return request('/api/catalogs/person-wages', {
+    method: 'PUT',
+    body: JSON.stringify(wages && typeof wages === 'object' ? wages : {}),
+  });
+}
+
+export async function getPersonNamesByType(type) {
+  return request(`/api/catalogs/person-names/${encodeURIComponent(type)}`);
+}
+
+export async function removePersonName(name) {
+  return request('/api/catalogs/person-names/remove', {
+    method: 'POST',
+    body: JSON.stringify({ name: String(name || '').trim() }),
+  });
+}

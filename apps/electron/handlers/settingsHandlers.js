@@ -460,8 +460,6 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
       store.set('scanFolder', null);
       store.set('reportFolder', null);
       store.set('einkaufsbelegeFolder', null);
-      store.set('wageOptions', []);
-      store.set('personWages', {});
       store.set('techNames', {
         soundEngineerName: '',
         lightingTechName: ''

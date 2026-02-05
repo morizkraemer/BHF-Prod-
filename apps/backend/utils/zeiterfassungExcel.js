@@ -102,6 +102,7 @@ function collectZeiterfassungEntriesForDb(eventId, formData, eventDate) {
 }
 
 module.exports = {
+  parseWageToNumber,
   collectZeiterfassungData,
   collectZeiterfassungEntriesForDb
 };

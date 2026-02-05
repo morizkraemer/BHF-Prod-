@@ -6,7 +6,7 @@
 const path = require('path');
 const fs = require('fs').promises;
 const { PDFDocument } = require('pdf-lib');
-const { collectZeiterfassungData, collectZeiterfassungEntriesForDb } = require('../utils/zeiterfassungExcel');
+const { parseWageToNumber, collectZeiterfassungData, collectZeiterfassungEntriesForDb } = require('../utils/zeiterfassungExcel');
 
 function toCamelCaseFolderName(str) {
   if (!str) return 'unbekanntesEvent';
@@ -167,7 +167,27 @@ async function runCloseShift({ eventId, formData, storagePath, pool }) {
   const hasTimeData = secuRows.length > 0 || tonLichtRows.length > 0 || andereRows.length > 0;
   if (hasTimeData) {
     const dbEntries = collectZeiterfassungEntriesForDb(eventId, data, eventDate);
+    // Build person_wages map (normalized name -> wage_option_label) to fill wage when form sent empty
+    let personWagesMap = {};
+    try {
+      const pw = await pool.query('SELECT person_name_key, wage_option_label FROM person_wages');
+      for (const row of pw.rows) {
+        const key = (row.person_name_key || '').trim().toLowerCase();
+        if (key) personWagesMap[key] = row.wage_option_label;
+      }
+    } catch (err) {
+      console.warn('closeShift person_wages lookup:', err.message);
+    }
     for (const e of dbEntries) {
+      if ((e.wage === 0 || e.wage == null) && (e.person_name || '').trim()) {
+        const key = (e.person_name || '').trim().toLowerCase();
+        const label = personWagesMap[key];
+        if (label != null) {
+          const wageNum = parseWageToNumber(label);
+          e.wage = wageNum != null ? wageNum : 0;
+          e.amount = Math.round(e.hours * e.wage * 100) / 100;
+        }
+      }
       await pool.query(
         `INSERT INTO zeiterfassung_entries (event_id, role, event_name, entry_date, person_name, wage, start_time, end_time, hours, amount, category)
          VALUES ($1, $2, $3, $4::date, $5, $6, $7, $8, $9, $10, $11)`,

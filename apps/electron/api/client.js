@@ -126,23 +126,6 @@ async function patchBestueckungListMeta(baseUrl, key, body) {
   return request(baseUrl, 'PATCH', `/api/catalogs/bestueckung-lists/${encodeURIComponent(key)}/meta`, body);
 }
 
-// --- Catalogs: wage options, person wages ---
-async function getWageOptions(baseUrl) {
-  return request(baseUrl, 'GET', '/api/catalogs/wage-options');
-}
-
-async function putWageOptions(baseUrl, options) {
-  return request(baseUrl, 'PUT', '/api/catalogs/wage-options', options);
-}
-
-async function getPersonWages(baseUrl) {
-  return request(baseUrl, 'GET', '/api/catalogs/person-wages');
-}
-
-async function putPersonWages(baseUrl, wages) {
-  return request(baseUrl, 'PUT', '/api/catalogs/person-wages', wages);
-}
-
 // --- Settings ---
 async function getSettings(baseUrl) {
   return request(baseUrl, 'GET', '/api/settings');
@@ -236,10 +219,6 @@ module.exports = {
   getBestueckungList,
   putBestueckungList,
   patchBestueckungListMeta,
-  getWageOptions,
-  putWageOptions,
-  getPersonWages,
-  putPersonWages,
   getSettings,
   getSetting,
   setSetting,
