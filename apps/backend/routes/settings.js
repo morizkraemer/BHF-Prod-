@@ -1,7 +1,7 @@
 /**
  * API routes for settings (key-value JSONB). Mirror store shape.
  * Keys: techNames, templates, scanFolder, reportFolder, einkaufsbelegeFolder,
- * zeiterfassungExcelFolder, selectedScanner, cateringPrices, pauschalePrices.
+ * selectedScanner, cateringPrices, pauschalePrices.
  */
 
 const express = require('express');

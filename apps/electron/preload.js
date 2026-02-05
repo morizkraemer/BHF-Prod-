@@ -31,8 +31,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getReportFolder: () => ipcRenderer.invoke('get-report-folder'),
   setEinkaufsbelegeFolder: () => ipcRenderer.invoke('set-einkaufsbelege-folder'),
   getEinkaufsbelegeFolder: () => ipcRenderer.invoke('get-einkaufsbelege-folder'),
-  setZeiterfassungExcelFolder: () => ipcRenderer.invoke('set-zeiterfassung-excel-folder'),
-  getZeiterfassungExcelFolder: () => ipcRenderer.invoke('get-zeiterfassung-excel-folder'),
   scanDocument: (source = 'glass', scanName = 'scan') => ipcRenderer.invoke('scan-document', source, scanName),
   selectScanFile: () => ipcRenderer.invoke('select-scan-file'),
   checkScanInProgress: () => ipcRenderer.invoke('check-scan-in-progress'),

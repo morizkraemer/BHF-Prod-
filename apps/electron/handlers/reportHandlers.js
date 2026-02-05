@@ -4,12 +4,6 @@ const { app } = require('electron');
 const { generateReportPDF } = require('../utils/pdfGenerator');
 const { PDFDocument } = require('pdf-lib');
 const { getLanFormRegistry, getFormById } = require('../server/lanFormRegistry');
-const {
-  buildZeiterfassungWorkbook,
-  loadZeiterfassungWorkbook,
-  appendZeiterfassungToWorkbook,
-  collectZeiterfassungData
-} = require('../utils/zeiterfassungExcel');
 const api = require('../api/client');
 
 /**
@@ -567,38 +561,6 @@ function registerReportHandlers(ipcMain, store) {
       
       // Count consolidated PDFs (one per scanName group)
       const consolidatedPDFsCount = Object.keys(scansByScanName).length;
-
-      // Zeiterfassung: create or append to monthly Excel (Zeiterfassung-YYYY-MM.xlsx)
-      const zeiterfassungFolder = store.get('zeiterfassungExcelFolder', null);
-      if (zeiterfassungFolder) {
-        try {
-          const eventDate = (formData.uebersicht && formData.uebersicht.date) || new Date().toISOString().split('T')[0];
-          const { secuRows, tonLichtRows, andereRows } = collectZeiterfassungData(formData, eventDate);
-          const hasTimeData = secuRows.length > 0 || tonLichtRows.length > 0 || andereRows.length > 0;
-          if (hasTimeData) {
-            await fs.mkdir(zeiterfassungFolder, { recursive: true });
-            const yearMonth = eventDate.slice(0, 7);
-            const excelPath = path.join(zeiterfassungFolder, `Zeiterfassung-${yearMonth}.xlsx`);
-            let exists = false;
-            try {
-              await fs.access(excelPath);
-              exists = true;
-            } catch {
-              // file does not exist
-            }
-            if (exists) {
-              const workbook = await loadZeiterfassungWorkbook(excelPath);
-              appendZeiterfassungToWorkbook(workbook, formData);
-              await workbook.xlsx.writeFile(excelPath);
-            } else {
-              const { workbook } = await buildZeiterfassungWorkbook(formData);
-              await workbook.xlsx.writeFile(excelPath);
-            }
-          }
-        } catch (excelErr) {
-          console.warn('Zeiterfassung Excel konnte nicht erstellt/aktualisiert werden:', excelErr.message);
-        }
-      }
 
       // Remove LAN form PDFs from temp scan folder after merge
       for (const formEntry of lanFormRegistry) {

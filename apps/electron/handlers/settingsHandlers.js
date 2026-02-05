@@ -391,24 +391,6 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
 
   // Wage options and person wages: handled in catalogHandlers (API + store fallback)
 
-  // IPC Handlers for Excel Zeiterfassung Folder
-  ipcMain.handle('set-zeiterfassung-excel-folder', async () => {
-    const { filePaths } = await dialog.showOpenDialog(mainWindow, {
-      title: 'Excel Zeiterfassung Ordner auswählen',
-      properties: ['openDirectory']
-    });
-
-    if (filePaths && filePaths.length > 0) {
-      store.set('zeiterfassungExcelFolder', filePaths[0]);
-      return filePaths[0];
-    }
-    return null;
-  });
-
-  ipcMain.handle('get-zeiterfassung-excel-folder', () => {
-    return store.get('zeiterfassungExcelFolder', null);
-  });
-
   // IPC Handlers for Catering Prices (API first when serverUrl set)
   const defaultCateringPrices = () => ({ warmPerPerson: '', coldPerPerson: '' });
   ipcMain.handle('get-catering-prices', async () => {
@@ -478,7 +460,6 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
       store.set('scanFolder', null);
       store.set('reportFolder', null);
       store.set('einkaufsbelegeFolder', null);
-      store.set('zeiterfassungExcelFolder', null);
       store.set('wageOptions', []);
       store.set('personWages', {});
       store.set('techNames', {

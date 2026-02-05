@@ -26,7 +26,6 @@ function SettingsForm() {
   const [scanFolder, setScanFolder] = useState(null);
   const [reportFolder, setReportFolder] = useState(null);
   const [einkaufsbelegeFolder, setEinkaufsbelegeFolder] = useState(null);
-  const [zeiterfassungExcelFolder, setZeiterfassungExcelFolder] = useState(null);
   const [wageOptions, setWageOptions] = useState([]);
   const [newWageOption, setNewWageOption] = useState('');
   const [employeesList, setEmployeesList] = useState([]);
@@ -81,7 +80,6 @@ function SettingsForm() {
     loadScanFolder();
     loadReportFolder();
     loadEinkaufsbelegeFolder();
-    loadZeiterfassungExcelFolder();
     loadWageOptions();
     loadEmployeesList();
     loadTemplates();
@@ -124,13 +122,6 @@ function SettingsForm() {
     if (window.electronAPI && window.electronAPI.getEinkaufsbelegeFolder) {
       const folder = await window.electronAPI.getEinkaufsbelegeFolder();
       setEinkaufsbelegeFolder(folder);
-    }
-  };
-
-  const loadZeiterfassungExcelFolder = async () => {
-    if (window.electronAPI && window.electronAPI.getZeiterfassungExcelFolder) {
-      const folder = await window.electronAPI.getZeiterfassungExcelFolder();
-      setZeiterfassungExcelFolder(folder);
     }
   };
 
@@ -277,15 +268,6 @@ function SettingsForm() {
       const folder = await window.electronAPI.setEinkaufsbelegeFolder();
       if (folder) {
         setEinkaufsbelegeFolder(folder);
-      }
-    }
-  };
-
-  const handleSelectZeiterfassungExcelFolder = async () => {
-    if (window.electronAPI && window.electronAPI.setZeiterfassungExcelFolder) {
-      const folder = await window.electronAPI.setZeiterfassungExcelFolder();
-      if (folder) {
-        setZeiterfassungExcelFolder(folder);
       }
     }
   };
@@ -938,31 +920,6 @@ function SettingsForm() {
           <p className="settings-empty">Optional: Wenn kein Ordner ausgewählt ist, werden keine Kopien der Einkaufsbelege erstellt.</p>
         )}
       </div>
-
-      {/* Excel Zeiterfassung Folder Selection */}
-      <div className="settings-scanner-section">
-        <h3>Excel Zeiterfassung Ordner</h3>
-        <p className="settings-description">
-          Wählen Sie den Ordner aus, in dem die Excel-Zeiterfassungsdateien gespeichert werden sollen. Beim Schließen einer Schicht wird die monatliche Datei Zeiterfassung-YYYY-MM.xlsx erstellt bzw. aktualisiert.
-        </p>
-        <div className="settings-scan-folder-form">
-          <div className="settings-scan-folder-display">
-            <span className="settings-scan-folder-path">
-              {zeiterfassungExcelFolder || 'Kein Ordner ausgewählt'}
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={handleSelectZeiterfassungExcelFolder}
-            className="settings-select-folder-button"
-          >
-            Ordner auswählen
-          </button>
-        </div>
-        {!zeiterfassungExcelFolder && (
-          <p className="settings-empty">Optional: Wenn kein Ordner ausgewählt ist, wird die Excel-Zeiterfassung nicht gespeichert.</p>
-        )}
-      </div>
     </>
   );
 
@@ -1232,7 +1189,7 @@ function SettingsForm() {
       'Dies wird gelöscht:\n' +
       '• Alle Rider Extras Items\n' +
       '• Scanner-Auswahl\n' +
-      '• Scan-, Report- und Excel-Zeiterfassung-Ordner\n' +
+      '• Scan-, Report- und Einkaufsbelege-Ordner\n' +
       '• Tech-Namen\n' +
       '• Alle Templates\n' +
       '• Alle Bestückungslisten\n' +
@@ -1267,7 +1224,6 @@ function SettingsForm() {
           loadScanFolder();
           loadReportFolder();
           loadEinkaufsbelegeFolder();
-          loadZeiterfassungExcelFolder();
           loadWageOptions();
           loadEmployeesList();
           loadTemplates();
@@ -1656,7 +1612,7 @@ function SettingsForm() {
           <ul className="settings-description" style={{ marginLeft: '20px', marginTop: '10px' }}>
             <li>Alle Rider Extras Items</li>
             <li>Scanner-Auswahl</li>
-            <li>Scan-, Report- und Excel-Zeiterfassung-Ordner</li>
+            <li>Scan-, Report- und Einkaufsbelege-Ordner</li>
             <li>Tech-Namen (Sound Engineer & Lighting Tech)</li>
             <li>Alle Templates</li>
             <li>Alle Bestückungslisten</li>

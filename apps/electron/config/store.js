@@ -11,7 +11,6 @@ const settingsStore = new Store({
     scanFolder: null, // Will default to ~/Documents/NightclubScans if not set
     reportFolder: null, // Will default to ~/Documents/NightclubReports if not set
     einkaufsbelegeFolder: null, // Optional folder for copying Einkaufsbelege PDFs
-    zeiterfassungExcelFolder: null, // Optional folder for saving Excel Zeiterfassung files
     techNames: {
       soundEngineerName: '',
       lightingTechName: ''

@@ -183,7 +183,7 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
-// POST /api/events/:id/close – close shift: section PDFs, Zeiterfassung Excel, set phase closed
+// POST /api/events/:id/close – close shift: section PDFs, Zeiterfassung entries (DB), set phase closed
 router.post('/:id/close', async (req, res) => {
   const { id } = req.params;
   const formData = req.body?.formData ?? req.body?.form_data ?? req.body;

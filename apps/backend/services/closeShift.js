@@ -1,18 +1,12 @@
 /**
- * Close-shift: section PDFs, Zeiterfassung Excel, document rows, set phase closed.
+ * Close-shift: section PDFs, Zeiterfassung entries (DB), document rows, set phase closed.
  * Report PDF (HTML→PDF) deferred to Phase 3 export app or Puppeteer follow-up.
  */
 
 const path = require('path');
 const fs = require('fs').promises;
 const { PDFDocument } = require('pdf-lib');
-const {
-  buildZeiterfassungWorkbook,
-  loadZeiterfassungWorkbook,
-  appendZeiterfassungToWorkbook,
-  collectZeiterfassungData,
-  collectZeiterfassungEntriesForDb
-} = require('../utils/zeiterfassungExcel');
+const { collectZeiterfassungData, collectZeiterfassungEntriesForDb } = require('../utils/zeiterfassungExcel');
 
 function toCamelCaseFolderName(str) {
   if (!str) return 'unbekanntesEvent';
@@ -169,7 +163,6 @@ async function runCloseShift({ eventId, formData, storagePath, pool }) {
     }
   }
 
-  const zeiterfassungDir = path.join(storagePath, 'zeiterfassung');
   const { secuRows, tonLichtRows, andereRows } = collectZeiterfassungData(data, eventDate);
   const hasTimeData = secuRows.length > 0 || tonLichtRows.length > 0 || andereRows.length > 0;
   if (hasTimeData) {
@@ -180,32 +173,6 @@ async function runCloseShift({ eventId, formData, storagePath, pool }) {
          VALUES ($1, $2, $3, $4::date, $5, $6, $7, $8, $9, $10, $11)`,
         [e.event_id, e.role, e.event_name, e.entry_date, e.person_name, e.wage, e.start_time, e.end_time, e.hours, e.amount, e.category]
       );
-    }
-    await fs.mkdir(zeiterfassungDir, { recursive: true });
-    const yearMonth = eventDate.slice(0, 7);
-    const excelPath = path.join(zeiterfassungDir, `Zeiterfassung-${yearMonth}.xlsx`);
-    let exists = false;
-    try {
-      await fs.access(excelPath);
-      exists = true;
-    } catch {}
-    try {
-      if (exists) {
-        const workbook = await loadZeiterfassungWorkbook(excelPath);
-        appendZeiterfassungToWorkbook(workbook, data);
-        await workbook.xlsx.writeFile(excelPath);
-      } else {
-        const { workbook } = await buildZeiterfassungWorkbook(data);
-        await workbook.xlsx.writeFile(excelPath);
-      }
-      const relativePath = path.relative(storagePath, excelPath);
-      await pool.query(
-        `INSERT INTO documents (event_id, type, section_or_name, file_path, content_type, metadata)
-         VALUES ($1, 'zeiterfassung', $2, $3, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', '{}'::jsonb)`,
-        [eventId, yearMonth, relativePath]
-      );
-    } catch (err) {
-      console.warn('closeShift Zeiterfassung:', err.message);
     }
   }
 
