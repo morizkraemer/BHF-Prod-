@@ -74,6 +74,49 @@ function collectZeiterfassungData(formData, eventDate) {
   return { secuRows, tonLichtRows, andereRows };
 }
 
+/**
+ * Returns time entries in DB shape for zeiterfassung_entries table.
+ * @param {string} eventId - UUID of the event
+ * @param {Object} formData - Full form data from close-shift
+ * @param {string} eventDate - YYYY-MM-DD
+ * @returns {Array<{ event_id, role, event_name, entry_date, person_name, wage, start_time, end_time, hours, amount, category }>}
+ */
+function collectZeiterfassungEntriesForDb(eventId, formData, eventDate) {
+  const { secuRows, tonLichtRows, andereRows } = collectZeiterfassungData(formData, eventDate);
+  const out = [];
+
+  function pushRow(role, row) {
+    const eventName = row[0];
+    const personName = row[2];
+    const wageStr = row[3];
+    const von = row[4];
+    const bis = row[5];
+    const category = row.length > 6 ? row[6] : null;
+    const wageNum = parseWageToNumber(wageStr);
+    const wage = wageNum != null ? wageNum : 0;
+    const hours = computeHours(von, bis);
+    const amount = Math.round(hours * wage * 100) / 100;
+    out.push({
+      event_id: eventId,
+      role,
+      event_name: eventName || null,
+      entry_date: eventDate,
+      person_name: personName,
+      wage,
+      start_time: von || null,
+      end_time: bis || null,
+      hours,
+      amount,
+      category: category || null
+    });
+  }
+
+  secuRows.forEach((row) => pushRow('secu', row));
+  tonLichtRows.forEach((row) => pushRow('ton_licht', row));
+  andereRows.forEach((row) => pushRow('andere', row));
+  return out;
+}
+
 function toTableRowFormat(rows, hasNotizen) {
   return rows.map((row) => {
     const r = [...row];
@@ -209,5 +252,6 @@ module.exports = {
   buildZeiterfassungWorkbook,
   loadZeiterfassungWorkbook,
   appendZeiterfassungToWorkbook,
-  collectZeiterfassungData
+  collectZeiterfassungData,
+  collectZeiterfassungEntriesForDb
 };

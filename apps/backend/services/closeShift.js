@@ -10,7 +10,8 @@ const {
   buildZeiterfassungWorkbook,
   loadZeiterfassungWorkbook,
   appendZeiterfassungToWorkbook,
-  collectZeiterfassungData
+  collectZeiterfassungData,
+  collectZeiterfassungEntriesForDb
 } = require('../utils/zeiterfassungExcel');
 
 function toCamelCaseFolderName(str) {
@@ -172,6 +173,14 @@ async function runCloseShift({ eventId, formData, storagePath, pool }) {
   const { secuRows, tonLichtRows, andereRows } = collectZeiterfassungData(data, eventDate);
   const hasTimeData = secuRows.length > 0 || tonLichtRows.length > 0 || andereRows.length > 0;
   if (hasTimeData) {
+    const dbEntries = collectZeiterfassungEntriesForDb(eventId, data, eventDate);
+    for (const e of dbEntries) {
+      await pool.query(
+        `INSERT INTO zeiterfassung_entries (event_id, role, event_name, entry_date, person_name, wage, start_time, end_time, hours, amount, category)
+         VALUES ($1, $2, $3, $4::date, $5, $6, $7, $8, $9, $10, $11)`,
+        [e.event_id, e.role, e.event_name, e.entry_date, e.person_name, e.wage, e.start_time, e.end_time, e.hours, e.amount, e.category]
+      );
+    }
     await fs.mkdir(zeiterfassungDir, { recursive: true });
     const yearMonth = eventDate.slice(0, 7);
     const excelPath = path.join(zeiterfassungDir, `Zeiterfassung-${yearMonth}.xlsx`);
