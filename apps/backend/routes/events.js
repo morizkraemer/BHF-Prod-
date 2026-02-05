@@ -12,6 +12,7 @@ const { randomUUID } = require('crypto');
 const multer = require('multer');
 const { getPool } = require('../db');
 const { runCloseShift } = require('../services/closeShift');
+const { toEntry: toZeiterfassungEntry } = require('./zeiterfassung');
 
 const router = express.Router();
 
@@ -118,6 +119,24 @@ router.post('/', async (req, res) => {
     res.status(201).json(toEvent(r.rows[0]));
   } catch (err) {
     console.error('POST /api/events:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// GET /api/events/:eventId/zeiterfassung – zeiterfassung entries for one event
+router.get('/:eventId/zeiterfassung', async (req, res) => {
+  const { eventId } = req.params;
+  try {
+    const eventCheck = await getPool().query('SELECT id FROM events WHERE id = $1', [eventId]);
+    if (eventCheck.rows.length === 0) return res.status(404).json({ error: 'Event not found' });
+    const r = await getPool().query(
+      `SELECT id, event_id, role, event_name, entry_date, person_name, wage, start_time, end_time, hours, amount, category, created_at
+       FROM zeiterfassung_entries WHERE event_id = $1 ORDER BY entry_date DESC, created_at DESC`,
+      [eventId]
+    );
+    res.json(r.rows.map(toZeiterfassungEntry));
+  } catch (err) {
+    console.error('GET /api/events/:eventId/zeiterfassung:', err);
     res.status(500).json({ error: 'Database error' });
   }
 });

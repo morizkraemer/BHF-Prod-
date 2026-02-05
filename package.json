@@ -7,8 +7,10 @@
     "dev": "npm run dev --prefix apps/electron",
     "dev:electron": "pnpm --filter nightclub-production-tool dev",
     "dev:backend": "pnpm --filter produktionstool-api dev",
+    "dev:db-viewer": "pnpm --filter db-viewer dev",
     "start:electron": "pnpm --filter nightclub-production-tool start",
     "start:backend": "pnpm --filter produktionstool-api start",
+    "build:db-viewer": "pnpm --filter db-viewer build",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down"
   },

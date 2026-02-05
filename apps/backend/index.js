@@ -6,6 +6,7 @@ const { getCurrentEvent, checkDb } = require('./db');
 const catalogsRouter = require('./routes/catalogs');
 const settingsRouter = require('./routes/settings');
 const eventsRouter = require('./routes/events');
+const zeiterfassungRouter = require('./routes/zeiterfassung');
 const documentsRouter = require('./routes/documents');
 const { router: secuFormRouter, handleSecuSubmit } = require('./routes/secuForm');
 
@@ -21,6 +22,7 @@ app.use(express.json());
 app.use('/api/catalogs', catalogsRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/events', eventsRouter);
+app.use('/api/zeiterfassung', zeiterfassungRouter);
 app.use('/api/documents', documentsRouter);
 app.post('/api/forms/secu/submit', handleSecuSubmit);
 app.use('/api', secuFormRouter);
