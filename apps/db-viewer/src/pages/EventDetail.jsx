@@ -1,6 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getEvent, getEventDocuments, getDocumentUrl } from '../api';
+import { sections } from 'shared/eventFormSchema';
+import UebersichtSection from '../components/eventDetail/UebersichtSection';
+import RiderExtrasSection from '../components/eventDetail/RiderExtrasSection';
+import TontechnikerSection from '../components/eventDetail/TontechnikerSection';
+import SecuSection from '../components/eventDetail/SecuSection';
+import AndereMitarbeiterSection from '../components/eventDetail/AndereMitarbeiterSection';
+import GaesteSection from '../components/eventDetail/GaesteSection';
+import KassenSection from '../components/eventDetail/KassenSection';
+
+const SECTION_COMPONENTS = {
+  'uebersicht': UebersichtSection,
+  'rider-extras': RiderExtrasSection,
+  'tontechniker': TontechnikerSection,
+  'secu': SecuSection,
+  'andere-mitarbeiter': AndereMitarbeiterSection,
+  'gaeste': GaesteSection,
+  'kassen': KassenSection,
+};
 
 export default function EventDetail() {
   const { id } = useParams();
@@ -8,7 +26,7 @@ export default function EventDetail() {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [formDataOpen, setFormDataOpen] = useState(false);
+  const [rawJsonOpen, setRawJsonOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -36,13 +54,14 @@ export default function EventDetail() {
   if (!event) return <div className="error">Event nicht gefunden.</div>;
 
   const docUrl = (docId) => getDocumentUrl(docId);
+  const formData = event.formData || {};
 
   return (
     <div>
       <h1 style={{ marginTop: 0 }}>{event.eventName ?? 'Event'}</h1>
       <section style={{ marginBottom: 24 }}>
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>Details</h2>
-        <table style={{ maxWidth: 480 }}>
+        <table style={{ maxWidth: 480 }} className="section-table">
           <tbody>
             <tr><th style={{ width: 120 }}>Datum</th><td>{event.eventDate ?? '–'}</td></tr>
             <tr><th>Phase</th><td>{event.phase ?? '–'}</td></tr>
@@ -53,12 +72,24 @@ export default function EventDetail() {
         </table>
       </section>
 
+      {sections.map(({ id: sectionId, name: sectionName }) => {
+        const data = formData[sectionId] ?? {};
+        const SectionComponent = SECTION_COMPONENTS[sectionId];
+        if (!SectionComponent) return null;
+        return (
+          <section key={sectionId} className="event-detail-section" style={{ marginBottom: 24 }}>
+            <h2 style={{ fontSize: 16, marginBottom: 8 }}>{sectionName}</h2>
+            <SectionComponent data={data} />
+          </section>
+        );
+      })}
+
       {event.formData && Object.keys(event.formData).length > 0 && (
         <section style={{ marginBottom: 24 }}>
-          <button type="button" onClick={() => setFormDataOpen(!formDataOpen)}>
-            {formDataOpen ? 'Formular-Daten ausblenden' : 'Formular-Daten anzeigen'}
+          <button type="button" onClick={() => setRawJsonOpen(!rawJsonOpen)}>
+            {rawJsonOpen ? 'Rohdaten (JSON) ausblenden' : 'Rohdaten (JSON) anzeigen'}
           </button>
-          {formDataOpen && (
+          {rawJsonOpen && (
             <pre style={{ marginTop: 8, padding: 12, background: '#f5f5f5', borderRadius: 8, overflow: 'auto', fontSize: 12 }}>
               {JSON.stringify(event.formData, null, 2)}
             </pre>
@@ -71,7 +102,7 @@ export default function EventDetail() {
         {documents.length === 0 ? (
           <p style={{ color: '#666' }}>Keine Dokumente.</p>
         ) : (
-          <table>
+          <table className="section-table">
             <thead>
               <tr>
                 <th>Typ</th>

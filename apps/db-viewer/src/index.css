@@ -82,3 +82,48 @@ select {
   padding: 24px;
   color: #666;
 }
+
+/* Event detail section blocks */
+.event-detail-section {
+  background: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.section-table {
+  max-width: 100%;
+}
+
+/* Label column narrow, value column gets the rest */
+.section-table th {
+  width: 1%;
+  white-space: nowrap;
+  max-width: 280px;
+}
+.section-table td {
+  width: auto;
+}
+
+.section-empty {
+  color: #666;
+  margin: 0;
+  font-size: 13px;
+}
+
+.section-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section-block {
+  margin-top: 0;
+}
+
+.section-subtitle {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: #333;
+}
