@@ -7,6 +7,8 @@ function AndereMitarbeiterForm({ formData, onDataChange, highlightedFields = [] 
     return highlightedFields.includes(fieldName);
   };
   const [wageOptions, setWageOptions] = useState([]);
+  const wageValue = (opt) => (typeof opt === 'object' && opt !== null && 'label' in opt ? opt.label : String(opt));
+  const wageInOptions = (wage) => wageOptions.some((o) => wageValue(o) === wage);
   const [mitarbeiter, setMitarbeiter] = useState(() => {
     const list = formData?.mitarbeiter || [];
     return list.map(p => ({ name: p.name ?? '', startTime: p.startTime ?? '', endTime: p.endTime ?? '', category: p.category ?? '', wage: p.wage ?? '' }));
@@ -126,10 +128,11 @@ function AndereMitarbeiterForm({ formData, onDataChange, highlightedFields = [] 
                     className="andere-mitarbeiter-wage"
                   >
                     <option value="">—</option>
-                    {wageOptions.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                    {(person.wage && wageOptions.indexOf(person.wage) === -1) && (
+                    {wageOptions.map((opt) => {
+                      const val = wageValue(opt);
+                      return <option key={val} value={val}>{val}</option>;
+                    })}
+                    {(person.wage && !wageInOptions(person.wage)) && (
                       <option value={person.wage}>{person.wage}</option>
                     )}
                   </select>

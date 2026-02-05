@@ -132,11 +132,14 @@ function SettingsForm() {
     }
   };
 
+  const wageValue = (opt) => (typeof opt === 'object' && opt !== null && 'label' in opt ? opt.label : String(opt));
+  const wageInOptions = (wage) => wageOptions.some((o) => wageValue(o) === wage);
+
   const handleAddWageOption = async () => {
     const label = (newWageOption || '').trim();
     if (!label || !window.electronAPI?.saveWageOptions) return;
     const next = [...wageOptions, label];
-    await window.electronAPI.saveWageOptions(next);
+    await window.electronAPI.saveWageOptions(next.map((o) => wageValue(o)));
     setWageOptions(next);
     setNewWageOption('');
   };
@@ -144,7 +147,7 @@ function SettingsForm() {
   const handleRemoveWageOption = async (index) => {
     if (!window.electronAPI?.saveWageOptions) return;
     const next = wageOptions.filter((_, i) => i !== index);
-    await window.electronAPI.saveWageOptions(next);
+    await window.electronAPI.saveWageOptions(next.map((o) => wageValue(o)));
     setWageOptions(next);
   };
 
@@ -1674,7 +1677,7 @@ function SettingsForm() {
           <ul className="settings-list" style={{ marginTop: 12, paddingLeft: 20 }}>
             {wageOptions.map((opt, index) => (
               <li key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <span>{opt}</span>
+                <span>{wageValue(opt)}</span>
                 <button type="button" onClick={() => handleRemoveWageOption(index)} className="settings-delete-button" style={{ padding: '4px 10px', fontSize: 13 }}>
                   Entfernen
                 </button>
@@ -1717,10 +1720,11 @@ function SettingsForm() {
                         style={{ minWidth: 140 }}
                       >
                         <option value="">—</option>
-                        {wageOptions.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                        {(emp.wage && wageOptions.indexOf(emp.wage) === -1) && (
+                        {wageOptions.map((opt) => {
+                          const val = wageValue(opt);
+                          return <option key={val} value={val}>{val}</option>;
+                        })}
+                        {(emp.wage && !wageInOptions(emp.wage)) && (
                           <option value={emp.wage}>{emp.wage}</option>
                         )}
                       </select>

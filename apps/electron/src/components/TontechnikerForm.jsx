@@ -18,6 +18,8 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
     return highlightedFields.includes(fieldName);
   };
   const [wageOptions, setWageOptions] = useState([]);
+  const wageValue = (opt) => (typeof opt === 'object' && opt !== null && 'label' in opt ? opt.label : String(opt));
+  const wageInOptions = (wage) => wageOptions.some((o) => wageValue(o) === wage);
   const [localData, setLocalData] = useState({
     soundEngineerEnabled: formData?.soundEngineerEnabled !== undefined ? formData.soundEngineerEnabled : true, // Default to checked
     soundEngineerName: formData?.soundEngineerName || '',
@@ -175,10 +177,11 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
                   disabled={!localData.soundEngineerEnabled}
                 >
                   <option value="">—</option>
-                  {wageOptions.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                  {(localData.soundEngineerWage && wageOptions.indexOf(localData.soundEngineerWage) === -1) && (
+                  {wageOptions.map((opt) => {
+                    const val = wageValue(opt);
+                    return <option key={val} value={val}>{val}</option>;
+                  })}
+                  {(localData.soundEngineerWage && !wageInOptions(localData.soundEngineerWage)) && (
                     <option value={localData.soundEngineerWage}>{localData.soundEngineerWage}</option>
                   )}
                 </select>
@@ -261,10 +264,11 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
                   disabled={!localData.lightingTechEnabled}
                 >
                   <option value="">—</option>
-                  {wageOptions.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                  {(localData.lightingTechWage && wageOptions.indexOf(localData.lightingTechWage) === -1) && (
+                  {wageOptions.map((opt) => {
+                    const val = wageValue(opt);
+                    return <option key={val} value={val}>{val}</option>;
+                  })}
+                  {(localData.lightingTechWage && !wageInOptions(localData.lightingTechWage)) && (
                     <option value={localData.lightingTechWage}>{localData.lightingTechWage}</option>
                   )}
                 </select>
