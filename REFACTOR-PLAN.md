@@ -1,5 +1,7 @@
 # Decentralized Server + DB Refactor Plan
 
+**Repository layout (after monorepo restructure):** Electron app lives in `apps/electron/`, backend in `apps/backend/`. Root has `docker-compose.yml`, root `package.json` (workspace scripts), and docs. Paths in this document refer to that layout (e.g. `apps/backend/`, `apps/electron/`).
+
 ## Current state (what you have now)
 
 **Not "everything in files"** – there are two layers:
@@ -225,7 +227,7 @@ Order of work: **Phase 1** (backend + Docker) → **Phase 2** (Electron as clien
 | **8** | Secu form on backend: added pdf-lib, backend/utils/secuFormPdf.js; backend/routes/secuForm.js (POST /api/forms/secu/submit, POST /api/secu-submit, GET /api/secu-names, POST /api/secu-add-name). Submit gets current event, generates PDF, writes to storage, inserts document row, adds names to person_names (secu). backend/public/secu/ and backend/public/src/ for form static files; GET /forms/secu serves form; static serves /secu/* and /src/*. SecuFormMobile.jsx patched for backend current-event response (currentEvent, eventDate). |
 | **9** | Close-shift: added exceljs, backend/utils/zeiterfassungExcel.js; backend/services/closeShift.js (runCloseShift: collect scanned docs from formData + documents table, create reports/{date}_{eventName}/, merge section PDFs with pdf-lib, write section PDFs + insert document rows; Zeiterfassung build/append, write to storage/zeiterfassung/, insert document row; set phase closed). POST /api/events/:id/close in events.js. Report PDF (HTML→PDF) deferred to Phase 3. |
 
-**Run the stack:** From repo root: `docker compose up -d`. API: `http://localhost:3001`. To stop: `docker compose down`.
+**Run the stack:** From repo root: `pnpm docker:up` or `docker compose up -d`. API: `http://localhost:3001`. To stop: `pnpm docker:down` or `docker compose down`.
 
 ### Phase 2: Electron app as client
 
@@ -256,12 +258,12 @@ Order of work: **Phase 1** (backend + Docker) → **Phase 2** (Electron as clien
 
 | Area | Files |
 |------|------|
-| Store / config | [config/store.js](config/store.js) – keep for local fallback or remove once fully on server |
-| Shift & catalog data | [handlers/dataHandlers.js](handlers/dataHandlers.js), [handlers/catalogHandlers.js](handlers/catalogHandlers.js), [handlers/settingsHandlers.js](handlers/settingsHandlers.js) – switch to server API |
-| Reports & close-shift | [handlers/reportHandlers.js](handlers/reportHandlers.js) – move close-shift logic to server; client calls API |
-| Scans & Secu form | [handlers/scannerHandlers.js](handlers/scannerHandlers.js) – upload to server. Secu form: move from [server/secuFormServer.js](server/secuFormServer.js) to backend; remove from Electron |
-| PDF/Excel generation | [utils/pdfGenerator.js](utils/pdfGenerator.js), [utils/secuFormPdf.js](utils/secuFormPdf.js), [utils/zeiterfassungExcel.js](utils/zeiterfassungExcel.js) – run on server |
-| Electron client | [preload.js](preload.js), handlers, hooks – server URL; replace store/file I/O with API calls |
+| Store / config | [apps/electron/config/store.js](apps/electron/config/store.js) – keep for local fallback or remove once fully on server |
+| Shift & catalog data | [apps/electron/handlers/dataHandlers.js](apps/electron/handlers/dataHandlers.js), [apps/electron/handlers/catalogHandlers.js](apps/electron/handlers/catalogHandlers.js), [apps/electron/handlers/settingsHandlers.js](apps/electron/handlers/settingsHandlers.js) – switch to server API |
+| Reports & close-shift | [apps/electron/handlers/reportHandlers.js](apps/electron/handlers/reportHandlers.js) – move close-shift logic to server; client calls API |
+| Scans & Secu form | [apps/electron/handlers/scannerHandlers.js](apps/electron/handlers/scannerHandlers.js) – upload to server. Secu form: move from [apps/electron/server/secuFormServer.js](apps/electron/server/secuFormServer.js) to backend; remove from Electron |
+| PDF/Excel generation | [apps/electron/utils/pdfGenerator.js](apps/electron/utils/pdfGenerator.js), [apps/electron/utils/secuFormPdf.js](apps/electron/utils/secuFormPdf.js), [apps/electron/utils/zeiterfassungExcel.js](apps/electron/utils/zeiterfassungExcel.js) – run on server |
+| Electron client | [apps/electron/preload.js](apps/electron/preload.js), handlers, hooks – server URL; replace store/file I/O with API calls |
 | Export app | New: browser app that calls server API to list events and trigger export (ZIP) |
 | Docker / deployment | New: `Dockerfile`, `docker-compose.yml`, `.env.example` |
 

@@ -14,10 +14,13 @@ app.commandLine.appendSwitch('--disable-features', 'VizDisplayCompositor');
 app.commandLine.appendSwitch('--disable-software-rasterizer');
 app.commandLine.appendSwitch('--no-sandbox');
 
-// Enable hot reload in development
+// Enable hot reload in development (electron may live in app dir or at repo root when using workspace)
 if (process.argv.includes('--dev')) {
+  const localElectron = path.join(__dirname, 'node_modules', '.bin', 'electron');
+  const rootElectron = path.join(__dirname, '..', '..', 'node_modules', '.bin', 'electron');
+  const electronPath = fs.existsSync(localElectron) ? localElectron : rootElectron;
   require('electron-reload')(__dirname, {
-    electron: path.join(__dirname, 'node_modules', '.bin', 'electron'),
+    electron: electronPath,
     hardResetMethod: 'exit'
   });
 }

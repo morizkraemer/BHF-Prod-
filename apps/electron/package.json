@@ -1,0 +1,39 @@
+{
+  "name": "nightclub-production-tool",
+  "version": "1.0.0",
+  "description": "Electron app for gathering end-of-shift information at nightclub",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "rm -f .env.build && electron-packager . \"Produktionsübersicht\" --platform=darwin --arch=x64 --icon=assets/icons/icon.icns --out=dist --overwrite",
+    "build:mac": "rm -f .env.build && electron-packager . \"Produktionsübersicht\" --platform=darwin --arch=x64 --icon=assets/icons/icon.icns --out=dist --overwrite",
+    "build:debug": "echo 'DEBUG_MODE=true' > .env.build && electron-packager . \"Produktionsübersicht-debug\" --platform=darwin --arch=x64 --icon=assets/icons/icon.icns --out=dist --overwrite",
+    "build:win": "electron-packager . \"Produktionsübersicht\" --platform=win32 --arch=x64 --icon=assets/icons/icon-1000px.png --out=dist --overwrite",
+    "build:linux": "electron-packager . \"Produktionsübersicht\" --platform=linux --arch=x64 --icon=assets/icons/icon-1000px.png --out=dist --overwrite",
+    "build:all": "npm run build:mac && npm run build:win && npm run build:linux",
+    "preview-report": "electron preview-report.js"
+  },
+  "keywords": [
+    "electron",
+    "nightclub",
+    "production"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@electron/packager": "^19.0.1",
+    "electron": "^34.0.0",
+    "electron-reload": "^2.0.0-alpha.1"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.21.0",
+    "date-fns": "^2.30.0",
+    "electron-store": "^8.1.0",
+    "exceljs": "^4.4.0",
+    "pdf-lib": "^1.17.1",
+    "pdfkit": "^0.14.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}

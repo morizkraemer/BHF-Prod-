@@ -11,6 +11,7 @@ output/
 debug.flag
 .env.build
 backend/.env
+apps/backend/.env
 backend/storage
 
 
