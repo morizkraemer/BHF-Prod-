@@ -8,11 +8,7 @@
   ],
   "scripts": {
     "dev": "npm run dev -w nightclub-production-tool",
-    "dev:electron": "npm run dev -w nightclub-production-tool",
-    "dev:db-viewer": "npm run dev -w db-viewer",
-    "start:electron": "npm run start -w nightclub-production-tool",
-    "start:backend": "npm run start -w produktionstool-api",
-    "build:db-viewer": "npm run build -w db-viewer",
+    "build:docker": "docker compose build && npm run migrate && docker compose up -d ",
     "docker:up": "docker compose up -d --build",
     "docker:down": "docker compose down",
     "docker:clean": "docker compose down -v && docker rm -f produktionstool-adminer-1 produktionstool-pgadmin-1 2>/dev/null || true && docker network rm produktionstool_default 2>/dev/null || true",
