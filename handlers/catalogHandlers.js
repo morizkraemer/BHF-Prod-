@@ -1,15 +1,38 @@
 /**
  * IPC Handlers for Catalog Management
- * Handles rider items, night leads, and bestückung lists
+ * Handles rider items, night leads, and bestückung lists.
+ * When serverUrl is set, uses API client first; falls back to store on error/offline.
  */
+
+const api = require('../api/client');
+
+function getBaseUrl(store) {
+  return (store.get('serverUrl', '') || '').trim();
+}
 
 function registerCatalogHandlers(ipcMain, store) {
   // IPC Handlers for Item Catalog
-  ipcMain.handle('get-rider-items', () => {
+  ipcMain.handle('get-rider-items', async () => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        return await api.getRiderItems(baseUrl);
+      } catch (err) {
+        console.warn('API get-rider-items fallback to store:', err.message);
+      }
+    }
     return store.get('riderExtrasItems', []);
   });
 
-  ipcMain.handle('add-rider-item', (event, item) => {
+  ipcMain.handle('add-rider-item', async (event, item) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        return await api.addRiderItem(baseUrl, item);
+      } catch (err) {
+        console.warn('API add-rider-item fallback to store:', err.message);
+      }
+    }
     const items = store.get('riderExtrasItems', []);
     const newItem = {
       id: Date.now().toString(),
@@ -23,7 +46,15 @@ function registerCatalogHandlers(ipcMain, store) {
     return newItem;
   });
 
-  ipcMain.handle('update-rider-item', (event, itemId, updates) => {
+  ipcMain.handle('update-rider-item', async (event, itemId, updates) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        return await api.updateRiderItem(baseUrl, itemId, updates);
+      } catch (err) {
+        console.warn('API update-rider-item fallback to store:', err.message);
+      }
+    }
     const items = store.get('riderExtrasItems', []);
     const index = items.findIndex(item => item.id === itemId);
     if (index !== -1) {
@@ -34,7 +65,16 @@ function registerCatalogHandlers(ipcMain, store) {
     return null;
   });
 
-  ipcMain.handle('delete-rider-item', (event, itemId) => {
+  ipcMain.handle('delete-rider-item', async (event, itemId) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        await api.deleteRiderItem(baseUrl, itemId);
+        return true;
+      } catch (err) {
+        console.warn('API delete-rider-item fallback to store:', err.message);
+      }
+    }
     const items = store.get('riderExtrasItems', []);
     const filtered = items.filter(item => item.id !== itemId);
     store.set('riderExtrasItems', filtered);
@@ -42,11 +82,27 @@ function registerCatalogHandlers(ipcMain, store) {
   });
 
   // IPC Handlers for Night Leads Catalog
-  ipcMain.handle('get-night-leads', () => {
+  ipcMain.handle('get-night-leads', async () => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        return await api.getNightLeads(baseUrl);
+      } catch (err) {
+        console.warn('API get-night-leads fallback to store:', err.message);
+      }
+    }
     return store.get('nightLeads', []);
   });
 
-  ipcMain.handle('add-night-lead', (event, lead) => {
+  ipcMain.handle('add-night-lead', async (event, lead) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        return await api.addNightLead(baseUrl, lead);
+      } catch (err) {
+        console.warn('API add-night-lead fallback to store:', err.message);
+      }
+    }
     const leads = store.get('nightLeads', []);
     const newLead = {
       id: Date.now().toString(),
@@ -58,7 +114,15 @@ function registerCatalogHandlers(ipcMain, store) {
     return newLead;
   });
 
-  ipcMain.handle('update-night-lead', (event, leadId, updates) => {
+  ipcMain.handle('update-night-lead', async (event, leadId, updates) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        return await api.updateNightLead(baseUrl, leadId, updates);
+      } catch (err) {
+        console.warn('API update-night-lead fallback to store:', err.message);
+      }
+    }
     const leads = store.get('nightLeads', []);
     const index = leads.findIndex(lead => lead.id === leadId);
     if (index !== -1) {
@@ -69,7 +133,16 @@ function registerCatalogHandlers(ipcMain, store) {
     return null;
   });
 
-  ipcMain.handle('delete-night-lead', (event, leadId) => {
+  ipcMain.handle('delete-night-lead', async (event, leadId) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        await api.deleteNightLead(baseUrl, leadId);
+        return true;
+      } catch (err) {
+        console.warn('API delete-night-lead fallback to store:', err.message);
+      }
+    }
     const leads = store.get('nightLeads', []);
     const filtered = leads.filter(lead => lead.id !== leadId);
     store.set('nightLeads', filtered);
@@ -105,19 +178,102 @@ function registerCatalogHandlers(ipcMain, store) {
   }
 
   // Person name catalogs: Secu, Tech (Ton + Licht shared), Andere Mitarbeiter
-  ipcMain.handle('get-secu-names', () => getPersonNames('secuPersonNames'));
-  ipcMain.handle('add-secu-name', (event, name) => addPersonName('secuPersonNames', name));
+  const personNameTypeMap = { secuPersonNames: 'secu', techPersonNames: 'tech', andereMitarbeiterNames: 'andere' };
+  ipcMain.handle('get-secu-names', async () => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        return await api.getPersonNames(baseUrl, 'secu');
+      } catch (err) {
+        console.warn('API get-secu-names fallback to store:', err.message);
+      }
+    }
+    return getPersonNames('secuPersonNames');
+  });
+  ipcMain.handle('add-secu-name', async (event, name) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        const result = await api.addPersonName(baseUrl, 'secu', name);
+        return result || addPersonName('secuPersonNames', name);
+      } catch (err) {
+        console.warn('API add-secu-name fallback to store:', err.message);
+      }
+    }
+    return addPersonName('secuPersonNames', name);
+  });
 
-  ipcMain.handle('get-tech-names', () => getPersonNames('techPersonNames'));
-  ipcMain.handle('add-tech-name', (event, name) => addPersonName('techPersonNames', name));
+  ipcMain.handle('get-tech-names', async () => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        return await api.getPersonNames(baseUrl, 'tech');
+      } catch (err) {
+        console.warn('API get-tech-names fallback to store:', err.message);
+      }
+    }
+    return getPersonNames('techPersonNames');
+  });
+  ipcMain.handle('add-tech-name', async (event, name) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        const result = await api.addPersonName(baseUrl, 'tech', name);
+        return result || addPersonName('techPersonNames', name);
+      } catch (err) {
+        console.warn('API add-tech-name fallback to store:', err.message);
+      }
+    }
+    return addPersonName('techPersonNames', name);
+  });
 
-  ipcMain.handle('get-andere-mitarbeiter-names', () => getPersonNames('andereMitarbeiterNames'));
-  ipcMain.handle('add-andere-mitarbeiter-name', (event, name) => addPersonName('andereMitarbeiterNames', name));
+  ipcMain.handle('get-andere-mitarbeiter-names', async () => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        return await api.getPersonNames(baseUrl, 'andere');
+      } catch (err) {
+        console.warn('API get-andere-mitarbeiter-names fallback to store:', err.message);
+      }
+    }
+    return getPersonNames('andereMitarbeiterNames');
+  });
+  ipcMain.handle('add-andere-mitarbeiter-name', async (event, name) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        const result = await api.addPersonName(baseUrl, 'andere', name);
+        return result || addPersonName('andereMitarbeiterNames', name);
+      } catch (err) {
+        console.warn('API add-andere-mitarbeiter-name fallback to store:', err.message);
+      }
+    }
+    return addPersonName('andereMitarbeiterNames', name);
+  });
 
   // Remove person from all catalogs and clear their wage
-  ipcMain.handle('remove-person-from-catalogs', (event, name) => {
+  ipcMain.handle('remove-person-from-catalogs', async (event, name) => {
     const trimmed = (name || '').trim();
     if (!trimmed) return { removed: false };
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        await api.removePersonName(baseUrl, trimmed);
+        const wages = await api.getPersonWages(baseUrl);
+        const keyLower = trimmed.toLowerCase();
+        let changed = false;
+        for (const k of Object.keys(wages || {})) {
+          if ((k || '').trim().toLowerCase() === keyLower) {
+            delete wages[k];
+            changed = true;
+          }
+        }
+        if (changed) await api.putPersonWages(baseUrl, wages);
+        return { removed: true };
+      } catch (err) {
+        console.warn('API remove-person-from-catalogs fallback to store:', err.message);
+      }
+    }
     removePersonName('secuPersonNames', trimmed);
     removePersonName('techPersonNames', trimmed);
     removePersonName('andereMitarbeiterNames', trimmed);
@@ -131,111 +287,262 @@ function registerCatalogHandlers(ipcMain, store) {
   });
 
   // IPC Handlers for Bestückung Lists
-  ipcMain.handle('get-bestueckung-lists', () => {
-    return store.get('bestueckungLists', {
-      'standard-konzert': [],
-      'standard-tranzit': []
-    });
+  const BESTUECKUNG_KEYS = ['standard-konzert', 'standard-tranzit'];
+  ipcMain.handle('get-bestueckung-lists', async () => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        const out = {};
+        for (const key of BESTUECKUNG_KEYS) {
+          const data = await api.getBestueckungList(baseUrl, key);
+          out[key] = (data && data.items) ? data.items : [];
+        }
+        return out;
+      } catch (err) {
+        console.warn('API get-bestueckung-lists fallback to store:', err.message);
+      }
+    }
+    return store.get('bestueckungLists', { 'standard-konzert': [], 'standard-tranzit': [] });
   });
 
-  ipcMain.handle('get-bestueckung-list', (event, bestueckungKey) => {
-    const lists = store.get('bestueckungLists', {
-      'standard-konzert': [],
-      'standard-tranzit': []
-    });
+  ipcMain.handle('get-bestueckung-list', async (event, bestueckungKey) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        const data = await api.getBestueckungList(baseUrl, bestueckungKey);
+        return (data && data.items) ? data.items : [];
+      } catch (err) {
+        console.warn('API get-bestueckung-list fallback to store:', err.message);
+      }
+    }
+    const lists = store.get('bestueckungLists', { 'standard-konzert': [], 'standard-tranzit': [] });
     return lists[bestueckungKey] || [];
   });
 
-  ipcMain.handle('save-bestueckung-list', (event, bestueckungKey, items) => {
-    const lists = store.get('bestueckungLists', {
-      'standard-konzert': [],
-      'standard-tranzit': []
-    });
-    lists[bestueckungKey] = items;
+  ipcMain.handle('save-bestueckung-list', async (event, bestueckungKey, items) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        await api.putBestueckungList(baseUrl, bestueckungKey, { items: items || [] });
+        return true;
+      } catch (err) {
+        console.warn('API save-bestueckung-list fallback to store:', err.message);
+      }
+    }
+    const lists = store.get('bestueckungLists', { 'standard-konzert': [], 'standard-tranzit': [] });
+    lists[bestueckungKey] = items || [];
     store.set('bestueckungLists', lists);
     return true;
   });
 
-  ipcMain.handle('add-bestueckung-item', (event, bestueckungKey, riderItemId, amount) => {
-    const lists = store.get('bestueckungLists', {
-      'standard-konzert': [],
-      'standard-tranzit': []
-    });
-    if (!lists[bestueckungKey]) {
-      lists[bestueckungKey] = [];
+  ipcMain.handle('add-bestueckung-item', async (event, bestueckungKey, riderItemId, amount) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        const data = await api.getBestueckungList(baseUrl, bestueckungKey);
+        const items = (data && data.items) ? [...data.items] : [];
+        if (items.some(item => item.riderItemId === riderItemId)) return false;
+        items.push({ riderItemId, amount: parseFloat(amount) || 1 });
+        await api.putBestueckungList(baseUrl, bestueckungKey, { items });
+        return true;
+      } catch (err) {
+        console.warn('API add-bestueckung-item fallback to store:', err.message);
+      }
     }
-    // Check if item already exists
-    if (lists[bestueckungKey].some(item => item.riderItemId === riderItemId)) {
-      return false; // Item already in list
-    }
+    const lists = store.get('bestueckungLists', { 'standard-konzert': [], 'standard-tranzit': [] });
+    if (!lists[bestueckungKey]) lists[bestueckungKey] = [];
+    if (lists[bestueckungKey].some(item => item.riderItemId === riderItemId)) return false;
     lists[bestueckungKey].push({ riderItemId, amount: parseFloat(amount) || 1 });
     store.set('bestueckungLists', lists);
     return true;
   });
 
-  ipcMain.handle('update-bestueckung-item', (event, bestueckungKey, oldRiderItemId, updates) => {
-    const lists = store.get('bestueckungLists', {
-      'standard-konzert': [],
-      'standard-tranzit': []
-    });
-    if (!lists[bestueckungKey]) {
-      return false;
+  ipcMain.handle('update-bestueckung-item', async (event, bestueckungKey, oldRiderItemId, updates) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        const data = await api.getBestueckungList(baseUrl, bestueckungKey);
+        const items = (data && data.items) ? [...data.items] : [];
+        const idx = items.findIndex(item => item.riderItemId === oldRiderItemId);
+        if (idx === -1) return false;
+        items[idx] = { ...items[idx], ...updates };
+        await api.putBestueckungList(baseUrl, bestueckungKey, { items });
+        return true;
+      } catch (err) {
+        console.warn('API update-bestueckung-item fallback to store:', err.message);
+      }
     }
+    const lists = store.get('bestueckungLists', { 'standard-konzert': [], 'standard-tranzit': [] });
+    if (!lists[bestueckungKey]) return false;
     const itemIndex = lists[bestueckungKey].findIndex(item => item.riderItemId === oldRiderItemId);
-    if (itemIndex === -1) {
-      return false;
-    }
+    if (itemIndex === -1) return false;
     lists[bestueckungKey][itemIndex] = { ...lists[bestueckungKey][itemIndex], ...updates };
     store.set('bestueckungLists', lists);
     return true;
   });
 
-  ipcMain.handle('delete-bestueckung-item', (event, bestueckungKey, riderItemId) => {
-    const lists = store.get('bestueckungLists', {
-      'standard-konzert': [],
-      'standard-tranzit': []
-    });
-    if (!lists[bestueckungKey]) {
-      return false;
+  ipcMain.handle('delete-bestueckung-item', async (event, bestueckungKey, riderItemId) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        const data = await api.getBestueckungList(baseUrl, bestueckungKey);
+        const items = (data && data.items) ? data.items.filter(item => item.riderItemId !== riderItemId) : [];
+        await api.putBestueckungList(baseUrl, bestueckungKey, { items });
+        return true;
+      } catch (err) {
+        console.warn('API delete-bestueckung-item fallback to store:', err.message);
+      }
     }
+    const lists = store.get('bestueckungLists', { 'standard-konzert': [], 'standard-tranzit': [] });
+    if (!lists[bestueckungKey]) return false;
     lists[bestueckungKey] = lists[bestueckungKey].filter(item => item.riderItemId !== riderItemId);
     store.set('bestueckungLists', lists);
     return true;
   });
 
-  // IPC Handlers for Bestückung Total Prices
-  ipcMain.handle('get-bestueckung-total-prices', () => {
-    return store.get('bestueckungTotalPrices', {
-      'standard-konzert': '',
-      'standard-tranzit': ''
-    });
+  // Bestückung Total Prices (stored in settings on backend)
+  ipcMain.handle('get-bestueckung-total-prices', async () => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        const all = await api.getSettings(baseUrl);
+        const prices = (all && all.bestueckungTotalPrices) ? all.bestueckungTotalPrices : {};
+        return { 'standard-konzert': prices['standard-konzert'] ?? '', 'standard-tranzit': prices['standard-tranzit'] ?? '' };
+      } catch (err) {
+        console.warn('API get-bestueckung-total-prices fallback to store:', err.message);
+      }
+    }
+    return store.get('bestueckungTotalPrices', { 'standard-konzert': '', 'standard-tranzit': '' });
   });
 
-  ipcMain.handle('save-bestueckung-total-price', (event, bestueckungKey, price) => {
-    const prices = store.get('bestueckungTotalPrices', {
-      'standard-konzert': '',
-      'standard-tranzit': ''
-    });
+  ipcMain.handle('save-bestueckung-total-price', async (event, bestueckungKey, price) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        const all = await api.getSettings(baseUrl);
+        const prices = (all && all.bestueckungTotalPrices) ? { ...all.bestueckungTotalPrices } : {};
+        prices[bestueckungKey] = price;
+        await api.setSetting(baseUrl, 'bestueckungTotalPrices', prices);
+        return true;
+      } catch (err) {
+        console.warn('API save-bestueckung-total-price fallback to store:', err.message);
+      }
+    }
+    const prices = store.get('bestueckungTotalPrices', { 'standard-konzert': '', 'standard-tranzit': '' });
     prices[bestueckungKey] = price;
     store.set('bestueckungTotalPrices', prices);
     return true;
   });
 
-  // IPC Handlers for Bestückung Pricing Types
-  ipcMain.handle('get-bestueckung-pricing-types', () => {
-    return store.get('bestueckungPricingTypes', {
-      'standard-konzert': 'pauschale',
-      'standard-tranzit': 'pauschale'
-    });
+  ipcMain.handle('get-bestueckung-pricing-types', async () => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        const all = await api.getSettings(baseUrl);
+        const types = (all && all.bestueckungPricingTypes) ? all.bestueckungPricingTypes : {};
+        return { 'standard-konzert': types['standard-konzert'] ?? 'pauschale', 'standard-tranzit': types['standard-tranzit'] ?? 'pauschale' };
+      } catch (err) {
+        console.warn('API get-bestueckung-pricing-types fallback to store:', err.message);
+      }
+    }
+    return store.get('bestueckungPricingTypes', { 'standard-konzert': 'pauschale', 'standard-tranzit': 'pauschale' });
   });
 
-  ipcMain.handle('save-bestueckung-pricing-type', (event, bestueckungKey, pricingType) => {
-    const types = store.get('bestueckungPricingTypes', {
-      'standard-konzert': 'pauschale',
-      'standard-tranzit': 'pauschale'
-    });
+  ipcMain.handle('save-bestueckung-pricing-type', async (event, bestueckungKey, pricingType) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        const all = await api.getSettings(baseUrl);
+        const types = (all && all.bestueckungPricingTypes) ? { ...all.bestueckungPricingTypes } : {};
+        types[bestueckungKey] = pricingType;
+        await api.setSetting(baseUrl, 'bestueckungPricingTypes', types);
+        return true;
+      } catch (err) {
+        console.warn('API save-bestueckung-pricing-type fallback to store:', err.message);
+      }
+    }
+    const types = store.get('bestueckungPricingTypes', { 'standard-konzert': 'pauschale', 'standard-tranzit': 'pauschale' });
     types[bestueckungKey] = pricingType;
     store.set('bestueckungPricingTypes', types);
+    return true;
+  });
+
+  // Wage options and person wages (catalogs on backend)
+  ipcMain.handle('get-wage-options', async () => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        const list = await api.getWageOptions(baseUrl);
+        return Array.isArray(list) ? list : [];
+      } catch (err) {
+        console.warn('API get-wage-options fallback to store:', err.message);
+      }
+    }
+    return store.get('wageOptions', []);
+  });
+
+  ipcMain.handle('save-wage-options', async (event, options) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        await api.putWageOptions(baseUrl, Array.isArray(options) ? options : []);
+        return true;
+      } catch (err) {
+        console.warn('API save-wage-options fallback to store:', err.message);
+      }
+    }
+    store.set('wageOptions', Array.isArray(options) ? options : []);
+    return true;
+  });
+
+  ipcMain.handle('get-person-wage', async (event, name) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        const wages = await api.getPersonWages(baseUrl);
+        const key = (name || '').trim();
+        return key ? (wages && wages[key]) ?? '' : '';
+      } catch (err) {
+        console.warn('API get-person-wage fallback to store:', err.message);
+      }
+    }
+    const wages = store.get('personWages', {});
+    const key = (name || '').trim();
+    return key ? (wages[key] ?? '') : '';
+  });
+
+  ipcMain.handle('get-person-wages', async () => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        return await api.getPersonWages(baseUrl) || {};
+      } catch (err) {
+        console.warn('API get-person-wages fallback to store:', err.message);
+      }
+    }
+    return store.get('personWages', {});
+  });
+
+  ipcMain.handle('set-person-wage', async (event, name, wageOption) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        const wages = await api.getPersonWages(baseUrl) || {};
+        const key = (name || '').trim();
+        if (key) {
+          wages[key] = (wageOption == null ? '' : String(wageOption).trim());
+          await api.putPersonWages(baseUrl, wages);
+        }
+        return true;
+      } catch (err) {
+        console.warn('API set-person-wage fallback to store:', err.message);
+      }
+    }
+    const key = (name || '').trim();
+    if (!key) return true;
+    const wages = store.get('personWages', {});
+    wages[key] = (wageOption == null ? '' : String(wageOption).trim());
+    store.set('personWages', wages);
     return true;
   });
 }

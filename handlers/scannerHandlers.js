@@ -9,6 +9,7 @@ const {
   classifyScannerError,
   execFileAsync
 } = require('../utils/scannerUtils');
+const api = require('../api/client');
 
 /**
  * IPC Handlers for Scanner Management
@@ -493,7 +494,25 @@ function registerScannerHandlers(ipcMain, store, mainWindow, dialog) {
             
             // Log file info (not the binary data!)
             console.log('Scan completed successfully:', outputFilename, `(${Math.round(stats.size / 1024)}KB)`);
-            
+
+            // Upload to server when serverUrl is set and we have a current event
+            const serverUrl = (store.get('serverUrl', '') || '').trim();
+            if (serverUrl) {
+              try {
+                const currentEvent = await api.getCurrentEventFull(serverUrl);
+                if (currentEvent && currentEvent.id) {
+                  await api.uploadEventDocument(serverUrl, currentEvent.id, outputPath, {
+                    type: 'scan',
+                    sectionOrName: scanName || 'scan',
+                    contentType: outputPath.endsWith('.pdf') ? 'application/pdf' : 'image/png'
+                  });
+                  console.log('Scan uploaded to server for event', currentEvent.id);
+                }
+              } catch (uploadErr) {
+                console.warn('Scan upload to server failed (file saved locally):', uploadErr.message);
+              }
+            }
+
             // Reset scan state
             scanInProgress = false;
             currentScanInfo = null;

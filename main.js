@@ -8,7 +8,6 @@ const { registerSettingsHandlers } = require('./handlers/settingsHandlers');
 const { registerScannerHandlers } = require('./handlers/scannerHandlers');
 const { registerReportHandlers } = require('./handlers/reportHandlers');
 const { registerDataHandlers } = require('./handlers/dataHandlers');
-const { createLanFormServer } = require('./server/secuFormServer');
 
 // Add V8 flags for macOS 15.6 compatibility
 app.commandLine.appendSwitch('--disable-features', 'VizDisplayCompositor');
@@ -110,11 +109,7 @@ app.whenReady().then(() => {
     return dialog.showMessageBox(win || BrowserWindow.getAllWindows()[0], options);
   });
 
-  try {
-    createLanFormServer(settingsStore, shiftDataStore);
-  } catch (err) {
-    console.error('LAN form server failed to start:', err);
-  }
+  // Secu form is served by the backend at /forms/secu when serverUrl is set
 
   // Check if NAPS2 is installed (only on macOS)
   if (process.platform === 'darwin') {

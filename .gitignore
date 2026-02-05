@@ -10,5 +10,7 @@ output/
 .idea/
 debug.flag
 .env.build
+backend/.env
+backend/storage
 
 

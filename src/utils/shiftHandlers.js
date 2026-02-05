@@ -124,7 +124,8 @@ const createShiftHandlers = ({
           setShiftStarted(false);
           setShiftStartTime(null);
           
-          alert(`Schicht erfolgreich beendet!\n\nReport gespeichert in:\n${result.eventFolder}\n\nPDF: ${result.pdfPath.split('/').pop()}\nGescannte PDFs: ${result.scannedPDFsCount}`);
+          const pdfName = result.pdfPath ? result.pdfPath.split('/').pop() : '';
+          alert(`Schicht erfolgreich beendet!\n\nReport gespeichert in:\n${result.eventFolder || ''}\n\nPDF: ${pdfName}\nGescannte PDFs: ${result.scannedPDFsCount ?? 0}`);
         } else {
           alert('Fehler beim Speichern der Schicht.');
         }

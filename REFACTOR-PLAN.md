@@ -68,11 +68,7 @@ flowchart LR
 - Add a **Node server** with **Express** in the repo (e.g. `server/` or a new `backend/`).
 - **Database: Postgres** (separate container in Docker; use volume for persistence).
 - **Documents: on disk** – server writes PDFs/Excel to a configured directory (Docker volume or bind mount); DB stores **file path** and metadata only (event_id, type, section_or_name, content_type). No blobs in DB.
-- **Schema (conceptual)**:
-  - **Events/shifts**: id, eventName, date, doorsTime, phase, formData (JSON or normalized tables), createdAt, etc.
-  - **Catalogs**: rider_items, night_leads, person_names (type: secu/tech/andere), bestueckung_lists, wage_options, person_wages, tech_names, prices (catering, pauschale, bestueckung).
-  - **Settings**: template paths (or uploads stored on disk), optional folder-path preferences for export app.
-  - **Documents**: event_id, type (scan/report/section/einkaufsbeleg/zeiterfassung), section_or_name, **file_path** (relative or absolute on server), content_type. Enough for the export app to know which file goes where in the folder structure.
+- **Schema (conceptual)** – see **Database layout** below for the full table design.
 
 ### 2. API surface (server)
 
@@ -112,6 +108,46 @@ flowchart LR
 
 ---
 
+## Database layout
+
+**Approach: hybrid** – core event fields as real columns (reliable, queryable); the rest of the form as one JSONB column (evolvable without migrations while the app is under constant development).
+
+### Events
+
+**Table: `events`**
+
+- **Columns (queryable, stable):** `id` (UUID PK), `event_name` (TEXT), `event_date` (DATE), `doors_time` (TEXT nullable), `phase` (TEXT: `VVA` | `SL` | `closed`), `created_at`, `updated_at` (TIMESTAMPTZ).
+- **JSONB:** `form_data` – full form payload (all sections: uebersicht, rider-extras, tontechniker, secu, andere-mitarbeiter, gaeste, kassen). Matches the app’s in-memory shape; new fields/sections only change the app, not the DB schema.
+- **Current event:** latest row with `phase != 'closed'` (or later a `current_event_id` in settings).
+
+**Rationale:** List/filter events by date, name, phase with simple SQL. Form structure can evolve without migrations; deeper queries (e.g. inside form_data) use JSONB path when needed.
+
+### Catalogs
+
+- **`rider_items`** – id (UUID), name, price, ek_price nullable, created_at. From settingsStore `riderExtrasItems`.
+- **`night_leads`** – id (UUID), name, created_at. From `nightLeads`.
+- **`person_names`** – id (UUID), type (`secu` | `tech` | `andere`), name, created_at. Single table for all three catalogs.
+- **`bestueckung_lists`** – list_key (PK, e.g. `standard-konzert`), total_price, pricing_type.
+- **`bestueckung_list_items`** – list_key (FK), rider_item_id (FK), amount; PK (list_key, rider_item_id).
+- **`wage_options`** – id (UUID), label (e.g. `25 €/h`), sort_order optional.
+- **`person_wages`** – person_name_key (PK), wage_option_label. From settingsStore `personWages`.
+
+### Settings
+
+- **`settings`** – key (TEXT PK), value (JSONB). One row per key: `techNames`, `templates`, `scanFolder`, `reportFolder`, `einkaufsbelegeFolder`, `zeiterfassungExcelFolder`, `selectedScanner`, `cateringPrices`, `pauschalePrices`. Mirrors flat store; no extra tables for app config.
+
+### Documents
+
+- **`documents`** – id (UUID PK), event_id (FK → events), type (`scan` | `report` | `section` | `einkaufsbeleg` | `zeiterfassung`), section_or_name (TEXT nullable), file_path (TEXT, relative to STORAGE_PATH), content_type (TEXT nullable), metadata (JSONB optional, e.g. source, scanName), created_at. No file blobs in DB.
+
+### Indexes
+
+- `events(phase)`, `events(event_date)` – current event and listing.
+- `documents(event_id)` – list documents per event.
+- `person_names(type)` – filter by catalog type.
+
+---
+
 ## Step-by-step implementation plan
 
 Order of work: **Phase 1** (backend + Docker) → **Phase 2** (Electron as client) → **Phase 3** (export app) → **Phase 4** (migration) when needed.
@@ -119,25 +155,25 @@ Order of work: **Phase 1** (backend + Docker) → **Phase 2** (Electron as clien
 ### Progress – tick when done (`[x]`):
 
 - **Phase 1: Backend**
-  - [ ] 1. Backend project structure
-  - [ ] 2. Postgres schema and migrations
-  - [ ] 3. Storage directory
-  - [ ] 4. API: health and config
-  - [ ] 5. API: catalogs and settings
-  - [ ] 6. API: events/shifts
-  - [ ] 7. API: documents
-  - [ ] 8. Secu form on backend
-  - [ ] 9. API: close-shift
-  - [ ] 10. Docker (Dockerfile + docker-compose)
+  - [x] 1. Backend project structure
+  - [x] 2. Postgres schema and migrations
+  - [x] 3. Storage directory
+  - [x] 4. API: health and config
+  - [x] 5. API: catalogs and settings
+  - [x] 6. API: events/shifts
+  - [x] 7. API: documents
+  - [x] 8. Secu form on backend
+  - [x] 9. API: close-shift
+  - [x] 10. Docker (Dockerfile + docker-compose)
 - **Phase 2: Electron client**
-  - [ ] 11. Server URL in Electron
-  - [ ] 12. API client in main process
-  - [ ] 13. Handlers: catalogs and settings
-  - [ ] 14. Handlers: shift data
-  - [ ] 15. Scanner: upload to server
-  - [ ] 16. Close-shift: call server
-  - [ ] 17. Remove Secu form server from Electron
-  - [ ] 18. Preload and renderer
+  - [x] 11. Server URL in Electron
+  - [x] 12. API client in main process
+  - [x] 13. Handlers: catalogs and settings
+  - [x] 14. Handlers: shift data
+  - [x] 15. Scanner: upload to server
+  - [x] 16. Close-shift: call server
+  - [x] 17. Remove Secu form server from Electron
+  - [x] 18. Preload and renderer
 - **Phase 3: Export app**
   - [ ] 19. Export API on server
   - [ ] 20. Export web app
@@ -151,21 +187,52 @@ Order of work: **Phase 1** (backend + Docker) → **Phase 2** (Electron as clien
 
 ### Phase 1: Backend server and database
 
-1. **Backend project structure** – Create backend (e.g. `backend/`). Add `package.json`, install Express, pg, multer. Single entry point (e.g. `backend/index.js`) that starts the HTTP server.
-2. **Postgres schema and migrations** – Define schema: events, catalogs, settings, documents. Raw SQL migrations in `backend/migrations/` (e.g. `001_initial.sql`); run in order via small Node script or `psql`. Use **pg** for all queries (parameterized: `$1`, `$2`).
-3. **Storage directory** – Env var `STORAGE_PATH`. On startup, ensure directory exists. All PDF/Excel writes go under this root; DB stores paths relative to it.
-4. **API: health and config** – `GET /api/health`, `GET /api/current-event` for Secu form (event name/date/doors). No auth for now.
-5. **API: catalogs and settings** – CRUD for rider items, night leads, person names (by type), bestueckung, wages, prices, tech names, templates. Mirror current store shape.
-6. **API: events/shifts** – `GET /api/events`, `GET /api/events/current`, `POST /api/events`, `GET /api/events/:id`, `PATCH /api/events/:id` (formData, phase).
-7. **API: documents** – `POST /api/events/:id/documents` (multipart), save to STORAGE_PATH, insert document row. `GET /api/events/:id/documents`, `GET /api/documents/:id` (stream file).
-8. **Secu form on backend** – Serve static form at `GET /forms/secu`. `POST /api/forms/secu/submit`: accept JSON, get current event, generate PDF (secuFormPdf), write to storage, insert document row.
-9. **API: close-shift** – `POST /api/events/:id/close` with full formData. Server: generate report PDF, section PDFs, Zeiterfassung Excel; write to storage; insert document rows; set event phase to closed.
-10. **Docker** – Dockerfile for Node backend; docker-compose: api + postgres, volumes for DB and document storage. `.env.example`: PORT, DATABASE_URL, STORAGE_PATH. Run `docker compose up -d`; verify with `GET /api/health`.
+1. **Backend project structure** – Create backend (e.g. `backend/`). Add `package.json`, install Express, pg, multer. Single entry point (e.g. `backend/index.js`) that starts the HTTP server.  
+   **Done:** `backend/`, `backend/package.json` (express, pg, multer), `backend/index.js` (Express, `GET /api/health`), `backend/.env.example`; `.gitignore` updated.
+2. **Postgres schema and migrations** – Define schema: events, catalogs, settings, documents. Raw SQL migrations in `backend/migrations/` (e.g. `001_initial.sql`); run in order via small Node script or `psql`. Use **pg** for all queries (parameterized: `$1`, `$2`).  
+   **Done:** `backend/migrations/001_initial.sql` (events with columns + form_data JSONB, rider_items, night_leads, person_names, bestueckung_lists, bestueckung_list_items, wage_options, person_wages, settings, documents; indexes; seed bestueckung list keys). `backend/migrate.js` (creates schema_migrations, runs .sql in order). `npm run migrate`; dotenv for DATABASE_URL.
+3. **Storage directory** – Env var `STORAGE_PATH`. On startup, ensure directory exists. All PDF/Excel writes go under this root; DB stores paths relative to it.  
+   **Done:** `backend/index.js` loads dotenv; resolves `STORAGE_PATH` (default `./storage`), ensures dir exists on startup via `fs.mkdir(..., { recursive: true })`; sets `app.locals.storagePath` for routes.
+4. **API: health and config** – `GET /api/health`, `GET /api/current-event` for Secu form (event name/date/doors). No auth for now.  
+   **Done:** `backend/db.js` (getPool, getCurrentEvent, checkDb). `GET /api/health` returns `{ ok: true, db }` (db = DB reachable). `GET /api/current-event` returns `{ currentEvent: { id, eventName, eventDate, doorsTime } }` or `{ currentEvent: null }`; 500 on DB error.
+5. **API: catalogs and settings** – CRUD for rider items, night leads, person names (by type), bestueckung, wages, prices, tech names, templates. Mirror current store shape.  
+   **Done:** `backend/routes/catalogs.js`: rider-items (GET, POST, PATCH, DELETE), night-leads (GET, POST, PATCH, DELETE), person-names/:type (GET, POST), person-names/remove (POST), bestueckung-lists (GET all, GET :key, PUT :key, PATCH :key/meta), wage-options (GET, PUT), person-wages (GET, PUT). `backend/routes/settings.js`: GET /, GET /:key, PUT /:key (key-value JSONB). Mounted at /api/catalogs and /api/settings.
+6. **API: events/shifts** – `GET /api/events`, `GET /api/events/current`, `POST /api/events`, `GET /api/events/:id`, `PATCH /api/events/:id` (formData, phase).  
+   **Done:** `backend/routes/events.js`: GET / (list, newest first), GET /current (full current open event), POST / (create), GET /:id (one event), PATCH /:id (formData, currentPhase/phase; syncs event_name, event_date, doors_time from form_data.uebersicht). Mounted at /api/events. Response shape: camelCase (eventName, eventDate, doorsTime, formData, createdAt, updatedAt).
+7. **API: documents** – `POST /api/events/:id/documents` (multipart), save to STORAGE_PATH, insert document row. `GET /api/events/:id/documents`, `GET /api/documents/:id` (stream file).  
+   **Done:** `backend/routes/documents.js`: GET /api/documents/:id (stream file from storage, Content-Type from row). `backend/routes/events.js`: GET /api/events/:eventId/documents (list documents for event), POST /api/events/:eventId/documents (multer.single('file'), save under STORAGE_PATH/events/:eventId/, insert row with type/sectionOrName/metadata; optional body fields type, sectionOrName, metadata). Response shape: camelCase (id, eventId, type, sectionOrName, filePath, contentType, metadata, createdAt). File size limit 50MB.
+8. **Secu form on backend** – Serve static form at `GET /forms/secu`. `POST /api/forms/secu/submit`: accept JSON, get current event, generate PDF (secuFormPdf), write to storage, insert document row.  
+   **Done:** Added `pdf-lib` and `backend/utils/secuFormPdf.js` (copy of repo). `backend/routes/secuForm.js`: POST /api/forms/secu/submit and POST /api/secu-submit (same handler), GET /api/secu-names (person names type secu), POST /api/secu-add-name. Submit: get current event from DB, generate PDF, write to STORAGE_PATH/events/:eventId/Secuzettel-{timestamp}.pdf, insert document row (type section, section_or_name secu), add submitted names to person_names (type secu). Static form: `backend/public/secu/` (index.html, style.css, SecuFormMobile.jsx patched for current-event response shape) and `backend/public/src/` (forms.css, nameSimilarity.js, PersonNameSelect.jsx). GET /forms/secu and GET /forms/secu/ serve form; express.static(public) serves /secu/* and /src/*.
+9. **API: close-shift** – `POST /api/events/:id/close` with full formData. Server: generate report PDF, section PDFs, Zeiterfassung Excel; write to storage; insert document rows; set event phase to closed.  
+   **Done:** `backend/services/closeShift.js`: runCloseShift loads event, collects scanned docs from formData + documents table (id/filePath), creates STORAGE_PATH/reports/{date}_{eventName}/, groups scans by section (getSectionName), merges PDFs (pdf-lib), writes section PDFs, inserts document rows (type section); Zeiterfassung: build/append workbook (zeiterfassungExcel), write to storage/zeiterfassung/Zeiterfassung-YYYY-MM.xlsx, insert document row (type zeiterfassung); set event phase to closed. `backend/utils/zeiterfassungExcel.js` (copy, exceljs). POST /api/events/:id/close in events.js. **Report PDF** (HTML→PDF) deferred to Phase 3 export app or Puppeteer follow-up.
+10. **Docker** – Dockerfile for Node backend; docker-compose: api + postgres, volumes for DB and document storage. `.env.example`: PORT, DATABASE_URL, STORAGE_PATH. Run `docker compose up -d`; verify with `GET /api/health`.  
+   **Done:** `backend/Dockerfile` (Node 20 Alpine, npm ci --omit=dev, CMD: migrate then node index.js). `docker-compose.yml` at repo root: api (build backend/, **port 3001:3000** so host 3000 can stay free; DATABASE_URL + STORAGE_PATH; volume storage_data), postgres (postgres:16-alpine, healthcheck pg_isready), depends_on postgres healthy. Optional dev UIs: adminer (port 8081), pgadmin (port 8080). Volumes: postgres_data, storage_data. `backend/.dockerignore` added. `backend/.env.example` curl example uses port 3001 (host). Verified: `docker compose build api`, `docker compose up -d`, `curl http://localhost:3001/api/health` → `{"ok":true,"db":true}`, `curl http://localhost:3001/api/current-event` → `{"currentEvent":null}`.
+
+---
+
+## What we did (Phase 1 so far)
+
+| Step | What we did |
+|------|-------------|
+| **1** | Created `backend/` with `package.json` (express, pg, multer), `index.js` (Express, `GET /api/health`), `.env.example`. Updated `.gitignore`. |
+| **2** | Added `backend/migrations/001_initial.sql` (events, rider_items, night_leads, person_names, bestueckung_lists/items, wage_options, person_wages, settings, documents; indexes; seed bestueckung keys). Added `backend/migrate.js` (schema_migrations, run .sql in order). `npm run migrate`; dotenv for DATABASE_URL. |
+| **3** | In `backend/index.js`: dotenv, resolve `STORAGE_PATH` (default `./storage`), ensure dir on startup, `app.locals.storagePath`. Added `backend/storage` to `.gitignore`. |
+| **4** | Added `backend/db.js` (getPool, getCurrentEvent, checkDb). `GET /api/health` → `{ ok: true, db }`. `GET /api/current-event` → `{ currentEvent: { id, eventName, eventDate, doorsTime } }` or `{ currentEvent: null }`. |
+| **10** | Added `backend/Dockerfile` (Node 20 Alpine, npm ci --omit=dev, CMD: migrate then node index.js). Added `docker-compose.yml` at repo root: **api** (build backend/, port **3001:3000**, DATABASE_URL, STORAGE_PATH, volume storage_data), **postgres** (postgres:16-alpine, healthcheck), depends_on postgres healthy. Optional: **adminer** (8081), **pgadmin** (8080). Volumes: postgres_data, storage_data. Added `backend/.dockerignore`. `backend/.env.example` documents host port 3001. Verified: `docker compose up -d` then `curl localhost:3001/api/health` and `/api/current-event`. |
+| **5** | Added `backend/routes/catalogs.js`: rider-items, night-leads, person-names (by type + remove), bestueckung-lists (GET all/:key, PUT :key, PATCH :key/meta), wage-options, person-wages. Added `backend/routes/settings.js`: GET /, GET /:key, PUT /:key (key-value JSONB). Mounted at /api/catalogs and /api/settings. Verified: GET/POST rider-items, GET bestueckung-lists, GET/PUT settings/techNames. |
+| **6** | Added `backend/routes/events.js`: GET /api/events (list), GET /api/events/current (full current event), POST /api/events (create), GET /api/events/:id, PATCH /api/events/:id (formData, currentPhase; syncs core columns from form_data.uebersicht). Mounted at /api/events. |
+| **7** | Added `backend/routes/documents.js`: GET /api/documents/:id (stream file). Added GET/POST /api/events/:eventId/documents in events.js (list, upload with multer; files under STORAGE_PATH/events/:eventId/; optional type, sectionOrName, metadata). Mounted documents router at /api/documents. |
+| **8** | Secu form on backend: added pdf-lib, backend/utils/secuFormPdf.js; backend/routes/secuForm.js (POST /api/forms/secu/submit, POST /api/secu-submit, GET /api/secu-names, POST /api/secu-add-name). Submit gets current event, generates PDF, writes to storage, inserts document row, adds names to person_names (secu). backend/public/secu/ and backend/public/src/ for form static files; GET /forms/secu serves form; static serves /secu/* and /src/*. SecuFormMobile.jsx patched for backend current-event response (currentEvent, eventDate). |
+| **9** | Close-shift: added exceljs, backend/utils/zeiterfassungExcel.js; backend/services/closeShift.js (runCloseShift: collect scanned docs from formData + documents table, create reports/{date}_{eventName}/, merge section PDFs with pdf-lib, write section PDFs + insert document rows; Zeiterfassung build/append, write to storage/zeiterfassung/, insert document row; set phase closed). POST /api/events/:id/close in events.js. Report PDF (HTML→PDF) deferred to Phase 3. |
+
+**Run the stack:** From repo root: `docker compose up -d`. API: `http://localhost:3001`. To stop: `docker compose down`.
 
 ### Phase 2: Electron app as client
 
-11. **Server URL in Electron** – Add "Server URL" to settings (persist in electron-store). Default e.g. `http://localhost:3000` for dev.
-12. **API client in main process** – New module: given base URL, implement fetch wrappers for all backend endpoints (catalogs, settings, events, documents, close-shift). Handle errors and offline.
+11. **Server URL in Electron** – Add "Server URL" to settings (persist in electron-store). Default e.g. `http://localhost:3000` for dev.  
+   **Done:** `config/store.js`: added `serverUrl` default `http://localhost:3001`. `handlers/settingsHandlers.js`: get-server-url, set-server-url. `preload.js`: getServerUrl, setServerUrl. `SettingsForm.jsx`: Server-URL (API) field in Scanner section (input + Speichern); load on mount, save on blur/click.
+12. **API client in main process** – New module: given base URL, implement fetch wrappers for all backend endpoints (catalogs, settings, events, documents, close-shift). Handle errors and offline.  
+   **Done:** `api/client.js`: ensureBaseUrl; health/current-event; rider-items (GET/POST/PATCH/DELETE), night-leads (GET/POST/PATCH/DELETE), person-names (GET/POST by type, remove), bestueckung-lists (GET, GET/:key, PUT/:key, PATCH/:key/meta), wage-options (GET/PUT), person-wages (GET/PUT); settings (GET, GET/:key, PUT/:key); events (GET, GET/current, GET/:id, POST, PATCH/:id, POST/:id/close); documents (GET events/:id/documents, POST upload with FormData, getDocumentUrl(id)). All methods throw on no baseUrl or network/!res.ok; caller can catch and fall back to store.
 13. **Handlers: catalogs and settings** – If server URL set, call API client instead of store; same IPC channel names. Optional fallback to store when offline.
 14. **Handlers: shift data** – save-data → API PATCH (debounced 2–3 s); load-data → API GET current event; clear-shift-data → API or local reset. Cache last synced formData for offline display; retry on failure.
 15. **Scanner: upload to server** – After NAPS2, upload PDF via API client to current event's documents; return document id to renderer. Form stores server document id instead of local path.
@@ -203,6 +270,7 @@ Order of work: **Phase 1** (backend + Docker) → **Phase 2** (Electron as clien
 ## Decisions (locked in)
 
 - **DB**: Postgres.
+- **Events schema**: **Hybrid** – core fields (event_name, event_date, doors_time, phase) as columns; full form payload as `form_data` JSONB. Reliable + queryable for listing/filtering; evolvable without migrations.
 - **PDFs/scans**: On server disk (paths in DB).
 - **Electron app**: Unchanged as main app (same forms, UI, flow); **data** moves off the machine – it's a client talking to the server API.
 - **Export**: Separate browser app that reads the DB (via API) and creates the folders (ZIP or write to path via server).

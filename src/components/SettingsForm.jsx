@@ -22,6 +22,7 @@ function SettingsForm() {
   const [scanners, setScanners] = useState([]);
   const [selectedScanner, setSelectedScanner] = useState(null);
   const [loadingScanners, setLoadingScanners] = useState(false);
+  const [serverUrl, setServerUrl] = useState('');
   const [scanFolder, setScanFolder] = useState(null);
   const [reportFolder, setReportFolder] = useState(null);
   const [einkaufsbelegeFolder, setEinkaufsbelegeFolder] = useState(null);
@@ -76,6 +77,7 @@ function SettingsForm() {
     loadBestueckungTotalPrices();
     loadBestueckungPricingTypes();
     loadSelectedScanner();
+    loadServerUrl();
     loadScanFolder();
     loadReportFolder();
     loadEinkaufsbelegeFolder();
@@ -90,6 +92,19 @@ function SettingsForm() {
     const interval = setInterval(checkScannerAvailability, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const loadServerUrl = async () => {
+    if (window.electronAPI && window.electronAPI.getServerUrl) {
+      const url = await window.electronAPI.getServerUrl();
+      setServerUrl(url || '');
+    }
+  };
+
+  const handleSaveServerUrl = async () => {
+    if (window.electronAPI && window.electronAPI.setServerUrl) {
+      await window.electronAPI.setServerUrl(serverUrl);
+    }
+  };
 
   const loadScanFolder = async () => {
     if (window.electronAPI && window.electronAPI.getScanFolder) {
@@ -775,6 +790,38 @@ function SettingsForm() {
   const renderScannerSection = () => (
     <>
       <h2>Printer / Scanner</h2>
+
+      {/* Server URL (Backend API) */}
+      <div className="settings-scanner-section">
+        <h3>Server-URL (API)</h3>
+        <p className="settings-description">
+          URL des Backend-Servers (z. B. http://localhost:3001). Wenn gesetzt, werden Kataloge, Schichtdaten und Scans über den Server synchronisiert. Leer = nur lokale Speicherung.
+        </p>
+        <div className="settings-scan-folder-form" style={{ alignItems: 'center', gap: '8px' }}>
+          <input
+            type="url"
+            value={serverUrl}
+            onChange={(e) => setServerUrl(e.target.value)}
+            onBlur={handleSaveServerUrl}
+            className="settings-input"
+            placeholder="http://localhost:3001"
+            style={{ flex: 1, maxWidth: '400px' }}
+          />
+          <button
+            type="button"
+            onClick={handleSaveServerUrl}
+            className="settings-select-folder-button"
+          >
+            Speichern
+          </button>
+        </div>
+        {serverUrl && serverUrl.trim() && (
+          <p className="settings-description" style={{ marginTop: '8px' }}>
+            Security-Zettel Formular (mobil/Tablet): <a href={`${serverUrl.replace(/\/$/, '')}/forms/secu`} target="_blank" rel="noopener noreferrer">{serverUrl.replace(/\/$/, '')}/forms/secu</a>
+          </p>
+        )}
+      </div>
+
       <p className="settings-description">
         Wählen Sie den Scanner aus, der für das Scannen von Dokumenten verwendet werden soll.
       </p>

@@ -10,6 +10,7 @@ const {
   appendZeiterfassungToWorkbook,
   collectZeiterfassungData
 } = require('../utils/zeiterfassungExcel');
+const api = require('../api/client');
 
 /**
  * IPC Handlers for Report Generation
@@ -108,9 +109,28 @@ async function mergePDFs(pdfPaths) {
 }
 
 function registerReportHandlers(ipcMain, store) {
-  // IPC Handler for close-shift
+  // IPC Handler for close-shift – API first when serverUrl set; else local report/Excel
   ipcMain.handle('close-shift', async (event, formData) => {
     try {
+      const serverUrl = (store.get('serverUrl', '') || '').trim();
+      if (serverUrl) {
+        try {
+          const currentEvent = await api.getCurrentEventFull(serverUrl);
+          if (currentEvent && currentEvent.id) {
+            const result = await api.closeEvent(serverUrl, currentEvent.id, formData);
+            return {
+              success: true,
+              eventFolder: (result && result.eventFolder) ? result.eventFolder : '',
+              pdfPath: (result && result.eventFolder) ? result.eventFolder : '',
+              scannedPDFsCount: 0
+            };
+          }
+        } catch (apiErr) {
+          console.warn('Close-shift API failed, falling back to local:', apiErr.message);
+        }
+      }
+
+      // Local close-shift: report folder, PDF, section PDFs, Excel
       // Get report folder from settings or use default
       let reportBaseFolder = store.get('reportFolder', null);
       if (!reportBaseFolder) {

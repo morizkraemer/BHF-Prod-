@@ -4,6 +4,7 @@ const Store = require('electron-store');
 const settingsStore = new Store({
   name: 'config',
   defaults: {
+    serverUrl: 'http://localhost:3001', // Backend API URL (empty = use local store only)
     riderExtrasItems: [],
     nightLeads: [],
     selectedScanner: null,

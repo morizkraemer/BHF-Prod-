@@ -5,6 +5,7 @@ const execAsync = promisify(exec);
 const path = require('path');
 const { app } = require('electron');
 const { PDFDocument } = require('pdf-lib');
+const api = require('../api/client');
 
 /**
  * IPC Handlers for Settings Management
@@ -12,16 +13,42 @@ const { PDFDocument } = require('pdf-lib');
  */
 
 function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shiftDataStore) {
-  // IPC Handlers for saved Tech Names (settings object for form pre-fill; distinct from tech person catalog)
-  ipcMain.handle('get-saved-tech-names', () => {
-    return store.get('techNames', {
-      soundEngineerName: '',
-      lightingTechName: ''
-    });
+  // Server URL (backend API) – used when set; empty = local store only
+  ipcMain.handle('get-server-url', () => {
+    return store.get('serverUrl', 'http://localhost:3001');
+  });
+  ipcMain.handle('set-server-url', (event, url) => {
+    const value = url == null || typeof url !== 'string' ? '' : url.trim();
+    store.set('serverUrl', value);
+    return value;
   });
 
-  ipcMain.handle('save-tech-names', (event, names) => {
-    store.set('techNames', names);
+  // IPC Handlers for saved Tech Names (settings object for form pre-fill; distinct from tech person catalog)
+  const defaultTechNames = () => ({ soundEngineerName: '', lightingTechName: '' });
+  ipcMain.handle('get-saved-tech-names', async () => {
+    const serverUrl = (store.get('serverUrl', '') || '').trim();
+    if (serverUrl) {
+      try {
+        const value = await api.getSetting(serverUrl, 'techNames');
+        return value != null ? value : defaultTechNames();
+      } catch (_) {
+        // fallback to store
+      }
+    }
+    return store.get('techNames', defaultTechNames());
+  });
+
+  ipcMain.handle('save-tech-names', async (event, names) => {
+    const serverUrl = (store.get('serverUrl', '') || '').trim();
+    if (serverUrl) {
+      try {
+        await api.setSetting(serverUrl, 'techNames', names || defaultTechNames());
+        return true;
+      } catch (_) {
+        // fallback to store
+      }
+    }
+    store.set('techNames', names || defaultTechNames());
     return true;
   });
 
@@ -362,35 +389,7 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
     return store.get('einkaufsbelegeFolder', null);
   });
 
-  // Wage options list (e.g. ["25 €/h", "30 €/h"])
-  ipcMain.handle('get-wage-options', () => {
-    return store.get('wageOptions', []);
-  });
-
-  ipcMain.handle('save-wage-options', (event, options) => {
-    store.set('wageOptions', Array.isArray(options) ? options : []);
-    return true;
-  });
-
-  // Person wage = selected option from wageOptions, keyed by name
-  ipcMain.handle('get-person-wage', (event, name) => {
-    const wages = store.get('personWages', {});
-    const key = (name || '').trim();
-    return key ? (wages[key] ?? '') : '';
-  });
-
-  ipcMain.handle('get-person-wages', () => {
-    return store.get('personWages', {});
-  });
-
-  ipcMain.handle('set-person-wage', (event, name, wageOption) => {
-    const key = (name || '').trim();
-    if (!key) return;
-    const wages = store.get('personWages', {});
-    wages[key] = (wageOption == null ? '' : String(wageOption).trim());
-    store.set('personWages', wages);
-    return true;
-  });
+  // Wage options and person wages: handled in catalogHandlers (API + store fallback)
 
   // IPC Handlers for Excel Zeiterfassung Folder
   ipcMain.handle('set-zeiterfassung-excel-folder', async () => {
@@ -410,30 +409,61 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
     return store.get('zeiterfassungExcelFolder', null);
   });
 
-  // IPC Handlers for Catering Prices
-  ipcMain.handle('get-catering-prices', () => {
-    return store.get('cateringPrices', {
-      warmPerPerson: '',
-      coldPerPerson: ''
-    });
+  // IPC Handlers for Catering Prices (API first when serverUrl set)
+  const defaultCateringPrices = () => ({ warmPerPerson: '', coldPerPerson: '' });
+  ipcMain.handle('get-catering-prices', async () => {
+    const serverUrl = (store.get('serverUrl', '') || '').trim();
+    if (serverUrl) {
+      try {
+        const value = await api.getSetting(serverUrl, 'cateringPrices');
+        return value != null ? value : defaultCateringPrices();
+      } catch (_) {
+        // fallback to store
+      }
+    }
+    return store.get('cateringPrices', defaultCateringPrices());
   });
 
-  ipcMain.handle('save-catering-prices', (event, prices) => {
-    store.set('cateringPrices', prices);
+  ipcMain.handle('save-catering-prices', async (event, prices) => {
+    const serverUrl = (store.get('serverUrl', '') || '').trim();
+    if (serverUrl) {
+      try {
+        await api.setSetting(serverUrl, 'cateringPrices', prices || defaultCateringPrices());
+        return true;
+      } catch (_) {
+        // fallback to store
+      }
+    }
+    store.set('cateringPrices', prices || defaultCateringPrices());
     return true;
   });
 
-  // IPC Handlers for Pauschale Prices
-  ipcMain.handle('get-pauschale-prices', () => {
-    return store.get('pauschalePrices', {
-      standard: '',
-      longdrinks: '',
-      shots: ''
-    });
+  // IPC Handlers for Pauschale Prices (API first when serverUrl set)
+  const defaultPauschalePrices = () => ({ standard: '', longdrinks: '', shots: '' });
+  ipcMain.handle('get-pauschale-prices', async () => {
+    const serverUrl = (store.get('serverUrl', '') || '').trim();
+    if (serverUrl) {
+      try {
+        const value = await api.getSetting(serverUrl, 'pauschalePrices');
+        return value != null ? value : defaultPauschalePrices();
+      } catch (_) {
+        // fallback to store
+      }
+    }
+    return store.get('pauschalePrices', defaultPauschalePrices());
   });
 
-  ipcMain.handle('save-pauschale-prices', (event, prices) => {
-    store.set('pauschalePrices', prices);
+  ipcMain.handle('save-pauschale-prices', async (event, prices) => {
+    const serverUrl = (store.get('serverUrl', '') || '').trim();
+    if (serverUrl) {
+      try {
+        await api.setSetting(serverUrl, 'pauschalePrices', prices || defaultPauschalePrices());
+        return true;
+      } catch (_) {
+        // fallback to store
+      }
+    }
+    store.set('pauschalePrices', prices || defaultPauschalePrices());
     return true;
   });
 

@@ -1,7 +1,8 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 // Expose protected methods that allow the renderer process to use
-// the ipcRenderer without exposing the entire object
+// the ipcRenderer without exposing the entire object.
+// Same IPC API for both local (electron-store) and API-backed (serverUrl set) modes.
 contextBridge.exposeInMainWorld('electronAPI', {
   // File system operations
   createFolder: (folderPath) => ipcRenderer.invoke('create-folder', folderPath),
@@ -14,6 +15,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getLanFormPdfs: (formTypeId, date) => ipcRenderer.invoke('get-lan-form-pdfs', formTypeId, date),
   deleteLanFormPdf: (filePath) => ipcRenderer.invoke('delete-lan-form-pdf', filePath),
   
+  // Server URL (backend API)
+  getServerUrl: () => ipcRenderer.invoke('get-server-url'),
+  setServerUrl: (url) => ipcRenderer.invoke('set-server-url', url),
+
   // Scanner operations
   listScanners: () => ipcRenderer.invoke('list-scanners'),
   setSelectedScanner: (scannerId, scannerInfo) => ipcRenderer.invoke('set-selected-scanner', scannerId, scannerInfo),
