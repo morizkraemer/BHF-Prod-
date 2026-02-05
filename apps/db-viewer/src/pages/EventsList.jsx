@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getEvents } from '../api';
+import { getEvents, updateEvent } from '../api';
 
 export default function EventsList() {
   const [events, setEvents] = useState([]);
@@ -9,7 +9,27 @@ export default function EventsList() {
   const [phaseFilter, setPhaseFilter] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const [updatingId, setUpdatingId] = useState(null);
   const navigate = useNavigate();
+
+  const handleAbgeschlossenChange = async (e, eventId) => {
+    e.stopPropagation();
+    const ev = events.find((x) => x.id === eventId);
+    if (!ev || updatingId) return;
+    const next = !ev.abgeschlossen;
+    setUpdatingId(eventId);
+    setError(null);
+    try {
+      const updated = await updateEvent(eventId, { abgeschlossen: next });
+      setEvents((prev) =>
+        prev.map((x) => (x.id === eventId ? { ...x, abgeschlossen: updated.abgeschlossen } : x))
+      );
+    } catch (err) {
+      setError(err.message || 'Fehler beim Aktualisieren');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -67,7 +87,8 @@ export default function EventsList() {
               <th>Datum</th>
               <th>Event</th>
               <th>Phase</th>
-              <th>Doors</th>
+              <th>Event Typ</th>
+              <th>Abgeschlossen</th>
             </tr>
           </thead>
           <tbody>
@@ -80,7 +101,16 @@ export default function EventsList() {
                 <td>{e.eventDate ?? '–'}</td>
                 <td>{e.eventName ?? '–'}</td>
                 <td>{e.phase ?? '–'}</td>
-                <td>{e.doorsTime ?? '–'}</td>
+                <td>{e.formData?.uebersicht?.eventType ?? '–'}</td>
+                <td onClick={(ev) => ev.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={!!e.abgeschlossen}
+                    disabled={updatingId === e.id}
+                    onChange={(ev) => handleAbgeschlossenChange(ev, e.id)}
+                    title={e.abgeschlossen ? 'Abgeschlossen' : 'Nicht abgeschlossen'}
+                  />
+                </td>
               </tr>
             ))}
           </tbody>

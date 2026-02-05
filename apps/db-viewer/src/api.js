@@ -36,6 +36,13 @@ export async function getEvent(id) {
   return request(`/api/events/${id}`);
 }
 
+export async function updateEvent(id, body) {
+  return request(`/api/events/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
+}
+
 export async function getEventDocuments(eventId) {
   return request(`/api/events/${eventId}/documents`);
 }
