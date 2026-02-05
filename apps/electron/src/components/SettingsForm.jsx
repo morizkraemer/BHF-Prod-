@@ -1253,14 +1253,10 @@ function SettingsForm() {
           customizedFridgeItems: []
         },
         tontechniker: {
-          soundEngineerEnabled: true,
-          soundEngineerName: soundName,
-          soundEngineerStartTime: '13:00',
-          soundEngineerEndTime: '00:30',
-          lightingTechEnabled: true,
-          lightingTechName: lightName,
-          lightingTechStartTime: '15:00',
-          lightingTechEndTime: '01:00',
+          personnel: [
+            { name: soundName, startTime: '13:00', endTime: '00:30', role: 'Ton/Licht' },
+            { name: lightName, startTime: '15:00', endTime: '01:00', role: 'Ton/Licht' }
+          ],
           scannedImages: []
         },
         secu: {

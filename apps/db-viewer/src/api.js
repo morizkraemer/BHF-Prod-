@@ -67,15 +67,28 @@ export function getDocumentUrl(documentId) {
   return `${b}/api/documents/${documentId}`;
 }
 
-// --- Catalogs: wage options, person wages, person names ---
-export async function getWageOptions() {
-  return request('/api/catalogs/wage-options');
+// --- Catalogs: roles, person wages (numeric €/h), person names ---
+export async function getRoles() {
+  return request('/api/catalogs/roles');
 }
 
-export async function putWageOptions(labels) {
-  return request('/api/catalogs/wage-options', {
-    method: 'PUT',
-    body: JSON.stringify(Array.isArray(labels) ? labels : []),
+export async function postRole(body) {
+  return request('/api/catalogs/roles', {
+    method: 'POST',
+    body: JSON.stringify(body || {}),
+  });
+}
+
+export async function patchRole(id, body) {
+  return request(`/api/catalogs/roles/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body || {}),
+  });
+}
+
+export async function deleteRole(id) {
+  return request(`/api/catalogs/roles/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
   });
 }
 

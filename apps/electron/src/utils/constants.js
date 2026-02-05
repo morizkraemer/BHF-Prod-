@@ -15,7 +15,7 @@ const settingsSection = { id: 'settings', name: 'Settings' };
 const getInitialFormData = () => ({
   uebersicht: {},
   'rider-extras': {},
-  tontechniker: {},
+  tontechniker: { personnel: [], scannedImages: [] },
   kassen: {},
   secu: {
     securityPersonnel: [{ name: '', startTime: '', endTime: '' }],

@@ -29,7 +29,9 @@ const settingsStore = new Store({
     // Person name catalogs (each item: { id, name })
     secuPersonNames: [],
     techPersonNames: [], // Shared pool for Tontechnik + Lichttechnik (Sound Engineer + Lighting Tech)
-    andereMitarbeiterNames: []
+    andereMitarbeiterNames: [],
+    // Roles (user-defined; wage per role) – fallback when API unavailable
+    roles: []
   }
 });
 

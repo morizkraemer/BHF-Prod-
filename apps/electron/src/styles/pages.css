@@ -12,6 +12,91 @@
   gap: 20px;
 }
 
+.tontechniker-personnel-section {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.tontechniker-personnel-header {
+  display: grid;
+  grid-template-columns: 1fr 0.33fr 0.33fr 1.2fr 40px;
+  gap: 10px;
+  padding: 8px 0;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 13px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.tontechniker-personnel-header-start,
+.tontechniker-personnel-header-end {
+  text-align: center;
+}
+
+.tontechniker-personnel-line {
+  display: grid;
+  grid-template-columns: 1fr 0.33fr 0.33fr 1.2fr 40px;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.tontechniker-personnel-name-combo {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: white;
+  overflow: visible;
+}
+
+.tontechniker-personnel-name-combo:focus-within {
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.tontechniker-personnel-name-combo .tontechniker-personnel-name,
+.tontechniker-personnel-name-combo .form-input,
+.tontechniker-personnel-name-combo input {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  width: 100%;
+}
+
+.tontechniker-personnel-time,
+.tontechniker-personnel-role {
+  padding: 10px 6px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  background-color: white;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.tontechniker-personnel-role {
+  cursor: pointer;
+}
+
+.tontechniker-personnel-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tontechniker-personnel-empty {
+  padding: 20px;
+  text-align: center;
+  color: #7f8c8d;
+  font-style: italic;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+}
+
 /* Secu Form */
 .secu-form {
   display: grid;
@@ -62,7 +147,8 @@
   padding: 8px 0;
 }
 
-.secu-name-wage-combo {
+.secu-name-wage-combo,
+.secu-personnel-name-combo {
   display: flex;
   border: 1px solid #ddd;
   border-radius: 6px;
@@ -71,19 +157,24 @@
   min-width: 0;
 }
 
-.secu-name-wage-combo:focus-within {
+.secu-name-wage-combo:focus-within,
+.secu-personnel-name-combo:focus-within {
   border-color: #3498db;
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
-.secu-name-wage-combo-name {
+.secu-name-wage-combo-name,
+.secu-personnel-name-combo {
   flex: 1;
   min-width: 0;
 }
 
 .secu-name-wage-combo-name .secu-personnel-name,
 .secu-name-wage-combo-name .form-input,
-.secu-name-wage-combo-name input {
+.secu-name-wage-combo-name input,
+.secu-personnel-name-combo .secu-personnel-name,
+.secu-personnel-name-combo .form-input,
+.secu-personnel-name-combo input {
   border: none;
   border-radius: 0;
   box-shadow: none;
@@ -91,7 +182,9 @@
 }
 
 .secu-name-wage-combo-name .secu-personnel-name:focus,
-.secu-name-wage-combo-name input:focus {
+.secu-name-wage-combo-name input:focus,
+.secu-personnel-name-combo .secu-personnel-name:focus,
+.secu-personnel-name-combo input:focus {
   outline: none;
   border: none;
   box-shadow: none;
@@ -215,16 +308,20 @@
   padding: 8px 0;
 }
 
-.andere-mitarbeiter-name-wage-combo {
+.andere-mitarbeiter-name-wage-combo,
+.andere-mitarbeiter-name-combo {
   display: flex;
   border: 1px solid #ddd;
   border-radius: 6px;
   background-color: white;
   overflow: visible;
   min-width: 0;
+  flex: 1;
+  min-width: 0;
 }
 
-.andere-mitarbeiter-name-wage-combo:focus-within {
+.andere-mitarbeiter-name-wage-combo:focus-within,
+.andere-mitarbeiter-name-combo:focus-within {
   border-color: #3498db;
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
@@ -236,7 +333,10 @@
 
 .andere-mitarbeiter-name-wage-combo-name .andere-mitarbeiter-name,
 .andere-mitarbeiter-name-wage-combo-name .form-input,
-.andere-mitarbeiter-name-wage-combo-name input {
+.andere-mitarbeiter-name-wage-combo-name input,
+.andere-mitarbeiter-name-combo .andere-mitarbeiter-name,
+.andere-mitarbeiter-name-combo .form-input,
+.andere-mitarbeiter-name-combo input {
   border: none;
   border-radius: 0;
   box-shadow: none;
@@ -244,7 +344,9 @@
 }
 
 .andere-mitarbeiter-name-wage-combo-name .andere-mitarbeiter-name:focus,
-.andere-mitarbeiter-name-wage-combo-name input:focus {
+.andere-mitarbeiter-name-wage-combo-name input:focus,
+.andere-mitarbeiter-name-combo .andere-mitarbeiter-name:focus,
+.andere-mitarbeiter-name-combo input:focus {
   outline: none;
   border: none;
   box-shadow: none;

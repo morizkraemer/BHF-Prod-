@@ -39,37 +39,45 @@ function collectZeiterfassungData(formData, eventDate) {
   const andereRows = [];
   const eventName = (formData.uebersicht && formData.uebersicht.eventName) ? String(formData.uebersicht.eventName).trim() : '';
   const ton = formData.tontechniker || {};
-  if (ton.soundEngineerEnabled !== false && (ton.soundEngineerName || '').trim()) {
-    tonLichtRows.push([eventName, eventDate, (ton.soundEngineerName || '').trim(), ton.soundEngineerWage || '', ton.soundEngineerStartTime || '', ton.soundEngineerEndTime || '']);
-  }
-  if (ton.lightingTechEnabled && (ton.lightingTechName || '').trim()) {
-    tonLichtRows.push([eventName, eventDate, (ton.lightingTechName || '').trim(), ton.lightingTechWage || '', ton.lightingTechStartTime || '', ton.lightingTechEndTime || '']);
-  }
+  (ton.personnel || []).forEach((p) => {
+    const n = (p.name || '').trim();
+    if (!n) return;
+    const roleName = (p.role || '').trim();
+    tonLichtRows.push([eventName, eventDate, n, '', p.startTime || '', p.endTime || '', null, roleName]);
+  });
   (formData.secu?.securityPersonnel || []).forEach((p) => {
     const n = (p.name || '').trim();
     if (!n) return;
-    secuRows.push([eventName, eventDate, n, p.wage || '', p.startTime || '', p.endTime || '']);
+    secuRows.push([eventName, eventDate, n, '', p.startTime || '', p.endTime || '']);
   });
   (formData['andere-mitarbeiter']?.mitarbeiter || []).forEach((p) => {
     const n = (p.name || '').trim();
     if (!n) return;
-    andereRows.push([eventName, eventDate, n, p.wage || '', p.startTime || '', p.endTime || '', (p.category || '').trim()]);
+    andereRows.push([eventName, eventDate, n, '', p.startTime || '', p.endTime || '', (p.category || '').trim()]);
   });
   return { secuRows, tonLichtRows, andereRows };
 }
+
+const DEFAULT_SECTION_ROLE_NAMES = {
+  secu: 'Secu',
+  ton_licht: 'Ton/Licht',
+  andere: 'Andere Mitarbeiter'
+};
 
 /**
  * Returns time entries in DB shape for zeiterfassung_entries table.
  * @param {string} eventId - UUID of the event
  * @param {Object} formData - Full form data from close-shift
  * @param {string} eventDate - YYYY-MM-DD
+ * @param {{ secu?: string, ton_licht?: string, andere?: string }} [sectionRoleNames] - role name per section (defaults: Secu, Ton/Licht, Andere Mitarbeiter)
  * @returns {Array<{ event_id, role, event_name, entry_date, person_name, wage, start_time, end_time, hours, amount, category }>}
  */
-function collectZeiterfassungEntriesForDb(eventId, formData, eventDate) {
+function collectZeiterfassungEntriesForDb(eventId, formData, eventDate, sectionRoleNames = {}) {
+  const mapping = { ...DEFAULT_SECTION_ROLE_NAMES, ...sectionRoleNames };
   const { secuRows, tonLichtRows, andereRows } = collectZeiterfassungData(formData, eventDate);
   const out = [];
 
-  function pushRow(role, row) {
+  function pushRow(roleName, row) {
     const eventName = row[0];
     const personName = row[2];
     const wageStr = row[3];
@@ -82,7 +90,7 @@ function collectZeiterfassungEntriesForDb(eventId, formData, eventDate) {
     const amount = Math.round(hours * wage * 100) / 100;
     out.push({
       event_id: eventId,
-      role,
+      role: roleName,
       event_name: eventName || null,
       entry_date: eventDate,
       person_name: personName,
@@ -95,14 +103,19 @@ function collectZeiterfassungEntriesForDb(eventId, formData, eventDate) {
     });
   }
 
-  secuRows.forEach((row) => pushRow('secu', row));
-  tonLichtRows.forEach((row) => pushRow('ton_licht', row));
-  andereRows.forEach((row) => pushRow('andere', row));
+  secuRows.forEach((row) => pushRow(mapping.secu || DEFAULT_SECTION_ROLE_NAMES.secu, row));
+  tonLichtRows.forEach((row) => {
+    const perRowRole = row.length > 7 && row[7] ? String(row[7]).trim() : null;
+    const roleName = perRowRole || mapping.ton_licht || DEFAULT_SECTION_ROLE_NAMES.ton_licht;
+    pushRow(roleName, row);
+  });
+  andereRows.forEach((row) => pushRow(mapping.andere || DEFAULT_SECTION_ROLE_NAMES.andere, row));
   return out;
 }
 
 module.exports = {
   parseWageToNumber,
   collectZeiterfassungData,
-  collectZeiterfassungEntriesForDb
+  collectZeiterfassungEntriesForDb,
+  DEFAULT_SECTION_ROLE_NAMES
 };

@@ -1,21 +1,25 @@
 const { useState, useEffect } = React;
 
-const PersonNameSelect = window.PersonNameSelect;
+const PersonnelListForm = window.PersonnelListForm;
 
 function SecuForm({ formData, onDataChange, highlightedFields = [], printedTemplates = {}, onTemplatePrinted, shiftDate }) {
-  const shouldHighlight = (fieldName) => {
-    return highlightedFields.includes(fieldName);
-  };
   const [securityPersonnel, setSecurityPersonnel] = useState(() => {
-    const list = formData?.securityPersonnel || [{ name: '', startTime: '', endTime: '', wage: '' }];
-    return list.map(p => ({ name: p.name ?? '', startTime: p.startTime ?? '', endTime: p.endTime ?? '', wage: p.wage ?? '' }));
+    const list = formData?.securityPersonnel || [{ name: '', startTime: '', endTime: '' }];
+    return list.map((p) => ({ name: p.name ?? '', startTime: p.startTime ?? '', endTime: p.endTime ?? '' }));
   });
-  const [scannedDocuments, setScannedDocuments] = useState(
-    formData?.scannedDocuments || []
-  );
+  const [scannedDocuments, setScannedDocuments] = useState(formData?.scannedDocuments || []);
   const [webFormPdfs, setWebFormPdfs] = useState([]);
 
-  // Load Secu web form PDFs for current shift date (LAN form submissions)
+  useEffect(() => {
+    const list = formData?.securityPersonnel;
+    if (Array.isArray(list) && list.length > 0) {
+      setSecurityPersonnel(list.map((p) => ({ name: p.name ?? '', startTime: p.startTime ?? '', endTime: p.endTime ?? '' })));
+    }
+    if (Array.isArray(formData?.scannedDocuments)) {
+      setScannedDocuments(formData.scannedDocuments);
+    }
+  }, [formData?.securityPersonnel?.length, formData?.scannedDocuments?.length]);
+
   useEffect(() => {
     const date = typeof shiftDate === 'string' && shiftDate.trim() ? shiftDate.trim() : null;
     if (!date || !window.electronAPI?.getSecuWebFormPdfs) {
@@ -27,7 +31,6 @@ function SecuForm({ formData, onDataChange, highlightedFields = [], printedTempl
     }).catch(() => setWebFormPdfs([]));
   }, [shiftDate]);
 
-  // Call onDataChange on mount and whenever data changes
   useEffect(() => {
     if (onDataChange) {
       onDataChange({
@@ -38,23 +41,10 @@ function SecuForm({ formData, onDataChange, highlightedFields = [], printedTempl
     }
   }, [securityPersonnel, scannedDocuments, webFormPdfs.length, onDataChange]);
 
-  const handlePersonnelChange = (index, field, value) => {
-    const newPersonnel = [...securityPersonnel];
-    newPersonnel[index][field] = value;
-    setSecurityPersonnel(newPersonnel);
-  };
-
-  const handleAddPersonnel = () => {
-    setSecurityPersonnel([
-      ...securityPersonnel,
-      { name: '', startTime: '', endTime: '', wage: '' }
-    ]);
-  };
-
-  const handleRemovePersonnel = (index) => {
-    const newPersonnel = securityPersonnel.filter((_, i) => i !== index);
-    // Allow removing all persons (empty array is valid)
-    setSecurityPersonnel(newPersonnel.length > 0 ? newPersonnel : []);
+  const handlePersonnelDataChange = (payload) => {
+    if (payload && Array.isArray(payload.securityPersonnel)) {
+      setSecurityPersonnel(payload.securityPersonnel.map((p) => ({ name: p.name ?? '', startTime: p.startTime ?? '', endTime: p.endTime ?? '' })));
+    }
   };
 
   const handleDocumentsChange = (updatedDocuments) => {
@@ -62,12 +52,10 @@ function SecuForm({ formData, onDataChange, highlightedFields = [], printedTempl
   };
 
   const handleRemoveReadOnlyDocument = (doc) => {
-    if (!doc || !doc.filePath || !window.electronAPI?.deleteLanFormPdf) return;
+    if (!doc?.filePath || !window.electronAPI?.deleteLanFormPdf) return;
     window.electronAPI.deleteLanFormPdf(doc.filePath).then((result) => {
-      if (result && result.ok) {
-        window.electronAPI.getSecuWebFormPdfs(shiftDate).then((list) => {
-          setWebFormPdfs(Array.isArray(list) ? list : []);
-        }).catch(() => setWebFormPdfs([]));
+      if (result?.ok && shiftDate) {
+        window.electronAPI.getSecuWebFormPdfs(shiftDate).then((list) => setWebFormPdfs(Array.isArray(list) ? list : [])).catch(() => setWebFormPdfs([]));
       }
     });
   };
@@ -77,83 +65,28 @@ function SecuForm({ formData, onDataChange, highlightedFields = [], printedTempl
   return (
     <div className="form-container">
       <div className="secu-form">
-        {/* Security Personnel Section */}
         <div className="secu-personnel-section">
-          {/* Column Headers */}
-          <div className="secu-personnel-header">
-            <div className="secu-header-name">Name</div>
-            <div className="secu-header-start">Start</div>
-            <div className="secu-header-end">Ende</div>
-            <div className="secu-header-actions"></div>
-          </div>
-
-          {/* Personnel List */}
-          {securityPersonnel.length === 0 ? (
-            <div className="secu-personnel-empty">Kein Sicherheitspersonal hinzugefügt</div>
+          {PersonnelListForm ? (
+            <PersonnelListForm
+              listKey="securityPersonnel"
+              initialList={securityPersonnel}
+              onDataChange={handlePersonnelDataChange}
+              getNames={window.electronAPI?.getSecuNames ?? null}
+              addName={window.electronAPI?.addSecuName ?? null}
+              roleMode="fixed"
+              fixedRoleName="Secu"
+              emptyMessage="Kein Sicherheitspersonal hinzugefügt"
+              addButtonLabel="+ Add Person"
+              sectionClass="secu-personnel"
+              highlightedFields={highlightedFields}
+              highlightPrefix="Secu Person"
+            />
           ) : (
-            securityPersonnel.map((person, index) => (
-            <div key={index} className="secu-personnel-line">
-              <div className="secu-name-combo">
-                {PersonNameSelect ? (
-                  <PersonNameSelect
-                    value={person.name}
-                    onChange={(name) => handlePersonnelChange(index, 'name', name)}
-                    getNames={window.electronAPI ? window.electronAPI.getSecuNames : null}
-                    addName={window.electronAPI ? window.electronAPI.addSecuName : null}
-                    placeholder="Name *"
-                    className={`secu-personnel-name ${shouldHighlight(`Secu Person ${index + 1} Name`) ? 'field-highlighted' : ''}`}
-                    required
-                  />
-                ) : (
-                  <input
-                    type="text"
-                    value={person.name}
-                    onChange={(e) => handlePersonnelChange(index, 'name', e.target.value)}
-                    className={`secu-personnel-name ${shouldHighlight(`Secu Person ${index + 1} Name`) ? 'field-highlighted' : ''}`}
-                    placeholder="Name *"
-                    required
-                  />
-                )}
-              </div>
-              <input
-                type="time"
-                value={person.startTime}
-                onChange={(e) => handlePersonnelChange(index, 'startTime', e.target.value)}
-                className={`secu-personnel-time ${shouldHighlight(`Secu Person ${index + 1} Start Zeit`) ? 'field-highlighted' : ''}`}
-                required
-              />
-              <input
-                type="time"
-                value={person.endTime}
-                onChange={(e) => handlePersonnelChange(index, 'endTime', e.target.value)}
-                className={`secu-personnel-time ${shouldHighlight(`Secu Person ${index + 1} End Zeit`) ? 'field-highlighted' : ''}`}
-                required
-              />
-              <div className="secu-personnel-controls">
-                <button
-                  type="button"
-                  onClick={() => handleRemovePersonnel(index)}
-                  className="remove-line-button"
-                  title="Remove"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-            ))
+            <div className="secu-personnel-empty">PersonnelListForm nicht geladen</div>
           )}
-          
-          <button
-            type="button"
-            onClick={handleAddPersonnel}
-            className="add-line-button"
-          >
-            + Add Person
-          </button>
         </div>
 
-        {/* Scanner Section */}
-        <div className={`scanner-box ${shouldHighlight('Gescannte Dokumente') ? 'field-highlighted-group' : ''}`}>
+        <div className={`scanner-box ${(highlightedFields || []).includes('Gescannte Dokumente') ? 'field-highlighted-group' : ''}`}>
           <DocumentScanner
             scannedDocuments={displayDocuments}
             onDocumentsChange={handleDocumentsChange}
@@ -172,4 +105,3 @@ function SecuForm({ formData, onDataChange, highlightedFields = [], printedTempl
     </div>
   );
 }
-

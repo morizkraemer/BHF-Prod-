@@ -290,39 +290,100 @@ router.patch('/bestueckung-lists/:key/meta', async (req, res) => {
   }
 });
 
-// ---- Wage options ----
-router.get('/wage-options', async (req, res) => {
+// ---- Roles (user-defined; wage per role, numeric €/h) ----
+function toRole(row) {
+  const hw = row.hourly_wage;
+  return {
+    id: row.id,
+    name: row.name,
+    hourlyWage: hw != null ? Number(hw) : 0,
+    sortOrder: row.sort_order ?? 0
+  };
+}
+
+router.get('/roles', async (req, res) => {
   try {
-    const r = await getPool().query('SELECT id, label, sort_order FROM wage_options ORDER BY sort_order, label');
-    res.json(r.rows.map(row => ({ id: row.id, label: row.label })));
+    const r = await getPool().query('SELECT id, name, hourly_wage, sort_order FROM roles ORDER BY sort_order, name');
+    res.json(r.rows.map(toRole));
   } catch (err) {
-    console.error('GET /api/catalogs/wage-options:', err);
+    console.error('GET /api/catalogs/roles:', err);
     res.status(500).json({ error: 'Database error' });
   }
 });
 
-router.put('/wage-options', async (req, res) => {
-  const labels = Array.isArray(req.body) ? req.body : (req.body?.labels ?? []);
+router.post('/roles', async (req, res) => {
+  const { name, hourlyWage, sortOrder } = req.body || {};
+  const n = (name ?? '').toString().trim();
+  if (!n) return res.status(400).json({ error: 'name required' });
+  const wage = hourlyWage != null ? parseFloat(hourlyWage) : 0;
   try {
-    await getPool().query('DELETE FROM wage_options');
-    for (let i = 0; i < labels.length; i++) {
-      const label = typeof labels[i] === 'string' ? labels[i] : labels[i]?.label ?? '';
-      await getPool().query('INSERT INTO wage_options (label, sort_order) VALUES ($1, $2)', [label, i]);
+    const r = await getPool().query(
+      'INSERT INTO roles (name, hourly_wage, sort_order) VALUES ($1, $2, $3) RETURNING id, name, hourly_wage, sort_order',
+      [n, Number.isFinite(wage) ? wage : 0, sortOrder != null ? parseInt(sortOrder, 10) : 0]
+    );
+    res.status(201).json(toRole(r.rows[0]));
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ error: 'Role name already exists' });
+    console.error('POST /api/catalogs/roles:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+router.patch('/roles/:id', async (req, res) => {
+  const { id } = req.params;
+  const body = req.body || {};
+  const updates = [];
+  const values = [id];
+  let n = 2;
+  if (body.name !== undefined) { updates.push(`name = $${n++}`); values.push((body.name ?? '').toString().trim()); }
+  if (body.hourlyWage !== undefined) {
+    const w = parseFloat(body.hourlyWage);
+    updates.push(`hourly_wage = $${n++}`);
+    values.push(Number.isFinite(w) ? w : 0);
+  }
+  if (body.sortOrder !== undefined) { updates.push(`sort_order = $${n++}`); values.push(parseInt(body.sortOrder, 10) || 0); }
+  if (updates.length === 0) {
+    try {
+      const r = await getPool().query('SELECT id, name, hourly_wage, sort_order FROM roles WHERE id = $1', [id]);
+      if (r.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+      return res.json(toRole(r.rows[0]));
+    } catch (err) {
+      console.error('PATCH /api/catalogs/roles/:id (get):', err);
+      return res.status(500).json({ error: 'Database error' });
     }
-    const r = await getPool().query('SELECT id, label FROM wage_options ORDER BY sort_order');
-    res.json(r.rows.map(row => ({ id: row.id, label: row.label })));
+  }
+  try {
+    const r = await getPool().query(
+      `UPDATE roles SET ${updates.join(', ')} WHERE id = $1 RETURNING id, name, hourly_wage, sort_order`,
+      values
+    );
+    if (r.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+    res.json(toRole(r.rows[0]));
   } catch (err) {
-    console.error('PUT /api/catalogs/wage-options:', err);
+    if (err.code === '23505') return res.status(409).json({ error: 'Role name already exists' });
+    console.error('PATCH /api/catalogs/roles/:id:', err);
     res.status(500).json({ error: 'Database error' });
   }
 });
 
-// ---- Person wages ----
+router.delete('/roles/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const r = await getPool().query('DELETE FROM roles WHERE id = $1', [id]);
+    if (r.rowCount === 0) return res.status(404).json({ error: 'Not found' });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('DELETE /api/catalogs/roles/:id:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// ---- Person wages (custom wage overrides only; numeric €/h) ----
 router.get('/person-wages', async (req, res) => {
   try {
-    const r = await getPool().query('SELECT person_name_key AS "personNameKey", wage_option_label AS "wageOptionLabel" FROM person_wages');
+    const r = await getPool().query('SELECT person_name_key AS "personNameKey", hourly_wage AS "hourlyWage" FROM person_wages');
     const obj = {};
-    for (const row of r.rows) obj[row.personNameKey] = row.wageOptionLabel;
+    for (const row of r.rows) obj[row.personNameKey] = row.hourlyWage != null ? Number(row.hourlyWage) : 0;
     res.json(obj);
   } catch (err) {
     console.error('GET /api/catalogs/person-wages:', err);
@@ -334,10 +395,12 @@ router.put('/person-wages', async (req, res) => {
   const wages = req.body && typeof req.body === 'object' ? req.body : {};
   try {
     await getPool().query('DELETE FROM person_wages');
-    for (const [key, label] of Object.entries(wages)) {
+    for (const [key, val] of Object.entries(wages)) {
       const k = (key || '').trim();
-      if (k && label != null) {
-        await getPool().query('INSERT INTO person_wages (person_name_key, wage_option_label) VALUES ($1, $2)', [k, String(label)]);
+      if (k && val != null) {
+        const w = parseFloat(val);
+        const num = Number.isFinite(w) ? w : 0;
+        await getPool().query('INSERT INTO person_wages (person_name_key, hourly_wage) VALUES ($1, $2)', [k, num]);
       }
     }
     res.json({ success: true });

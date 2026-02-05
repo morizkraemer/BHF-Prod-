@@ -6,7 +6,7 @@
 const path = require('path');
 const fs = require('fs').promises;
 const { PDFDocument } = require('pdf-lib');
-const { parseWageToNumber, collectZeiterfassungData, collectZeiterfassungEntriesForDb } = require('../utils/zeiterfassungExcel');
+const { collectZeiterfassungData, collectZeiterfassungEntriesForDb } = require('../utils/zeiterfassungExcel');
 
 function toCamelCaseFolderName(str) {
   if (!str) return 'unbekanntesEvent';
@@ -166,25 +166,50 @@ async function runCloseShift({ eventId, formData, storagePath, pool }) {
   const { secuRows, tonLichtRows, andereRows } = collectZeiterfassungData(data, eventDate);
   const hasTimeData = secuRows.length > 0 || tonLichtRows.length > 0 || andereRows.length > 0;
   if (hasTimeData) {
-    const dbEntries = collectZeiterfassungEntriesForDb(eventId, data, eventDate);
-    // Build person_wages map (normalized name -> wage_option_label) to fill wage when form sent empty
-    let personWagesMap = {};
+    // Section–role mapping from settings (default: Secu, Ton/Licht, Andere Mitarbeiter)
+    let sectionRoleNames = null;
     try {
-      const pw = await pool.query('SELECT person_name_key, wage_option_label FROM person_wages');
+      const sr = await pool.query("SELECT value FROM settings WHERE key = 'sectionRoleNames'");
+      if (sr.rows.length > 0 && sr.rows[0].value) {
+        sectionRoleNames = sr.rows[0].value;
+      }
+    } catch (err) {
+      console.warn('closeShift sectionRoleNames:', err.message);
+    }
+    const dbEntries = collectZeiterfassungEntriesForDb(eventId, data, eventDate, sectionRoleNames);
+
+    // Role wages (role name -> hourly_wage number)
+    let roleWagesMap = {};
+    try {
+      const rw = await pool.query('SELECT name, hourly_wage FROM roles');
+      for (const row of rw.rows) {
+        const k = (row.name || '').trim();
+        if (k) roleWagesMap[k] = row.hourly_wage != null ? Number(row.hourly_wage) : 0;
+      }
+    } catch (err) {
+      console.warn('closeShift roles lookup:', err.message);
+    }
+    // Person custom wage overrides (normalized name -> hourly_wage number)
+    let personCustomWagesMap = {};
+    try {
+      const pw = await pool.query('SELECT person_name_key, hourly_wage FROM person_wages');
       for (const row of pw.rows) {
         const key = (row.person_name_key || '').trim().toLowerCase();
-        if (key) personWagesMap[key] = row.wage_option_label;
+        if (key) personCustomWagesMap[key] = row.hourly_wage != null ? Number(row.hourly_wage) : 0;
       }
     } catch (err) {
       console.warn('closeShift person_wages lookup:', err.message);
     }
+
     for (const e of dbEntries) {
       if ((e.wage === 0 || e.wage == null) && (e.person_name || '').trim()) {
-        const key = (e.person_name || '').trim().toLowerCase();
-        const label = personWagesMap[key];
-        if (label != null) {
-          const wageNum = parseWageToNumber(label);
-          e.wage = wageNum != null ? wageNum : 0;
+        const personKey = (e.person_name || '').trim().toLowerCase();
+        // Andere Mitarbeiter: always use person wage only (no role fallback)
+        const wageNum = (e.role === 'Andere Mitarbeiter')
+          ? personCustomWagesMap[personKey]
+          : (personCustomWagesMap[personKey] ?? roleWagesMap[e.role]);
+        if (wageNum != null && Number.isFinite(wageNum)) {
+          e.wage = wageNum;
           e.amount = Math.round(e.hours * e.wage * 100) / 100;
         }
       }

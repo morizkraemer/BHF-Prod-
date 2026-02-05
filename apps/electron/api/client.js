@@ -126,6 +126,23 @@ async function patchBestueckungListMeta(baseUrl, key, body) {
   return request(baseUrl, 'PATCH', `/api/catalogs/bestueckung-lists/${encodeURIComponent(key)}/meta`, body);
 }
 
+// --- Catalogs: roles (user-defined; wage per role, numeric €/h) ---
+async function getRoles(baseUrl) {
+  return request(baseUrl, 'GET', '/api/catalogs/roles');
+}
+
+async function postRole(baseUrl, body) {
+  return request(baseUrl, 'POST', '/api/catalogs/roles', body);
+}
+
+async function patchRole(baseUrl, id, body) {
+  return request(baseUrl, 'PATCH', `/api/catalogs/roles/${id}`, body);
+}
+
+async function deleteRole(baseUrl, id) {
+  return request(baseUrl, 'DELETE', `/api/catalogs/roles/${id}`);
+}
+
 // --- Settings ---
 async function getSettings(baseUrl) {
   return request(baseUrl, 'GET', '/api/settings');
@@ -219,6 +236,10 @@ module.exports = {
   getBestueckungList,
   putBestueckungList,
   patchBestueckungListMeta,
+  getRoles,
+  postRole,
+  patchRole,
+  deleteRole,
   getSettings,
   getSetting,
   setSetting,

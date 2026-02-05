@@ -432,6 +432,90 @@ function registerCatalogHandlers(ipcMain, store) {
     return true;
   });
 
+  // Roles (user-defined; wage per role, numeric €/h) – API first, fallback to store
+  ipcMain.handle('get-roles', async () => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        return await api.getRoles(baseUrl);
+      } catch (err) {
+        console.warn('API get-roles fallback to store:', err.message);
+      }
+    }
+    return store.get('roles', []);
+  });
+
+  ipcMain.handle('create-role', async (event, body) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        const role = await api.postRole(baseUrl, body);
+        const roles = store.get('roles', []);
+        roles.push(role);
+        store.set('roles', roles);
+        return role;
+      } catch (err) {
+        console.warn('API create-role fallback to store:', err.message);
+      }
+    }
+    const roles = store.get('roles', []);
+    const wage = body?.hourlyWage != null ? parseFloat(body.hourlyWage) : 0;
+    const newRole = {
+      id: `local-${Date.now()}`,
+      name: (body?.name ?? '').toString().trim() || 'Rolle',
+      hourlyWage: Number.isFinite(wage) ? wage : 0,
+      sortOrder: typeof body?.sortOrder === 'number' ? body.sortOrder : roles.length
+    };
+    roles.push(newRole);
+    store.set('roles', roles);
+    return newRole;
+  });
+
+  ipcMain.handle('update-role', async (event, id, body) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        const role = await api.patchRole(baseUrl, id, body);
+        const roles = store.get('roles', []);
+        const idx = roles.findIndex((r) => r.id === id);
+        if (idx !== -1) {
+          roles[idx] = { ...roles[idx], ...role };
+          store.set('roles', roles);
+        }
+        return role;
+      } catch (err) {
+        console.warn('API update-role fallback to store:', err.message);
+      }
+    }
+    const roles = store.get('roles', []);
+    const idx = roles.findIndex((r) => r.id === id);
+    if (idx === -1) return null;
+    if (body?.name !== undefined) roles[idx].name = (body.name ?? '').toString().trim();
+    if (body?.hourlyWage !== undefined) {
+      const w = parseFloat(body.hourlyWage);
+      roles[idx].hourlyWage = Number.isFinite(w) ? w : 0;
+    }
+    if (body?.sortOrder !== undefined) roles[idx].sortOrder = parseInt(body.sortOrder, 10) || 0;
+    store.set('roles', roles);
+    return roles[idx];
+  });
+
+  ipcMain.handle('delete-role', async (event, id) => {
+    const baseUrl = getBaseUrl(store);
+    if (baseUrl) {
+      try {
+        await api.deleteRole(baseUrl, id);
+        const roles = store.get('roles', []).filter((r) => r.id !== id);
+        store.set('roles', roles);
+        return true;
+      } catch (err) {
+        console.warn('API delete-role fallback to store:', err.message);
+      }
+    }
+    const roles = store.get('roles', []).filter((r) => r.id !== id);
+    store.set('roles', roles);
+    return true;
+  });
 }
 
 module.exports = { registerCatalogHandlers };

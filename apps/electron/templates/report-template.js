@@ -375,30 +375,19 @@
         `;
     }
 
-    // Ton/Lichttechnik
-    if (tontechniker.soundEngineerEnabled !== false) {
-        let soundHtml = '<div class="subsection-header">Sound Engineer:</div>';
-        if (tontechniker.soundEngineerName) soundHtml += createFieldRow('Name', tontechniker.soundEngineerName);
-        if (tontechniker.soundEngineerStartTime) soundHtml += createFieldRow('Start', tontechniker.soundEngineerStartTime);
-        if (tontechniker.soundEngineerEndTime) soundHtml += createFieldRow('Ende', tontechniker.soundEngineerEndTime);
-        const duration = calculateDuration(tontechniker.soundEngineerStartTime, tontechniker.soundEngineerEndTime);
-        if (duration !== '-') {
-            soundHtml += createFieldRow('Dauer', duration);
-        }
-        document.getElementById('sound-engineer-container').innerHTML = soundHtml;
+    // Ton/Lichttechnik – personnel list
+    const tonPersonnel = tontechniker.personnel || [];
+    const tonWithData = tonPersonnel.filter(p => (p.name || '').trim() || (p.startTime || '').trim() || (p.endTime || '').trim());
+    if (tonWithData.length > 0) {
+        let tonHtml = '<div class="table-container"><table style="width: 100%; border-collapse: collapse;"><thead><tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;"><th style="text-align: left; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Name</th><th style="text-align: left; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Rolle</th><th style="text-align: left; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Start</th><th style="text-align: left; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Ende</th><th style="text-align: left; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Dauer</th></tr></thead><tbody>';
+        tonWithData.forEach(person => {
+            const duration = calculateDuration(person.startTime, person.endTime);
+            tonHtml += '<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px;">' + escapeHtml(person.name || '-') + '</td><td style="padding: 10px;">' + escapeHtml(person.role || '-') + '</td><td style="padding: 10px;">' + escapeHtml(person.startTime || '-') + '</td><td style="padding: 10px;">' + escapeHtml(person.endTime || '-') + '</td><td style="padding: 10px;">' + escapeHtml(duration) + '</td></tr>';
+        });
+        tonHtml += '</tbody></table></div>';
+        document.getElementById('sound-engineer-container').innerHTML = tonHtml;
     }
-
-    if (tontechniker.lightingTechEnabled === true) {
-        let lightingHtml = '<div class="subsection-header">Lighting Tech:</div>';
-        if (tontechniker.lightingTechName) lightingHtml += createFieldRow('Name', tontechniker.lightingTechName);
-        if (tontechniker.lightingTechStartTime) lightingHtml += createFieldRow('Start', tontechniker.lightingTechStartTime);
-        if (tontechniker.lightingTechEndTime) lightingHtml += createFieldRow('Ende', tontechniker.lightingTechEndTime);
-        const duration = calculateDuration(tontechniker.lightingTechStartTime, tontechniker.lightingTechEndTime);
-        if (duration !== '-') {
-            lightingHtml += createFieldRow('Dauer', duration);
-        }
-        document.getElementById('lighting-tech-container').innerHTML = lightingHtml;
-    }
+    document.getElementById('lighting-tech-container').innerHTML = '';
 
     // Secu
     if (secu.securityPersonnel && secu.securityPersonnel.length > 0) {

@@ -77,18 +77,19 @@ const validateVVAtoSL = (formData) => {
     errors.push({ section: 'Hospitality', sectionId: 'rider-extras', field: 'Backstage Kühlschrank' });
   }
   
-  // Ton/Lichttechnik section - Get In Times (Start Times) required when enabled
+  // Ton/Lichttechnik section - personnel entries require start/end times
   const tontechnikerData = formData.tontechniker || {};
-  if (tontechnikerData.soundEngineerEnabled !== false) {
-    if (!tontechnikerData.soundEngineerStartTime || tontechnikerData.soundEngineerStartTime === '') {
-      errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Sound Engineer Start Zeit' });
+  const tonPersonnel = tontechnikerData.personnel || [];
+  tonPersonnel.forEach((p, index) => {
+    if ((p.name || '').trim()) {
+      if (!p.startTime || p.startTime === '') {
+        errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: `Ton/Licht Person ${index + 1} Start Zeit` });
+      }
+      if (!p.endTime || p.endTime === '') {
+        errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: `Ton/Licht Person ${index + 1} End Zeit` });
+      }
     }
-  }
-  if (tontechnikerData.lightingTechEnabled === true) {
-    if (!tontechnikerData.lightingTechStartTime || tontechnikerData.lightingTechStartTime === '') {
-      errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Lighting Tech Start Zeit' });
-    }
-  }
+  });
   
   return errors;
 };
@@ -181,33 +182,25 @@ const validateAllSectionsDetailed = (formData) => {
     }
   }
   
-  // Ton/Lichttechnik section
-  if (tontechnikerData.soundEngineerEnabled !== false) {
-    if (!tontechnikerData.soundEngineerName || tontechnikerData.soundEngineerName === '') {
-      errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Sound Engineer Name' });
+  // Ton/Lichttechnik section - personnel list
+  const tonPersonnel = tontechnikerData.personnel || [];
+  tonPersonnel.forEach((person, index) => {
+    const hasName = (person.name || '').trim() !== '';
+    const hasTime = (person.startTime || '').trim() !== '' || (person.endTime || '').trim() !== '';
+    if (hasName) {
+      if (!person.startTime || person.startTime === '') {
+        errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: `Ton/Licht Person ${index + 1} Start Zeit` });
+      }
+      if (!person.endTime || person.endTime === '') {
+        errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: `Ton/Licht Person ${index + 1} End Zeit` });
+      }
     }
-    if (!tontechnikerData.soundEngineerStartTime || tontechnikerData.soundEngineerStartTime === '') {
-      errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Sound Engineer Start Zeit' });
+    if (hasTime && !hasName) {
+      errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: `Ton/Licht Person ${index + 1} Name` });
     }
-    if (!tontechnikerData.soundEngineerEndTime || tontechnikerData.soundEngineerEndTime === '') {
-      errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Sound Engineer End Zeit' });
-    }
-  }
-  if (tontechnikerData.lightingTechEnabled === true) {
-    if (!tontechnikerData.lightingTechName || tontechnikerData.lightingTechName === '') {
-      errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Lighting Tech Name' });
-    }
-    if (!tontechnikerData.lightingTechStartTime || tontechnikerData.lightingTechStartTime === '') {
-      errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Lighting Tech Start Zeit' });
-    }
-    if (!tontechnikerData.lightingTechEndTime || tontechnikerData.lightingTechEndTime === '') {
-      errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Lighting Tech End Zeit' });
-    }
-  }
-  // Only require scanning if at least one tech is enabled
-  const soundEngineerEnabled = tontechnikerData.soundEngineerEnabled !== false;
-  const lightingTechEnabled = tontechnikerData.lightingTechEnabled === true;
-  if (soundEngineerEnabled || lightingTechEnabled) {
+  });
+  const tonPersonnelWithName = tonPersonnel.filter((p) => (p.name || '').trim());
+  if (tonPersonnelWithName.length > 0) {
     const scannedImages = tontechnikerData.scannedImages || [];
     if (scannedImages.length === 0) {
       errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Gescannte Bilder' });
@@ -311,47 +304,27 @@ const getRequiredFieldsCount = (sectionId, formData) => {
       }).length;
       return { filled: uebersichtFilled, total: uebersichtRequired.length };
     
-    case 'tontechniker':
-      // Count required fields based on enabled checkboxes
-      let tontechnikerRequired = [];
+    case 'tontechniker': {
+      const personnel = data.personnel || [];
+      let tontechnikerRequired = 0;
       let tontechnikerFilled = 0;
-      
-      // Sound engineer fields are required if enabled (default true)
-      if (data.soundEngineerEnabled !== false) {
-        const soundFields = ['soundEngineerName', 'soundEngineerStartTime', 'soundEngineerEndTime'];
-        tontechnikerRequired = tontechnikerRequired.concat(soundFields);
-        soundFields.forEach(field => {
-          const value = data[field];
-          if (value !== undefined && value !== null && value !== '') {
-            tontechnikerFilled++;
-          }
-        });
-      }
-      
-      // Lighting tech fields are required if enabled
-      if (data.lightingTechEnabled === true) {
-        const lightingFields = ['lightingTechName', 'lightingTechStartTime', 'lightingTechEndTime'];
-        tontechnikerRequired = tontechnikerRequired.concat(lightingFields);
-        lightingFields.forEach(field => {
-          const value = data[field];
-          if (value !== undefined && value !== null && value !== '') {
-            tontechnikerFilled++;
-          }
-        });
-      }
-      
-      // Scanned images are only required if at least one tech is enabled
-      const soundEngineerEnabled = data.soundEngineerEnabled !== false;
-      const lightingTechEnabled = data.lightingTechEnabled === true;
-      if (soundEngineerEnabled || lightingTechEnabled) {
-        const scannedImages = data.scannedImages || [];
-        tontechnikerRequired.push('scannedImages');
-        if (scannedImages.length > 0) {
-          tontechnikerFilled++;
+      personnel.forEach((p) => {
+        const hasName = (p.name || '').trim() !== '';
+        if (hasName) {
+          tontechnikerRequired += 3;
+          if (p.name && p.name.trim()) tontechnikerFilled++;
+          if (p.startTime && p.startTime.trim()) tontechnikerFilled++;
+          if (p.endTime && p.endTime.trim()) tontechnikerFilled++;
         }
+      });
+      const hasPersonnel = personnel.some((p) => (p.name || '').trim());
+      if (hasPersonnel) {
+        tontechnikerRequired += 1;
+        const scannedImages = data.scannedImages || [];
+        if (scannedImages.length > 0) tontechnikerFilled++;
       }
-      
-      return { filled: tontechnikerFilled, total: tontechnikerRequired.length };
+      return { filled: tontechnikerFilled, total: tontechnikerRequired };
+    }
     
     case 'rider-extras':
       const hospitalityRequired = ['getInCatering', 'dinner', 'standardbestueckung', 'travelPartyGetIn', 'nightlinerParkplatz'];
@@ -575,23 +548,15 @@ const getVVAFieldsStatus = (formData) => {
     isFilled: !!(riderExtrasData.standardbestueckung && riderExtrasData.standardbestueckung !== '')
   });
   
-  // Ton/Lichttechnik - Sound Engineer Start Zeit
-  if (tontechnikerData.soundEngineerEnabled !== false) {
+  // Ton/Lichttechnik - first personnel start time (VVA check)
+  const tonPersonnel = tontechnikerData.personnel || [];
+  const firstWithName = tonPersonnel.find((p) => (p.name || '').trim());
+  if (firstWithName) {
     fields.push({
       section: 'Ton/Lichttechnik',
       sectionId: 'tontechniker',
-      field: 'Sound Engineer Start Zeit',
-      isFilled: !!(tontechnikerData.soundEngineerStartTime && tontechnikerData.soundEngineerStartTime !== '')
-    });
-  }
-  
-  // Ton/Lichttechnik - Lighting Tech Start Zeit
-  if (tontechnikerData.lightingTechEnabled === true) {
-    fields.push({
-      section: 'Ton/Lichttechnik',
-      sectionId: 'tontechniker',
-      field: 'Lighting Tech Start Zeit',
-      isFilled: !!(tontechnikerData.lightingTechStartTime && tontechnikerData.lightingTechStartTime !== '')
+      field: 'Ton/Licht Start Zeit',
+      isFilled: !!(firstWithName.startTime && firstWithName.startTime !== '')
     });
   }
   
@@ -725,52 +690,30 @@ const getAllFieldsStatus = (formData) => {
     });
   }
   
-  // Ton/Lichttechnik section
-  if (tontechnikerData.soundEngineerEnabled !== false) {
+  // Ton/Lichttechnik section - personnel list
+  const tonPersonnel = tontechnikerData.personnel || [];
+  tonPersonnel.forEach((person, index) => {
+    if (!(person.name || '').trim()) return;
     fields.push({
       section: 'Ton/Lichttechnik',
       sectionId: 'tontechniker',
-      field: 'Sound Engineer Name',
-      isFilled: !!(tontechnikerData.soundEngineerName && tontechnikerData.soundEngineerName !== '')
+      field: `Ton/Licht Person ${index + 1} Name`,
+      isFilled: !!(person.name && person.name.trim() !== '')
     });
     fields.push({
       section: 'Ton/Lichttechnik',
       sectionId: 'tontechniker',
-      field: 'Sound Engineer Start Zeit',
-      isFilled: !!(tontechnikerData.soundEngineerStartTime && tontechnikerData.soundEngineerStartTime !== '')
+      field: `Ton/Licht Person ${index + 1} Start Zeit`,
+      isFilled: !!(person.startTime && person.startTime !== '')
     });
     fields.push({
       section: 'Ton/Lichttechnik',
       sectionId: 'tontechniker',
-      field: 'Sound Engineer End Zeit',
-      isFilled: !!(tontechnikerData.soundEngineerEndTime && tontechnikerData.soundEngineerEndTime !== '')
+      field: `Ton/Licht Person ${index + 1} End Zeit`,
+      isFilled: !!(person.endTime && person.endTime !== '')
     });
-  }
-  
-  if (tontechnikerData.lightingTechEnabled === true) {
-    fields.push({
-      section: 'Ton/Lichttechnik',
-      sectionId: 'tontechniker',
-      field: 'Lighting Tech Name',
-      isFilled: !!(tontechnikerData.lightingTechName && tontechnikerData.lightingTechName !== '')
-    });
-    fields.push({
-      section: 'Ton/Lichttechnik',
-      sectionId: 'tontechniker',
-      field: 'Lighting Tech Start Zeit',
-      isFilled: !!(tontechnikerData.lightingTechStartTime && tontechnikerData.lightingTechStartTime !== '')
-    });
-    fields.push({
-      section: 'Ton/Lichttechnik',
-      sectionId: 'tontechniker',
-      field: 'Lighting Tech End Zeit',
-      isFilled: !!(tontechnikerData.lightingTechEndTime && tontechnikerData.lightingTechEndTime !== '')
-    });
-  }
-  
-  const soundEngineerEnabled = tontechnikerData.soundEngineerEnabled !== false;
-  const lightingTechEnabled = tontechnikerData.lightingTechEnabled === true;
-  if (soundEngineerEnabled || lightingTechEnabled) {
+  });
+  if (tonPersonnel.some((p) => (p.name || '').trim())) {
     const scannedImages = tontechnikerData.scannedImages || [];
     fields.push({
       section: 'Ton/Lichttechnik',

@@ -8,8 +8,6 @@ const { getPool } = require('../db');
 
 const router = express.Router();
 
-const ROLES = ['secu', 'ton_licht', 'andere'];
-
 function poolOr503(req, res, next) {
   if (!getPool()) return res.status(503).json({ error: 'Database not configured' });
   next();
@@ -55,7 +53,7 @@ router.get('/', async (req, res) => {
       conditions.push(`entry_date <= $${n++}`);
       values.push(to.trim());
     }
-    if (role && typeof role === 'string' && ROLES.includes(role.trim())) {
+    if (role && typeof role === 'string' && role.trim()) {
       conditions.push(`role = $${n++}`);
       values.push(role.trim());
     }
