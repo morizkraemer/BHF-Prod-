@@ -57,6 +57,9 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
     setScannedImages(updatedDocuments);
   };
 
+  // Ton/Licht: show only roles that are not Secu
+  const tonLichtRoles = roles.filter((r) => (r.name || '').trim().toLowerCase() !== 'secu');
+
   return (
     <div className="form-container">
       <div className="tontechniker-form">
@@ -69,8 +72,8 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
               getNames={window.electronAPI?.getTechNames ?? null}
               addName={window.electronAPI?.addTechName ?? null}
               roleMode="select"
-              getRoles={() => roles}
-              roles={roles}
+              getRoles={() => tonLichtRoles}
+              roles={tonLichtRoles}
               emptyMessage="Keine Ton/Licht-Personen hinzugefügt"
               addButtonLabel="+ Add Person"
               sectionClass="tontechniker-personnel"

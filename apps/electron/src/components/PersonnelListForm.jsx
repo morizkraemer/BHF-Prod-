@@ -1,6 +1,6 @@
 /**
  * Reusable personnel list: name, startTime, endTime, optional role column, optional extra fields.
- * roleMode: 'fixed' (one role for all), 'select' (dropdown per row), 'personWage' (no role column; wage from person at close-shift).
+ * roleMode: 'fixed' (one role for all; show role column disabled), 'select' (dropdown per row), 'personWage' (no role column; wage from person at close-shift).
  */
 
 const { useState, useEffect } = React;
@@ -87,7 +87,7 @@ function PersonnelListForm({
         <div className={`${headerClass}-name`}>Name</div>
         <div className={`${headerClass}-start`}>Start</div>
         <div className={`${headerClass}-end`}>Ende</div>
-        {roleMode === 'select' && <div className={`${headerClass}-role`}>Rolle</div>}
+        {(roleMode === 'select' || (roleMode === 'fixed' && fixedRoleName)) && <div className={`${headerClass}-role`}>Rolle</div>}
         {extraFields.map((f) => (
           <div key={f.key} className={`${headerClass}-${f.key}`}>{f.label}</div>
         ))}
@@ -146,6 +146,16 @@ function PersonnelListForm({
                   <option key={r.id} value={r.name ?? ''}>{r.name}</option>
                 ))}
               </select>
+            )}
+            {roleMode === 'fixed' && fixedRoleName && (
+              <input
+                type="text"
+                value={fixedRoleName}
+                readOnly
+                disabled
+                className={`${sectionClass}-role ${sectionClass}-role-disabled`}
+                aria-label="Rolle"
+              />
             )}
             {extraFields.map((f) =>
               f.options ? (

@@ -121,7 +121,7 @@
 
 .secu-personnel-header {
   display: grid;
-  grid-template-columns: 1fr 0.33fr 0.33fr 40px;
+  grid-template-columns: 1fr 0.33fr 0.33fr 1.2fr 40px;
   gap: 10px;
   padding: 8px 0;
   font-weight: 600;
@@ -141,7 +141,7 @@
 
 .secu-personnel-line {
   display: grid;
-  grid-template-columns: 1fr 0.33fr 0.33fr 40px;
+  grid-template-columns: 1fr 0.33fr 0.33fr 1.2fr 40px;
   gap: 10px;
   align-items: center;
   padding: 8px 0;
@@ -253,6 +253,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.secu-personnel-role-disabled {
+  padding: 10px 8px;
+  font-size: 14px;
+  background-color: #f5f5f5;
+  color: #555;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  cursor: default;
+  min-width: 0;
 }
 
 /* Andere Mitarbeiter Form */
