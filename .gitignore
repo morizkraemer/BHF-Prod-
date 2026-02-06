@@ -1,13 +1,16 @@
 node_modules/
-.pnpm-store/
+**/node_modules/
 dist/
+**/dist/
 build/
+**/build/
 *.log
 .DS_Store
 output/
 *.pdf
 .vscode/
 .idea/
+.cursor/
 debug.flag
 .env.build
 backend/.env

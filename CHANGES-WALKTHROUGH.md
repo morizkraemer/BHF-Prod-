@@ -7,7 +7,7 @@ This document summarizes all **uncommitted** changes: what they do, how they fit
 ## 1. Config & dependencies
 
 ### `.gitignore`
-- **Change:** Added `.pnpm-store/` so pnpm’s local store is not committed.
+- **Change:** Ignores `node_modules/`, `dist/`, build artifacts, env files, etc.
 - **Makes sense:** Yes; avoids committing a large cache.
 
 ### `config/store.js`
@@ -21,7 +21,7 @@ This document summarizes all **uncommitted** changes: what they do, how they fit
 - **Change:** Added `exceljs` dependency; `devDependencies` reordered (e.g. `@electron/packager` before `electron`).
 - **Makes sense:** Yes; Excel create/append needs ExcelJS.
 
-### `pnpm-lock.yaml`
+### `package-lock.json`
 - **Change:** Lockfile updated for dependency changes.
 - **Makes sense:** Yes; keep lockfile in sync with `package.json`.
 

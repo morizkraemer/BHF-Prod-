@@ -10,47 +10,47 @@ Monorepo: Electron desktop app + API backend for gathering end-of-shift informat
 
 ## Development
 
-### From repo root (pnpm workspace)
+### From repo root (npm workspace)
 
 1. Install all dependencies:
    ```bash
-   pnpm install
+   npm install
    ```
 
 2. Run the Electron app:
    ```bash
-   pnpm start:electron
+   npm run start:electron
    # or with DevTools
-   pnpm dev:electron
+   npm run dev:electron
    ```
 
 3. Run the backend (local, no Docker):
    ```bash
-   pnpm start:backend
+   npm run start:backend
    # or with nodemon
-   pnpm dev:backend
+   npm run dev:backend
    ```
 
 4. Run backend via Docker (Postgres + API):
    ```bash
-   pnpm docker:up
+   npm run docker:up
    ```
-   API: `http://localhost:3001`. Stop with `pnpm docker:down`.
+   API: `http://localhost:3001`. Stop with `npm run docker:down`.
 
 ### From an app directory
 
-- **Electron:** `cd apps/electron && pnpm install && pnpm start` (or `pnpm dev`)
-- **Backend:** `cd apps/backend && pnpm install && pnpm start` (or `pnpm dev`). Set `DATABASE_URL` and `STORAGE_PATH` (see `apps/backend/.env.example`).
+- **Electron:** `cd apps/electron && npm install && npm start` (or `npm run dev`)
+- **Backend:** `cd apps/backend && npm install && npm start` (or `npm run dev`). Set `DATABASE_URL` and `STORAGE_PATH` (see `apps/backend/.env.example`).
 
 ## Building the Electron app
 
 ```bash
 cd apps/electron
-pnpm run build        # macOS
-pnpm run build:mac
-pnpm run build:win
-pnpm run build:linux
-pnpm run build:all
+npm run build        # macOS
+npm run build:mac
+npm run build:win
+npm run build:linux
+npm run build:all
 ```
 
 Output goes to `apps/electron/dist/`.

@@ -227,7 +227,7 @@ Order of work: **Phase 1** (backend + Docker) → **Phase 2** (Electron as clien
 | **8** | Secu form on backend: added pdf-lib, backend/utils/secuFormPdf.js; backend/routes/secuForm.js (POST /api/forms/secu/submit, POST /api/secu-submit, GET /api/secu-names, POST /api/secu-add-name). Submit gets current event, generates PDF, writes to storage, inserts document row, adds names to person_names (secu). backend/public/secu/ and backend/public/src/ for form static files; GET /forms/secu serves form; static serves /secu/* and /src/*. SecuFormMobile.jsx patched for backend current-event response (currentEvent, eventDate). |
 | **9** | Close-shift: added exceljs, backend/utils/zeiterfassungExcel.js; backend/services/closeShift.js (runCloseShift: collect scanned docs from formData + documents table, create reports/{date}_{eventName}/, merge section PDFs with pdf-lib, write section PDFs + insert document rows; Zeiterfassung build/append, write to storage/zeiterfassung/, insert document row; set phase closed). POST /api/events/:id/close in events.js. Report PDF (HTML→PDF) deferred to Phase 3. |
 
-**Run the stack:** From repo root: `pnpm docker:up` or `docker compose up -d`. API: `http://localhost:3001`. To stop: `pnpm docker:down` or `docker compose down`.
+**Run the stack:** From repo root: `npm run docker:up` or `docker compose up -d`. API: `http://localhost:3001`. To stop: `npm run docker:down` or `docker compose down`.
 
 ### Phase 2: Electron app as client
 

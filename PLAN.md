@@ -146,7 +146,7 @@ Produktionstool/
 ### Phase 1: Basic Setup ✅ COMPLETE
 - [x] Initialize Electron project
 - [x] Set up React in renderer process
-- [x] Configure build tools and scripts (using pnpm)
+- [x] Configure build tools and scripts (using npm)
 - [x] Create basic window structure
 - [x] Sidebar navigation with 4 sections
 - [x] Close Shift button (UI only, functionality in Phase 4)
