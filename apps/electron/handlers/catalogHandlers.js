@@ -367,19 +367,22 @@ function registerCatalogHandlers(ipcMain, store) {
     return true;
   });
 
-  // Bestückung Total Prices (stored in settings on backend)
+  // Bestückung Total Prices (stored in settings on backend) – 4 keys: leer, abgeschlossen, standard-konzert, standard-tranzit
+  const defaultBestueckungTotalPrices = () => ({ 'leer': '', 'abgeschlossen': '', 'standard-konzert': '', 'standard-tranzit': '' });
+  const defaultBestueckungPricingTypes = () => ({ 'leer': 'pauschale', 'abgeschlossen': 'pauschale', 'standard-konzert': 'pauschale', 'standard-tranzit': 'pauschale' });
+
   ipcMain.handle('get-bestueckung-total-prices', async () => {
     const baseUrl = getBaseUrl(store);
     if (baseUrl) {
       try {
         const all = await api.getSettings(baseUrl);
         const prices = (all && all.bestueckungTotalPrices) ? all.bestueckungTotalPrices : {};
-        return { 'standard-konzert': prices['standard-konzert'] ?? '', 'standard-tranzit': prices['standard-tranzit'] ?? '' };
+        return { ...defaultBestueckungTotalPrices(), ...prices };
       } catch (err) {
         console.warn('API get-bestueckung-total-prices fallback to store:', err.message);
       }
     }
-    return store.get('bestueckungTotalPrices', { 'standard-konzert': '', 'standard-tranzit': '' });
+    return store.get('bestueckungTotalPrices', defaultBestueckungTotalPrices());
   });
 
   ipcMain.handle('save-bestueckung-total-price', async (event, bestueckungKey, price) => {
@@ -387,7 +390,7 @@ function registerCatalogHandlers(ipcMain, store) {
     if (baseUrl) {
       try {
         const all = await api.getSettings(baseUrl);
-        const prices = (all && all.bestueckungTotalPrices) ? { ...all.bestueckungTotalPrices } : {};
+        const prices = (all && all.bestueckungTotalPrices) ? { ...all.bestueckungTotalPrices } : defaultBestueckungTotalPrices();
         prices[bestueckungKey] = price;
         await api.setSetting(baseUrl, 'bestueckungTotalPrices', prices);
         return true;
@@ -395,9 +398,9 @@ function registerCatalogHandlers(ipcMain, store) {
         console.warn('API save-bestueckung-total-price fallback to store:', err.message);
       }
     }
-    const prices = store.get('bestueckungTotalPrices', { 'standard-konzert': '', 'standard-tranzit': '' });
+    const prices = store.get('bestueckungTotalPrices', defaultBestueckungTotalPrices());
     prices[bestueckungKey] = price;
-    store.set('bestueckungTotalPrices', prices);
+    store.set('bestueckungTotalPrices', { ...prices });
     return true;
   });
 
@@ -407,12 +410,12 @@ function registerCatalogHandlers(ipcMain, store) {
       try {
         const all = await api.getSettings(baseUrl);
         const types = (all && all.bestueckungPricingTypes) ? all.bestueckungPricingTypes : {};
-        return { 'standard-konzert': types['standard-konzert'] ?? 'pauschale', 'standard-tranzit': types['standard-tranzit'] ?? 'pauschale' };
+        return { ...defaultBestueckungPricingTypes(), ...types };
       } catch (err) {
         console.warn('API get-bestueckung-pricing-types fallback to store:', err.message);
       }
     }
-    return store.get('bestueckungPricingTypes', { 'standard-konzert': 'pauschale', 'standard-tranzit': 'pauschale' });
+    return store.get('bestueckungPricingTypes', defaultBestueckungPricingTypes());
   });
 
   ipcMain.handle('save-bestueckung-pricing-type', async (event, bestueckungKey, pricingType) => {
@@ -420,7 +423,7 @@ function registerCatalogHandlers(ipcMain, store) {
     if (baseUrl) {
       try {
         const all = await api.getSettings(baseUrl);
-        const types = (all && all.bestueckungPricingTypes) ? { ...all.bestueckungPricingTypes } : {};
+        const types = (all && all.bestueckungPricingTypes) ? { ...all.bestueckungPricingTypes } : defaultBestueckungPricingTypes();
         types[bestueckungKey] = pricingType;
         await api.setSetting(baseUrl, 'bestueckungPricingTypes', types);
         return true;
@@ -428,9 +431,9 @@ function registerCatalogHandlers(ipcMain, store) {
         console.warn('API save-bestueckung-pricing-type fallback to store:', err.message);
       }
     }
-    const types = store.get('bestueckungPricingTypes', { 'standard-konzert': 'pauschale', 'standard-tranzit': 'pauschale' });
+    const types = store.get('bestueckungPricingTypes', defaultBestueckungPricingTypes());
     types[bestueckungKey] = pricingType;
-    store.set('bestueckungPricingTypes', types);
+    store.set('bestueckungPricingTypes', { ...types });
     return true;
   });
 

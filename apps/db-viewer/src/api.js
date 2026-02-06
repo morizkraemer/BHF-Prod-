@@ -167,3 +167,15 @@ export async function deleteRiderItem(id) {
     method: 'DELETE',
   });
 }
+
+// --- Settings (key-value) ---
+export async function getSetting(key) {
+  return request(`/api/settings/${encodeURIComponent(key)}`);
+}
+
+export async function setSetting(key, value) {
+  return request(`/api/settings/${encodeURIComponent(key)}`, {
+    method: 'PUT',
+    body: JSON.stringify(value),
+  });
+}

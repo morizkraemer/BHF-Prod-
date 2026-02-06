@@ -36,8 +36,6 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
   const [showSuggestions, setShowSuggestions] = useState({});
   const [filteredSuggestions, setFilteredSuggestions] = useState({});
   const [searchByIndex, setSearchByIndex] = useState({});
-  const [bestueckungItems, setBestueckungItems] = useState([]);
-  const [customizedFridgeItems, setCustomizedFridgeItems] = useState(formData?.customizedFridgeItems || []);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [pendingAddName, setPendingAddName] = useState('');
   const [pendingAddRowIndex, setPendingAddRowIndex] = useState(null);
@@ -90,32 +88,6 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
     return res.price;
   }
 
-  // Load bestueckung items when standardbestueckung changes
-  useEffect(() => {
-    if (standardbestueckung && (standardbestueckung === 'standard-konzert' || standardbestueckung === 'standard-tranzit') && window.electronAPI && window.electronAPI.getBestueckungList) {
-      window.electronAPI.getBestueckungList(standardbestueckung).then(listItems => {
-        // Look up the actual rider items from the catalog and include amounts
-        const items = (listItems || [])
-          .map(listItem => {
-            const riderItem = catalogItems.find(item => item.id === listItem.riderItemId);
-            if (!riderItem) return null;
-            return { ...riderItem, amount: listItem.amount || 1 };
-          })
-          .filter(item => item !== null); // Remove any items not found in catalog
-        setBestueckungItems(items);
-        // Initialize customized items with the loaded items if not already set
-        if (formData?.customizedFridgeItems && formData.customizedFridgeItems.length > 0) {
-          setCustomizedFridgeItems(formData.customizedFridgeItems);
-        } else {
-          setCustomizedFridgeItems(items);
-        }
-      });
-    } else {
-      setBestueckungItems([]);
-      setCustomizedFridgeItems([]);
-    }
-  }, [standardbestueckung, catalogItems]);
-
   useEffect(() => {
     if (onDataChange) {
       onDataChange({ 
@@ -128,11 +100,10 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
         scannedDocuments,
         purchaseReceipts,
         buyoutQuittungDocuments,
-        notes,
-        customizedFridgeItems
+        notes
       });
     }
-  }, [items, standardbestueckung, getInCatering, dinner, buyoutProvider, buyoutGroups, scannedDocuments, purchaseReceipts, buyoutQuittungDocuments, notes, customizedFridgeItems]);
+  }, [items, standardbestueckung, getInCatering, dinner, buyoutProvider, buyoutGroups, scannedDocuments, purchaseReceipts, buyoutQuittungDocuments, notes]);
 
   useEffect(() => {
     if (window.lucide) {
@@ -163,11 +134,6 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
       const newGroups = buyoutGroups.filter((_, i) => i !== index);
       setBuyoutGroups(newGroups);
     }
-  };
-
-  const handleRemoveFridgeItem = (itemId) => {
-    const updatedItems = customizedFridgeItems.filter(item => item.id !== itemId);
-    setCustomizedFridgeItems(updatedItems);
   };
 
   const handleAmountChange = (index, value) => {
@@ -505,15 +471,16 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
               </div>
             </div>
 
-            {/* Right Side: Fridge Select + Contents List */}
-            <div className={`fridge-section ${shouldHighlight('Backstage Kühlschrank') ? 'field-highlighted-group' : ''}`}>
-              <h3 className="fridge-section-title">Backstage Kühlschrank</h3>
+            {/* Backstage Kühlschrank: small dropdown only */}
+            <div className={`form-group ${shouldHighlight('Backstage Kühlschrank') ? 'field-highlighted-group' : ''}`} style={{ marginTop: 12 }}>
+              <label className="catering-radio-label" htmlFor="standardbestueckung">Backstage Kühlschrank *</label>
               <select
                 id="standardbestueckung"
                 value={standardbestueckung}
                 onChange={(e) => setStandardbestueckung(e.target.value)}
                 className={`standardbestueckung-select ${shouldHighlight('Backstage Kühlschrank') ? 'field-highlighted' : ''}`}
                 required
+                style={{ maxWidth: 220 }}
               >
                 {standardbestueckungOptions.map(option => (
                   <option key={option.value} value={option.value}>
@@ -521,29 +488,6 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
                   </option>
                 ))}
               </select>
-              <div className="fridge-contents-list">
-                {customizedFridgeItems.length > 0 ? (
-                  <ul className="fridge-contents-items">
-                    {customizedFridgeItems.map((item) => (
-                      <li key={item.id} className="fridge-contents-item">
-                        <span className="fridge-item-text">
-                          {item.amount}x {item.name} {item.price ? `(€${item.price.toFixed(2)})` : ''}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveFridgeItem(item.id)}
-                          className="remove-fridge-item-button"
-                          title="Item entfernen"
-                        >
-                          ×
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="fridge-contents-empty">Keine Items</p>
-                )}
-              </div>
             </div>
           </div>
         </div>

@@ -208,8 +208,9 @@
         }
     }
     
-    // Bestückung (if standard-konzert or standard-tranzit is selected)
-    if (riderExtras.standardbestueckung === 'standard-konzert' || riderExtras.standardbestueckung === 'standard-tranzit') {
+    // Bestückung (any of the 4 options: leer, abgeschlossen, standard-konzert, standard-tranzit)
+    const bestueckungKeys = ['leer', 'abgeschlossen', 'standard-konzert', 'standard-tranzit'];
+    if (riderExtras.standardbestueckung && bestueckungKeys.indexOf(riderExtras.standardbestueckung) !== -1) {
         const bestueckungKey = riderExtras.standardbestueckung;
         const pricingType = bestueckungPricingTypes[bestueckungKey] || 'pauschale';
         const priceStr = bestueckungTotalPrices[bestueckungKey];
@@ -218,6 +219,8 @@
             const unitPrice = parseFloat(priceStr) || 0;
             if (unitPrice > 0) {
                 const bestueckungMap = {
+                    'leer': 'Leer',
+                    'abgeschlossen': 'Abgeschlossen',
                     'standard-konzert': 'Standard Konzert',
                     'standard-tranzit': 'Standard Tranzit'
                 };
@@ -317,30 +320,10 @@
     let bestueckungValue = riderExtras.standardbestueckung ? (bestueckungMap[riderExtras.standardbestueckung] || riderExtras.standardbestueckung) : '-';
     const displayValue = bestueckungValue !== '-' ? `Backstage Kühlschrank: ${bestueckungValue}` : '-';
     document.getElementById('field-backstage-kuehlschrank').innerHTML = createFieldRow('Backstage Kühlschrank', displayValue);
-    
-    if (riderExtras.standardbestueckung) {
 
-        // Fridge Items
-        if (riderExtras.customizedFridgeItems && riderExtras.customizedFridgeItems.length > 0) {
-            let fridgeHtml = '<div class="subsection-header">Kühlschrank Items:</div><div class="table-container"><table style="width: 100%; border-collapse: collapse;"><thead><tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;"><th style="text-align: left; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Item</th><th style="text-align: right; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Menge</th><th style="text-align: right; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Preis</th></tr></thead><tbody>';
-            riderExtras.customizedFridgeItems.forEach(item => {
-                if (item.name) {
-                    let price = '-';
-                    if (item.price !== undefined && item.price !== null && item.price !== '') {
-                        const priceNum = typeof item.price === 'number' ? item.price : parseFloat(String(item.price));
-                        if (!isNaN(priceNum) && isFinite(priceNum)) {
-                            price = `€${priceNum.toFixed(2)}`;
-                        }
-                    }
-                    fridgeHtml += `<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px;">${escapeHtml(item.name)}</td><td style="text-align: right; padding: 10px;">${escapeHtml(String(item.amount || '-'))}</td><td style="text-align: right; padding: 10px;">${escapeHtml(price)}</td></tr>`;
-                }
-            });
-            fridgeHtml += '</tbody></table></div>';
-            document.getElementById('fridge-items-container').innerHTML = fridgeHtml;
-        } else if (riderExtras.standardbestueckung === 'standard-konzert' || riderExtras.standardbestueckung === 'standard-tranzit') {
-            document.getElementById('fridge-items-container').innerHTML = '<div class="empty-state">(Keine Items hinzugefügt)</div>';
-        }
-    }
+    // Fridge items container no longer used (Backstage Kühlschrank is dropdown + prices only)
+    var fridgeEl = document.getElementById('fridge-items-container');
+    if (fridgeEl) fridgeEl.innerHTML = '';
 
     // Extras (resolve riderItemId -> name, price from riderItems)
     const riderItems = data.riderItems || [];

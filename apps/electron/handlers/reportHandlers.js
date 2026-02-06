@@ -147,29 +147,28 @@ function registerReportHandlers(ipcMain, store) {
       // Create event folder
       await fs.mkdir(eventFolderPath, { recursive: true });
       
-      // Get catering prices from settings store
-      const cateringPrices = store.get('cateringPrices', {
-        warmPerPerson: '',
-        coldPerPerson: ''
-      });
-      
-      // Get pauschale prices from settings store
+      // Get catering and bestueckung settings: from API when serverUrl set (viewer-managed), else from store
+      const defaultBestueckungPrices = () => ({ 'leer': '', 'abgeschlossen': '', 'standard-konzert': '', 'standard-tranzit': '' });
+      const defaultBestueckungTypes = () => ({ 'leer': 'pauschale', 'abgeschlossen': 'pauschale', 'standard-konzert': 'pauschale', 'standard-tranzit': 'pauschale' });
+      let cateringPrices = store.get('cateringPrices', { warmPerPerson: '', coldPerPerson: '' });
+      let bestueckungTotalPrices = { ...defaultBestueckungPrices(), ...store.get('bestueckungTotalPrices', defaultBestueckungPrices()) };
+      let bestueckungPricingTypes = { ...defaultBestueckungTypes(), ...store.get('bestueckungPricingTypes', defaultBestueckungTypes()) };
+      if (serverUrl) {
+        try {
+          const all = await api.getSettings(serverUrl);
+          if (all && all.cateringPrices != null) cateringPrices = { warmPerPerson: '', coldPerPerson: '', ...all.cateringPrices };
+          if (all && all.bestueckungTotalPrices != null) bestueckungTotalPrices = { ...defaultBestueckungPrices(), ...all.bestueckungTotalPrices };
+          if (all && all.bestueckungPricingTypes != null) bestueckungPricingTypes = { ...defaultBestueckungTypes(), ...all.bestueckungPricingTypes };
+        } catch (e) {
+          // keep store values
+        }
+      }
+
+      // Get pauschale prices from settings store (Electron-only)
       const pauschalePrices = store.get('pauschalePrices', {
         standard: '',
         longdrinks: '',
         shots: ''
-      });
-      
-      // Get bestueckung total prices from settings store
-      const bestueckungTotalPrices = store.get('bestueckungTotalPrices', {
-        'standard-konzert': '',
-        'standard-tranzit': ''
-      });
-      
-      // Get bestueckung pricing types from settings store
-      const bestueckungPricingTypes = store.get('bestueckungPricingTypes', {
-        'standard-konzert': 'pauschale',
-        'standard-tranzit': 'pauschale'
       });
       
       // Get rider items for resolving riderItemId -> name/price in report

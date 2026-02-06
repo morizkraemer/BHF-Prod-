@@ -12,10 +12,6 @@ function SettingsForm() {
   const [editItemPrice, setEditItemPrice] = useState('');
   const [editItemEkPrice, setEditItemEkPrice] = useState('');
   const [editItemCategory, setEditItemCategory] = useState('Extra');
-  const [cateringPrices, setCateringPrices] = useState({
-    warmPerPerson: '',
-    coldPerPerson: ''
-  });
   const [pauschalePrices, setPauschalePrices] = useState({
     standard: '',
     longdrinks: '',
@@ -37,25 +33,6 @@ function SettingsForm() {
     kassenzettel: null,
     gaesteliste: null
   });
-  const [bestueckungLists, setBestueckungLists] = useState({
-    'standard-konzert': [],
-    'standard-tranzit': []
-  });
-  const [bestueckungTotalPrices, setBestueckungTotalPrices] = useState({
-    'standard-konzert': '',
-    'standard-tranzit': ''
-  });
-  const [bestueckungPricingTypes, setBestueckungPricingTypes] = useState({
-    'standard-konzert': 'pauschale',
-    'standard-tranzit': 'pauschale'
-  });
-  const [selectedBestueckung, setSelectedBestueckung] = useState('standard-konzert');
-  const [selectedRiderItemId, setSelectedRiderItemId] = useState('');
-  const [selectedItemAmount, setSelectedItemAmount] = useState('1');
-  const [editingBestueckungItem, setEditingBestueckungItem] = useState(null);
-  const [editSelectedRiderItemId, setEditSelectedRiderItemId] = useState('');
-  const [editItemAmount, setEditItemAmount] = useState('1');
-
   const checkScannerAvailability = async () => {
     if (window.electronAPI && window.electronAPI.checkScannerAvailability) {
       try {
@@ -69,18 +46,14 @@ function SettingsForm() {
 
   useEffect(() => {
     loadItems();
-    loadCateringPrices();
     loadPauschalePrices();
     loadScanners();
-    loadBestueckungTotalPrices();
-    loadBestueckungPricingTypes();
     loadSelectedScanner();
     loadServerUrl();
     loadScanFolder();
     loadReportFolder();
     loadEinkaufsbelegeFolder();
     loadTemplates();
-    loadBestueckungLists();
     checkScannerAvailability();
     
     // Check scanner availability periodically
@@ -226,20 +199,6 @@ function SettingsForm() {
     }
   };
 
-  const loadCateringPrices = async () => {
-    if (window.electronAPI && window.electronAPI.getCateringPrices) {
-      const prices = await window.electronAPI.getCateringPrices();
-      setCateringPrices(prices || { warmPerPerson: '', coldPerPerson: '' });
-    }
-  };
-
-  const handleSaveCateringPrices = async () => {
-    if (window.electronAPI && window.electronAPI.saveCateringPrices) {
-      await window.electronAPI.saveCateringPrices(cateringPrices);
-      alert('Catering Preise gespeichert');
-    }
-  };
-
   const loadPauschalePrices = async () => {
     if (window.electronAPI && window.electronAPI.getPauschalePrices) {
       const prices = await window.electronAPI.getPauschalePrices();
@@ -251,50 +210,6 @@ function SettingsForm() {
     if (window.electronAPI && window.electronAPI.savePauschalePrices) {
       await window.electronAPI.savePauschalePrices(pauschalePrices);
       alert('Pauschale Preise gespeichert');
-    }
-  };
-
-  const loadBestueckungLists = async () => {
-    if (window.electronAPI && window.electronAPI.getBestueckungLists) {
-      const lists = await window.electronAPI.getBestueckungLists();
-      setBestueckungLists(lists || {
-        'standard-konzert': [],
-        'standard-tranzit': []
-      });
-    }
-  };
-
-  const loadBestueckungTotalPrices = async () => {
-    if (window.electronAPI && window.electronAPI.getBestueckungTotalPrices) {
-      const prices = await window.electronAPI.getBestueckungTotalPrices();
-      setBestueckungTotalPrices(prices || {
-        'standard-konzert': '',
-        'standard-tranzit': ''
-      });
-    }
-  };
-
-  const loadBestueckungPricingTypes = async () => {
-    if (window.electronAPI && window.electronAPI.getBestueckungPricingTypes) {
-      const types = await window.electronAPI.getBestueckungPricingTypes();
-      setBestueckungPricingTypes(types || {
-        'standard-konzert': 'pauschale',
-        'standard-tranzit': 'pauschale'
-      });
-    }
-  };
-
-  const handleSaveBestueckungTotalPrice = async (bestueckungKey) => {
-    if (window.electronAPI && window.electronAPI.saveBestueckungTotalPrice) {
-      await window.electronAPI.saveBestueckungTotalPrice(bestueckungKey, bestueckungTotalPrices[bestueckungKey]);
-      alert('Gesamtpreis gespeichert');
-    }
-  };
-
-  const handleSaveBestueckungPricingType = async (bestueckungKey) => {
-    if (window.electronAPI && window.electronAPI.saveBestueckungPricingType) {
-      await window.electronAPI.saveBestueckungPricingType(bestueckungKey, bestueckungPricingTypes[bestueckungKey]);
-      alert('Preisart gespeichert');
     }
   };
 
@@ -384,76 +299,6 @@ function SettingsForm() {
     }
   };
 
-
-  // Bestückung handlers
-  const handleAddBestueckungItem = async () => {
-    if (!selectedRiderItemId) {
-      alert('Bitte ein Item auswählen');
-      return;
-    }
-
-    const amount = parseFloat(selectedItemAmount) || 1;
-    if (amount <= 0) {
-      alert('Die Menge muss größer als 0 sein');
-      return;
-    }
-
-    if (window.electronAPI && window.electronAPI.addBestueckungItem) {
-      const result = await window.electronAPI.addBestueckungItem(selectedBestueckung, selectedRiderItemId, amount);
-      if (result) {
-        setSelectedRiderItemId('');
-        setSelectedItemAmount('1');
-        loadBestueckungLists();
-      } else {
-        alert('Dieses Item ist bereits in der Liste');
-      }
-    }
-  };
-
-  const handleStartEditBestueckungItem = (riderItemId, amount) => {
-    setEditingBestueckungItem(riderItemId);
-    setEditSelectedRiderItemId(riderItemId);
-    setEditItemAmount(amount.toString());
-  };
-
-  const handleSaveEditBestueckungItem = async () => {
-    if (!editSelectedRiderItemId) {
-      alert('Bitte ein Item auswählen');
-      return;
-    }
-
-    const amount = parseFloat(editItemAmount) || 1;
-    if (amount <= 0) {
-      alert('Die Menge muss größer als 0 sein');
-      return;
-    }
-
-    if (window.electronAPI && window.electronAPI.updateBestueckungItem) {
-      await window.electronAPI.updateBestueckungItem(selectedBestueckung, editingBestueckungItem, {
-        riderItemId: editSelectedRiderItemId,
-        amount: amount
-      });
-      setEditingBestueckungItem(null);
-      setEditSelectedRiderItemId('');
-      setEditItemAmount('1');
-      loadBestueckungLists();
-    }
-  };
-
-  const handleCancelEditBestueckungItem = () => {
-    setEditingBestueckungItem(null);
-    setEditSelectedRiderItemId('');
-    setEditItemAmount('1');
-  };
-
-  const handleDeleteBestueckungItem = async (itemId) => {
-    if (window.confirm('Möchten Sie dieses Item wirklich löschen?')) {
-      if (window.electronAPI && window.electronAPI.deleteBestueckungItem) {
-        await window.electronAPI.deleteBestueckungItem(selectedBestueckung, itemId);
-        loadBestueckungLists();
-      }
-    }
-  };
 
   const renderRiderSection = () => (
     <>
@@ -608,51 +453,9 @@ function SettingsForm() {
     </>
   );
 
-  const renderCateringPricesSection = () => (
+  const renderPauschaleSection = () => (
     <>
-      <h2>Catering Preise</h2>
-      <p className="settings-description">
-        Legen Sie die Preise pro Person für warmes Catering und kaltes Catering fest. Diese werden im PDF basierend auf der Travel Party Anzahl berechnet.
-      </p>
-
-      <div className="settings-add-section">
-        <div className="settings-add-form" style={{ flexDirection: 'column', gap: '15px', maxWidth: '400px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontWeight: '600', fontSize: '14px' }}>Warm Catering Preis pro Person (€)</label>
-            <input
-              type="number"
-              value={cateringPrices.warmPerPerson}
-              onChange={(e) => setCateringPrices({ ...cateringPrices, warmPerPerson: e.target.value })}
-              className="settings-input"
-              placeholder="0.00"
-              step="0.01"
-              min="0"
-            />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontWeight: '600', fontSize: '14px' }}>Kalt Catering Preis pro Person (€)</label>
-            <input
-              type="number"
-              value={cateringPrices.coldPerPerson}
-              onChange={(e) => setCateringPrices({ ...cateringPrices, coldPerPerson: e.target.value })}
-              className="settings-input"
-              placeholder="0.00"
-              step="0.01"
-              min="0"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={handleSaveCateringPrices}
-            className="settings-add-button"
-            style={{ alignSelf: 'flex-start' }}
-          >
-            Speichern
-          </button>
-        </div>
-      </div>
-
-      <h2 style={{ marginTop: '40px' }}>Gast Pauschale Preise</h2>
+      <h2>Gast Pauschale Preise</h2>
       <p className="settings-description">
         Legen Sie die Preise für die verschiedenen Pauschale-Optionen fest. Diese werden im PDF verwendet, wenn Pauschale als Zahlungsart ausgewählt wurde.
       </p>
@@ -862,234 +665,6 @@ function SettingsForm() {
     </>
   );
 
-  const renderBestueckungSection = () => {
-    const bestueckungOptions = [
-      { value: 'standard-konzert', label: 'Standard Konzert' },
-      { value: 'standard-tranzit', label: 'Standard Tranzit' }
-    ];
-    const currentList = bestueckungLists[selectedBestueckung] || [];
-
-    return (
-      <>
-        <h2>Backstage Kühlschrank Bestückung</h2>
-        <p className="settings-description">
-          Verwalten Sie die Items für jede Bestückungsoption. Diese werden im Hospitality-Formular angezeigt, wenn die entsprechende Option ausgewählt wird.
-        </p>
-
-        {/* Select Bestückung */}
-        <div className="settings-add-section">
-          <h3>Bestückung auswählen</h3>
-          <select
-            value={selectedBestueckung}
-            onChange={(e) => {
-              setSelectedBestueckung(e.target.value);
-              setEditingBestueckungItem(null);
-              setEditSelectedRiderItemId('');
-              setEditItemAmount('1');
-            }}
-            className="settings-select"
-            style={{ marginBottom: '20px' }}
-          >
-            {bestueckungOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Pricing Type and Price for Selected Bestückung */}
-        <div className="settings-add-section">
-          <h3>Preiseinstellung für {bestueckungOptions.find(o => o.value === selectedBestueckung)?.label}</h3>
-          <div className="settings-add-form" style={{ flexDirection: 'column', gap: '15px', maxWidth: '400px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontWeight: '600', fontSize: '14px' }}>Preisart</label>
-              <div style={{ display: 'flex', gap: '20px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name={`pricing-type-${selectedBestueckung}`}
-                    value="pauschale"
-                    checked={bestueckungPricingTypes[selectedBestueckung] === 'pauschale'}
-                    onChange={(e) => setBestueckungPricingTypes({ ...bestueckungPricingTypes, [selectedBestueckung]: e.target.value })}
-                  />
-                  <span>Pauschale</span>
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name={`pricing-type-${selectedBestueckung}`}
-                    value="perPerson"
-                    checked={bestueckungPricingTypes[selectedBestueckung] === 'perPerson'}
-                    onChange={(e) => setBestueckungPricingTypes({ ...bestueckungPricingTypes, [selectedBestueckung]: e.target.value })}
-                  />
-                  <span>Pro Person</span>
-                </label>
-              </div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontWeight: '600', fontSize: '14px' }}>
-                {bestueckungPricingTypes[selectedBestueckung] === 'pauschale' ? 'Pauschale Preis (€)' : 'Preis pro Person (€)'}
-              </label>
-              <input
-                type="number"
-                value={bestueckungTotalPrices[selectedBestueckung] || ''}
-                onChange={(e) => setBestueckungTotalPrices({ ...bestueckungTotalPrices, [selectedBestueckung]: e.target.value })}
-                className="settings-input"
-                placeholder="0.00"
-                step="0.01"
-                min="0"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                handleSaveBestueckungTotalPrice(selectedBestueckung);
-                handleSaveBestueckungPricingType(selectedBestueckung);
-              }}
-              className="settings-add-button"
-              style={{ alignSelf: 'flex-start' }}
-            >
-              Speichern
-            </button>
-          </div>
-        </div>
-
-        {/* Add New Item */}
-        <div className="settings-add-section">
-          <h3>Neues Item hinzufügen</h3>
-          <div className="settings-add-form">
-            <select
-              value={selectedRiderItemId}
-              onChange={(e) => setSelectedRiderItemId(e.target.value)}
-              className="settings-select"
-              style={{ flex: 1 }}
-            >
-              <option value="">-- Item auswählen --</option>
-              {catalogItems
-                .filter(item => {
-                  // Filter out items that are already in the current list
-                  const currentList = bestueckungLists[selectedBestueckung] || [];
-                  return !currentList.some(listItem => listItem.riderItemId === item.id);
-                })
-                .map(item => (
-                  <option key={item.id} value={item.id}>
-                    {item.name} (€{item.price.toFixed(2)})
-                  </option>
-                ))}
-            </select>
-            <input
-              type="number"
-              value={selectedItemAmount}
-              onChange={(e) => setSelectedItemAmount(e.target.value)}
-              className="settings-input"
-              placeholder="Menge"
-              min="1"
-              step="1"
-              style={{ width: '100px' }}
-            />
-            <button
-              type="button"
-              onClick={handleAddBestueckungItem}
-              className="settings-add-button"
-              disabled={!selectedRiderItemId}
-            >
-              Hinzufügen
-            </button>
-          </div>
-        </div>
-
-        {/* Items List */}
-        <div className="settings-items-section">
-          <h3>Items für {bestueckungOptions.find(o => o.value === selectedBestueckung)?.label}</h3>
-          {currentList.length === 0 ? (
-            <p className="settings-empty-message">Keine Items hinzugefügt</p>
-          ) : (
-            <div className="settings-items-list">
-              {currentList.map((listItem) => {
-                const riderItem = catalogItems.find(item => item.id === listItem.riderItemId);
-                if (!riderItem) return null; // Skip if item not found
-                
-                return (
-                  <div key={listItem.riderItemId} className="settings-item">
-                    {editingBestueckungItem === listItem.riderItemId ? (
-                      <div className="settings-edit-form">
-                        <select
-                          value={editSelectedRiderItemId}
-                          onChange={(e) => setEditSelectedRiderItemId(e.target.value)}
-                          className="settings-select"
-                          style={{ flex: 1 }}
-                        >
-                          <option value="">-- Item auswählen --</option>
-                          {catalogItems
-                            .filter(item => {
-                              // Show current item and items not in the list
-                              const currentList = bestueckungLists[selectedBestueckung] || [];
-                              return item.id === listItem.riderItemId || !currentList.some(li => li.riderItemId === item.id);
-                            })
-                            .map(item => (
-                              <option key={item.id} value={item.id}>
-                                {item.name} (€{item.price.toFixed(2)})
-                              </option>
-                            ))}
-                        </select>
-                        <input
-                          type="number"
-                          value={editItemAmount}
-                          onChange={(e) => setEditItemAmount(e.target.value)}
-                          className="settings-input"
-                          placeholder="Menge"
-                          min="1"
-                          step="1"
-                          style={{ width: '100px' }}
-                        />
-                        <button
-                          type="button"
-                          onClick={handleSaveEditBestueckungItem}
-                          className="settings-save-button"
-                          disabled={!editSelectedRiderItemId}
-                        >
-                          Speichern
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleCancelEditBestueckungItem}
-                          className="settings-cancel-button"
-                        >
-                          Abbrechen
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <span className="settings-item-name">{riderItem.name} (€{riderItem.price.toFixed(2)}) x {listItem.amount}</span>
-                        <div className="settings-item-actions">
-                          <button
-                            type="button"
-                            onClick={() => handleStartEditBestueckungItem(listItem.riderItemId, listItem.amount)}
-                            className="settings-edit-button"
-                          >
-                            Bearbeiten
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteBestueckungItem(listItem.riderItemId)}
-                            className="settings-delete-button"
-                          >
-                            Löschen
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </>
-    );
-  };
-
   const handleResetShiftData = async () => {
     const confirmed = window.confirm(
       'Möchten Sie wirklich die aktuelle Schicht zurücksetzen?\n\n' +
@@ -1156,7 +731,6 @@ function SettingsForm() {
           alert('Alle Einstellungen und Daten wurden erfolgreich zurückgesetzt. Die Seite wird neu geladen.');
           // Reload all data
           loadItems();
-          loadCateringPrices();
           loadPauschalePrices();
           loadScanners();
           loadSelectedScanner();
@@ -1164,7 +738,6 @@ function SettingsForm() {
           loadReportFolder();
           loadEinkaufsbelegeFolder();
           loadTemplates();
-          loadBestueckungLists();
           // Optionally reload the page
           window.location.reload();
         } else {
@@ -1586,16 +1159,10 @@ function SettingsForm() {
               Rider
             </button>
             <button
-              className={`settings-sidebar-item ${activeSettingsSection === 'catering-prices' ? 'active' : ''}`}
-              onClick={() => setActiveSettingsSection('catering-prices')}
+              className={`settings-sidebar-item ${activeSettingsSection === 'pauschale' ? 'active' : ''}`}
+              onClick={() => setActiveSettingsSection('pauschale')}
             >
-              Catering Preise
-            </button>
-            <button
-              className={`settings-sidebar-item ${activeSettingsSection === 'bestueckung' ? 'active' : ''}`}
-              onClick={() => setActiveSettingsSection('bestueckung')}
-            >
-              Backstage Kühlschrank
+              Pauschale Preise
             </button>
             <button
               className={`settings-sidebar-item ${activeSettingsSection === 'scanner' ? 'active' : ''}`}
@@ -1622,8 +1189,7 @@ function SettingsForm() {
         <div className="settings-content">
           <div className="settings-form">
             {activeSettingsSection === 'rider' ? renderRiderSection() : 
-             activeSettingsSection === 'catering-prices' ? renderCateringPricesSection() : 
-             activeSettingsSection === 'bestueckung' ? renderBestueckungSection() :
+             activeSettingsSection === 'pauschale' ? renderPauschaleSection() :
              activeSettingsSection === 'templates' ? renderTemplatesSection() :
              activeSettingsSection === 'reset' ? renderResetSection() :
              renderScannerSection()}

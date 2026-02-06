@@ -476,10 +476,14 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
         'standard-tranzit': []
       });
       store.set('bestueckungTotalPrices', {
+        'leer': '',
+        'abgeschlossen': '',
         'standard-konzert': '',
         'standard-tranzit': ''
       });
       store.set('bestueckungPricingTypes', {
+        'leer': 'pauschale',
+        'abgeschlossen': 'pauschale',
         'standard-konzert': 'pauschale',
         'standard-tranzit': 'pauschale'
       });
