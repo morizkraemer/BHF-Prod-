@@ -342,23 +342,34 @@
         }
     }
 
-    // Extras
+    // Extras (resolve riderItemId -> name, price from riderItems)
+    const riderItems = data.riderItems || [];
+    function resolveRiderItem(item) {
+        if (!item.riderItemId || !riderItems.length) return { name: '', price: 0, ekPrice: null };
+        const cat = riderItems.find(function(c) { return c.id === item.riderItemId; });
+        if (!cat) return { name: '', price: 0, ekPrice: null };
+        return { name: cat.name, price: cat.price != null ? cat.price : 0, ekPrice: cat.ekPrice != null ? cat.ekPrice : null };
+    }
+    function computedExtrasPrice(resolved, item) {
+        if (item.discount === 'EK' && resolved.ekPrice != null) return resolved.ekPrice;
+        if (item.discount) {
+            var pct = parseFloat(item.discount);
+            if (!isNaN(pct)) return resolved.price * (1 - pct / 100);
+        }
+        return resolved.price;
+    }
     if (riderExtras.items && riderExtras.items.length > 0) {
-        const extrasItems = riderExtras.items.filter(item => item.text && item.text.trim());
+        const extrasItems = riderExtras.items.filter(function(item) { return item.riderItemId; });
         if (extrasItems.length > 0) {
             let extrasHtml = '<div class="subsection-header">Extras:</div><div class="table-container"><table style="width: 100%; border-collapse: collapse;"><thead><tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;"><th style="text-align: left; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Item</th><th style="text-align: right; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Menge</th><th style="text-align: right; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Preis</th><th style="text-align: center; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Rabatt</th><th style="text-align: center; padding: 10px; border-bottom: 2px solid #ddd; color: #000;">Status</th></tr></thead><tbody>';
-            extrasItems.forEach(item => {
-                let price = '-';
-                if (item.price !== undefined && item.price !== null && item.price !== '') {
-                    const priceNum = typeof item.price === 'number' ? item.price : parseFloat(String(item.price));
-                    if (!isNaN(priceNum) && isFinite(priceNum)) {
-                        price = `€${priceNum.toFixed(2)}`;
-                    }
-                }
+            extrasItems.forEach(function(item) {
+                var resolved = resolveRiderItem(item);
+                var priceNum = computedExtrasPrice(resolved, item);
+                var price = (priceNum != null && isFinite(priceNum)) ? '€' + priceNum.toFixed(2) : '-';
                 const discountMap = { '50': '50%', '75': '75%', '100': '100%', 'EK': 'EK' };
                 const discount = item.discount ? (discountMap[item.discount] || item.discount) : '-';
                 const status = item.checked ? '✓ Eingebongt' : '-';
-                extrasHtml += `<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px;">${escapeHtml(item.text)}</td><td style="text-align: right; padding: 10px;">${escapeHtml(String(item.amount || '-'))}</td><td style="text-align: right; padding: 10px;">${escapeHtml(price)}</td><td style="text-align: center; padding: 10px;">${escapeHtml(discount)}</td><td style="text-align: center; padding: 10px;">${escapeHtml(status)}</td></tr>`;
+                extrasHtml += '<tr style="border-bottom: 1px solid #eee;"><td style="padding: 10px;">' + escapeHtml(resolved.name) + '</td><td style="text-align: right; padding: 10px;">' + escapeHtml(String(item.amount || '-')) + '</td><td style="text-align: right; padding: 10px;">' + escapeHtml(price) + '</td><td style="text-align: center; padding: 10px;">' + escapeHtml(discount) + '</td><td style="text-align: center; padding: 10px;">' + escapeHtml(status) + '</td></tr>';
             });
             extrasHtml += '</tbody></table></div>';
             document.getElementById('extras-container').innerHTML = extrasHtml;

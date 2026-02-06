@@ -255,6 +255,31 @@
   justify-content: center;
 }
 
+.secu-personnel-section .add-line-button {
+  padding: 10px 20px;
+  background-color: #f1f3f4;
+  color: #5f6368;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  margin-top: 8px;
+  align-self: flex-start;
+  box-shadow: none;
+}
+
+.secu-personnel-section .add-line-button:hover {
+  background-color: #e8eaed;
+  border-color: #dadce0;
+  color: #3c4043;
+}
+
+.secu-personnel-section .add-line-button:active {
+  background-color: #dadce0;
+}
+
 .secu-personnel-role-disabled {
   padding: 10px 8px;
   font-size: 14px;

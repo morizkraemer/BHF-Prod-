@@ -4,7 +4,7 @@ const PersonnelListForm = window.PersonnelListForm;
 
 function SecuForm({ formData, onDataChange, highlightedFields = [], printedTemplates = {}, onTemplatePrinted, shiftDate }) {
   const [securityPersonnel, setSecurityPersonnel] = useState(() => {
-    const list = formData?.securityPersonnel || [{ name: '', startTime: '', endTime: '' }];
+    const list = formData?.securityPersonnel || [];
     return list.map((p) => ({ name: p.name ?? '', startTime: p.startTime ?? '', endTime: p.endTime ?? '' }));
   });
   const [scannedDocuments, setScannedDocuments] = useState(formData?.scannedDocuments || []);
@@ -12,7 +12,7 @@ function SecuForm({ formData, onDataChange, highlightedFields = [], printedTempl
 
   useEffect(() => {
     const list = formData?.securityPersonnel;
-    if (Array.isArray(list) && list.length > 0) {
+    if (Array.isArray(list)) {
       setSecurityPersonnel(list.map((p) => ({ name: p.name ?? '', startTime: p.startTime ?? '', endTime: p.endTime ?? '' })));
     }
     if (Array.isArray(formData?.scannedDocuments)) {

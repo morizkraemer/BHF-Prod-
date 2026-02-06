@@ -4,6 +4,7 @@ import EventsList from './pages/EventsList';
 import EventDetail from './pages/EventDetail';
 import Zeiterfassung from './pages/Zeiterfassung';
 import LohnMitarbeiter from './pages/LohnMitarbeiter';
+import RiderExtrasKatalog from './pages/RiderExtrasKatalog';
 
 function App() {
   return (
@@ -61,6 +62,20 @@ function App() {
               Lohn & Mitarbeiter
             </NavLink>
           </li>
+          <li style={{ marginBottom: 4 }}>
+            <NavLink
+              to="/rider-extras-katalog"
+              style={({ isActive }) => ({
+                display: 'block',
+                padding: '8px 12px',
+                borderRadius: 4,
+                background: isActive ? '#e8f0fe' : 'transparent',
+                color: isActive ? '#1967d2' : '#1a1a1a',
+              })}
+            >
+              Rider Extras Katalog
+            </NavLink>
+          </li>
         </ul>
       </nav>
       <main style={{ flex: 1, padding: 24, overflow: 'auto' }}>
@@ -70,6 +85,7 @@ function App() {
           <Route path="/events/:id" element={<EventDetail />} />
           <Route path="/zeiterfassung" element={<Zeiterfassung />} />
           <Route path="/lohn-mitarbeiter" element={<LohnMitarbeiter />} />
+          <Route path="/rider-extras-katalog" element={<RiderExtrasKatalog />} />
         </Routes>
       </main>
     </div>

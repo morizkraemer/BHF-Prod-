@@ -172,13 +172,26 @@ function registerReportHandlers(ipcMain, store) {
         'standard-tranzit': 'pauschale'
       });
       
+      // Get rider items for resolving riderItemId -> name/price in report
+      let riderItems = [];
+      if (serverUrl) {
+        try {
+          riderItems = await api.getRiderItems(serverUrl) || [];
+        } catch (e) {
+          riderItems = store.get('riderExtrasItems', []);
+        }
+      } else {
+        riderItems = store.get('riderExtrasItems', []);
+      }
+
       // Add settings data to formData for PDF generation
       const formDataWithSettings = {
         ...formData,
         cateringPrices: cateringPrices,
         pauschalePrices: pauschalePrices,
         bestueckungTotalPrices: bestueckungTotalPrices,
-        bestueckungPricingTypes: bestueckungPricingTypes
+        bestueckungPricingTypes: bestueckungPricingTypes,
+        riderItems: riderItems
       };
       
       // Generate PDF

@@ -62,9 +62,13 @@ function findSimilarNames(typedName, catalog, threshold = 0.6, maxResults = 5) {
   results.sort((a, b) => b.score - a.score);
   return results.slice(0, maxResults);
 }
+function findSimilarItems(typedName, catalog, threshold = 0.6, maxResults = 5) {
+  return findSimilarNames(typedName, catalog, threshold, maxResults);
+}
 
 window.NameSimilarity = {
   similarity,
   findSimilarNames,
+  findSimilarItems,
   levenshteinDistance
 };

@@ -42,9 +42,10 @@ export const uebersichtFields = [
 
 export const riderExtrasItemColumns = [
   { key: 'amount', label: 'Menge' },
-  { key: 'text', label: 'Bezeichnung' },
+  { key: 'name', label: 'Bezeichnung' },
   { key: 'price', label: 'Preis' },
   { key: 'discount', label: 'Rabatt' },
+  { key: 'category', label: 'Kategorie' },
   { key: 'checked', label: 'abgerechnet' }
 ];
 
@@ -98,7 +99,7 @@ export function isEmptySection(sectionId, data) {
   }
   if (sectionId === 'rider-extras') {
     const items = data.items;
-    const hasItems = Array.isArray(items) && items.some((i) => (i.text || '').trim());
+    const hasItems = Array.isArray(items) && items.some((i) => i.riderItemId);
     const hasOther = riderExtrasSingleFields.some((f) => {
       const v = data[f.key];
       return v !== undefined && v !== null && v !== '';

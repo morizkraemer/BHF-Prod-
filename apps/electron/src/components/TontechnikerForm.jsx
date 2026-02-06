@@ -13,7 +13,7 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
         role: p.role ?? ''
       }));
     }
-    return [{ name: '', startTime: '', endTime: '', role: '' }];
+    return [];
   };
 
   const [personnel, setPersonnel] = useState(initialPersonnel);
@@ -28,7 +28,7 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
 
   useEffect(() => {
     const list = formData?.personnel;
-    if (Array.isArray(list) && list.length > 0) {
+    if (Array.isArray(list)) {
       setPersonnel(list.map((p) => ({ name: p.name ?? '', startTime: p.startTime ?? '', endTime: p.endTime ?? '', role: p.role ?? '' })));
     }
     if (Array.isArray(formData?.scannedImages)) {

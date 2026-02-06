@@ -685,6 +685,22 @@
   font-weight: 600;
 }
 
+.suggestion-item-add {
+  background-color: #f1f3f4;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  margin-top: 6px;
+  box-shadow: none;
+  color: #5f6368;
+  font-size: 13px;
+}
+
+.suggestion-item-add:hover {
+  background-color: #e8eaed;
+  border-color: #dadce0;
+  color: #3c4043;
+}
+
 .rider-extras-discount {
   padding: 10px 12px;
   border: 1px solid #ddd;
@@ -785,28 +801,47 @@
   font-weight: bold;
 }
 
-.add-line-button {
-  padding: 12px 24px;
-  background-color: #3498db;
-  color: white;
-  border: none;
+/* Add row button – gray flat, same as Secu form; full width + dashed border in hospitality */
+.rider-extras-items-section .add-line-button {
+  width: 100%;
+  padding: 10px 20px;
+  background-color: #f1f3f4;
+  color: #5f6368;
+  border: 1px dashed #dadce0;
   border-radius: 6px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  margin-top: 8px;
+  box-shadow: none;
+}
+
+.add-line-button {
+  padding: 10px 20px;
+  background-color: #f1f3f4;
+  color: #5f6368;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
   margin-top: 8px;
   align-self: flex-start;
+  box-shadow: none;
 }
 
+.rider-extras-items-section .add-line-button:hover,
 .add-line-button:hover {
-  background-color: #2980b9;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  background-color: #e8eaed;
+  border-color: #dadce0;
+  color: #3c4043;
 }
 
+.rider-extras-items-section .add-line-button:active,
 .add-line-button:active {
-  transform: translateY(0);
+  background-color: #dadce0;
 }
 
 .remove-line-button {

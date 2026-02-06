@@ -6,10 +6,12 @@ function SettingsForm() {
   const [newItemName, setNewItemName] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('');
   const [newItemEkPrice, setNewItemEkPrice] = useState('');
+  const [newItemCategory, setNewItemCategory] = useState('Extra');
   const [editingItem, setEditingItem] = useState(null);
   const [editItemName, setEditItemName] = useState('');
   const [editItemPrice, setEditItemPrice] = useState('');
   const [editItemEkPrice, setEditItemEkPrice] = useState('');
+  const [editItemCategory, setEditItemCategory] = useState('Extra');
   const [cateringPrices, setCateringPrices] = useState({
     warmPerPerson: '',
     coldPerPerson: ''
@@ -296,13 +298,20 @@ function SettingsForm() {
     }
   };
 
+  const parsePriceInput = (s) => {
+    const t = String(s ?? '').trim().replace(',', '.');
+    const n = parseFloat(t);
+    return Number.isFinite(n) ? n : NaN;
+  };
+  const formatPriceInput = (n) => (n === '' || n == null ? '' : Number(n).toFixed(2).replace('.', ','));
+
   const handleAddItem = async () => {
     if (!newItemName.trim() || !newItemPrice.trim()) {
       alert('Bitte Name und Preis eingeben');
       return;
     }
 
-    const price = parseFloat(newItemPrice);
+    const price = parsePriceInput(newItemPrice);
     if (isNaN(price) || price < 0) {
       alert('Bitte einen gültigen Preis eingeben');
       return;
@@ -312,11 +321,13 @@ function SettingsForm() {
       await window.electronAPI.addRiderItem({
         name: newItemName.trim(),
         price: price,
-        ekPrice: newItemEkPrice.trim() ? parseFloat(newItemEkPrice) : null
+        ekPrice: newItemEkPrice.trim() ? parsePriceInput(newItemEkPrice) : null,
+        category: newItemCategory === 'Karte' ? 'Karte' : 'Extra'
       });
       setNewItemName('');
       setNewItemPrice('');
       setNewItemEkPrice('');
+      setNewItemCategory('Extra');
       loadItems();
     }
   };
@@ -324,8 +335,9 @@ function SettingsForm() {
   const handleStartEdit = (item) => {
     setEditingItem(item.id);
     setEditItemName(item.name);
-    setEditItemPrice(item.price.toString());
-    setEditItemEkPrice(item.ekPrice ? item.ekPrice.toString() : '');
+    setEditItemPrice(formatPriceInput(item.price));
+    setEditItemEkPrice(item.ekPrice != null ? formatPriceInput(item.ekPrice) : '');
+    setEditItemCategory(item.category === 'Karte' ? 'Karte' : 'Extra');
   };
 
   const handleSaveEdit = async () => {
@@ -334,7 +346,7 @@ function SettingsForm() {
       return;
     }
 
-    const price = parseFloat(editItemPrice);
+    const price = parsePriceInput(editItemPrice);
     if (isNaN(price) || price < 0) {
       alert('Bitte einen gültigen Preis eingeben');
       return;
@@ -344,12 +356,14 @@ function SettingsForm() {
       await window.electronAPI.updateRiderItem(editingItem, {
         name: editItemName.trim(),
         price: price,
-        ekPrice: editItemEkPrice.trim() ? parseFloat(editItemEkPrice) : null
+        ekPrice: editItemEkPrice.trim() ? parsePriceInput(editItemEkPrice) : null,
+        category: editItemCategory === 'Karte' ? 'Karte' : 'Extra'
       });
       setEditingItem(null);
       setEditItemName('');
       setEditItemPrice('');
       setEditItemEkPrice('');
+      setEditItemCategory('Extra');
       loadItems();
     }
   };
@@ -465,13 +479,12 @@ function SettingsForm() {
               }}
             />
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               value={newItemPrice}
               onChange={(e) => setNewItemPrice(e.target.value)}
               className="settings-input settings-price-input"
-              placeholder="Preis"
-              min="0"
-              step="0.01"
+              placeholder="0,00"
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
                   handleAddItem();
@@ -479,19 +492,26 @@ function SettingsForm() {
               }}
             />
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               value={newItemEkPrice}
               onChange={(e) => setNewItemEkPrice(e.target.value)}
               className="settings-input settings-price-input"
-              placeholder="EK Preis (optional)"
-              min="0"
-              step="0.01"
+              placeholder="0,00"
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
                   handleAddItem();
                 }
               }}
             />
+            <select
+              value={newItemCategory}
+              onChange={(e) => setNewItemCategory(e.target.value)}
+              className="settings-input"
+            >
+              <option value="Karte">Karte</option>
+              <option value="Extra">Extra</option>
+            </select>
             <button
               type="button"
               onClick={handleAddItem}
@@ -520,22 +540,29 @@ function SettingsForm() {
                         className="settings-edit-input"
                       />
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         value={editItemPrice}
                         onChange={(e) => setEditItemPrice(e.target.value)}
                         className="settings-edit-input settings-price-input"
-                        min="0"
-                        step="0.01"
+                        placeholder="0,00"
                       />
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         value={editItemEkPrice}
                         onChange={(e) => setEditItemEkPrice(e.target.value)}
                         className="settings-edit-input settings-price-input"
-                        placeholder="EK Preis"
-                        min="0"
-                        step="0.01"
+                        placeholder="0,00"
                       />
+                      <select
+                        value={editItemCategory}
+                        onChange={(e) => setEditItemCategory(e.target.value)}
+                        className="settings-edit-input"
+                      >
+                        <option value="Karte">Karte</option>
+                        <option value="Extra">Extra</option>
+                      </select>
                       <button
                         type="button"
                         onClick={handleSaveEdit}
@@ -556,6 +583,7 @@ function SettingsForm() {
                       <span className="settings-item-name">{item.name}</span>
                       <span className="settings-item-price">€{item.price.toFixed(2)}</span>
                       <span className="settings-item-price">{item.ekPrice ? `EK: €${item.ekPrice.toFixed(2)}` : 'Kein EK Preis'}</span>
+                      <span className="settings-item-price">{item.category === 'Karte' ? 'Karte' : 'Extra'}</span>
                       <button
                         type="button"
                         onClick={() => handleStartEdit(item)}

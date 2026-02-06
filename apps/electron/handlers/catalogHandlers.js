@@ -34,11 +34,13 @@ function registerCatalogHandlers(ipcMain, store) {
       }
     }
     const items = store.get('riderExtrasItems', []);
+    const cat = (item.category === 'Karte' || item.category === 'Extra') ? item.category : 'Extra';
     const newItem = {
       id: Date.now().toString(),
       name: item.name,
       price: parseFloat(item.price) || 0,
       ekPrice: item.ekPrice ? parseFloat(item.ekPrice) : null,
+      category: cat,
       createdAt: new Date().toISOString()
     };
     items.push(newItem);

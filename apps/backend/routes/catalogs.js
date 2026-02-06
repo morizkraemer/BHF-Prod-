@@ -21,6 +21,7 @@ function toRiderItem(row) {
     name: row.name,
     price: parseFloat(row.price),
     ekPrice: row.ek_price != null ? parseFloat(row.ek_price) : null,
+    category: row.category || 'Extra',
     createdAt: row.created_at?.toISOString?.() ?? row.created_at
   };
 }
@@ -40,7 +41,7 @@ function toPersonName(row) {
 // ---- Rider items ----
 router.get('/rider-items', async (req, res) => {
   try {
-    const r = await getPool().query('SELECT id, name, price, ek_price, created_at FROM rider_items ORDER BY created_at');
+    const r = await getPool().query('SELECT id, name, price, ek_price, category, created_at FROM rider_items ORDER BY created_at');
     res.json(r.rows.map(toRiderItem));
   } catch (err) {
     console.error('GET /api/catalogs/rider-items:', err);
@@ -49,11 +50,12 @@ router.get('/rider-items', async (req, res) => {
 });
 
 router.post('/rider-items', async (req, res) => {
-  const { name, price, ekPrice } = req.body || {};
+  const { name, price, ekPrice, category } = req.body || {};
+  const cat = (category === 'Karte' || category === 'Extra') ? category : 'Extra';
   try {
     const r = await getPool().query(
-      'INSERT INTO rider_items (name, price, ek_price) VALUES ($1, $2, $3) RETURNING id, name, price, ek_price, created_at',
-      [name ?? '', parseFloat(price) || 0, ekPrice != null ? parseFloat(ekPrice) : null]
+      'INSERT INTO rider_items (name, price, ek_price, category) VALUES ($1, $2, $3, $4) RETURNING id, name, price, ek_price, category, created_at',
+      [name ?? '', parseFloat(price) || 0, ekPrice != null ? parseFloat(ekPrice) : null, cat]
     );
     res.status(201).json(toRiderItem(r.rows[0]));
   } catch (err) {
@@ -72,13 +74,17 @@ router.patch('/rider-items/:id', async (req, res) => {
     if (body.name !== undefined) { updates.push(`name = $${n++}`); values.push(body.name); }
     if (body.price !== undefined) { updates.push(`price = $${n++}`); values.push(parseFloat(body.price)); }
     if (body.ekPrice !== undefined) { updates.push(`ek_price = $${n++}`); values.push(body.ekPrice == null ? null : parseFloat(body.ekPrice)); }
+    if (body.category !== undefined && (body.category === 'Karte' || body.category === 'Extra')) {
+      updates.push(`category = $${n++}`);
+      values.push(body.category);
+    }
     if (updates.length === 0) {
-      const r = await getPool().query('SELECT id, name, price, ek_price, created_at FROM rider_items WHERE id = $1', [id]);
+      const r = await getPool().query('SELECT id, name, price, ek_price, category, created_at FROM rider_items WHERE id = $1', [id]);
       if (r.rows.length === 0) return res.status(404).json({ error: 'Not found' });
       return res.json(toRiderItem(r.rows[0]));
     }
     const r = await getPool().query(
-      `UPDATE rider_items SET ${updates.join(', ')} WHERE id = $1 RETURNING id, name, price, ek_price, created_at`,
+      `UPDATE rider_items SET ${updates.join(', ')} WHERE id = $1 RETURNING id, name, price, ek_price, category, created_at`,
       values
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'Not found' });

@@ -1,25 +1,33 @@
 const { useState, useEffect } = React;
 
+const SIMILARITY_THRESHOLD = 0.6;
+const MAX_SIMILAR = 5;
+
+function toStoredItem(raw) {
+  return {
+    riderItemId: raw.riderItemId ?? null,
+    amount: raw.amount ?? '',
+    discount: raw.discount ?? '',
+    checked: raw.checked ?? false
+  };
+}
+
 function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], printedTemplates = {}, onTemplatePrinted }) {
-  // Map display field names to field identifiers
   const fieldNameMap = {
     'Get In Catering': 'getInCatering',
     'Dinner': 'dinner',
     'Backstage Kühlschrank': 'standardbestueckung',
     'Handtuchzettel Scan': 'handtuchzettel'
   };
-  
-  const shouldHighlight = (fieldName) => {
-    return highlightedFields.includes(fieldName);
-  };
-  const [items, setItems] = useState(formData?.items || [{ amount: '', text: '', price: '', discount: '', originalPrice: '', ekPrice: null, checked: false }]);
+  const shouldHighlight = (fieldName) => highlightedFields.includes(fieldName);
+
+  const rawItems = Array.isArray(formData?.items) ? formData.items : [];
+  const [items, setItems] = useState(rawItems.length > 0 ? rawItems.map(toStoredItem) : []);
   const [standardbestueckung, setStandardbestueckung] = useState(formData?.standardbestueckung || '');
   const [getInCatering, setGetInCatering] = useState(formData?.getInCatering || '');
-  const [dinner, setDinner] = useState(formData?.dinner || ''); // Can be 'no', 'warm', or 'buyout'
+  const [dinner, setDinner] = useState(formData?.dinner || '');
   const [buyoutProvider, setBuyoutProvider] = useState(formData?.buyoutProvider || '');
-  const [buyoutGroups, setBuyoutGroups] = useState(formData?.buyoutGroups || [
-    { people: '', perPerson: '' }
-  ]);
+  const [buyoutGroups, setBuyoutGroups] = useState(formData?.buyoutGroups || [{ people: '', perPerson: '' }]);
   const [scannedDocuments, setScannedDocuments] = useState(formData?.scannedDocuments || []);
   const [purchaseReceipts, setPurchaseReceipts] = useState(formData?.purchaseReceipts || []);
   const [buyoutQuittungDocuments, setBuyoutQuittungDocuments] = useState(formData?.buyoutQuittungDocuments || []);
@@ -27,8 +35,14 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
   const [catalogItems, setCatalogItems] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState({});
   const [filteredSuggestions, setFilteredSuggestions] = useState({});
+  const [searchByIndex, setSearchByIndex] = useState({});
   const [bestueckungItems, setBestueckungItems] = useState([]);
   const [customizedFridgeItems, setCustomizedFridgeItems] = useState(formData?.customizedFridgeItems || []);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [pendingAddName, setPendingAddName] = useState('');
+  const [pendingAddRowIndex, setPendingAddRowIndex] = useState(null);
+  const [modalPrice, setModalPrice] = useState('');
+  const [modalEkPrice, setModalEkPrice] = useState('');
 
   const discountOptions = [
     { value: '50', label: '50%' },
@@ -45,14 +59,36 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
     { value: 'standard-tranzit', label: 'Standard Tranzit' }
   ];
 
-  // Load catalog items on mount
-  useEffect(() => {
+  const loadCatalog = () => {
     if (window.electronAPI && window.electronAPI.getRiderItems) {
-      window.electronAPI.getRiderItems().then(items => {
-        setCatalogItems(items || []);
+      return window.electronAPI.getRiderItems().then((list) => {
+        setCatalogItems(list || []);
+        return list;
       });
     }
+    return Promise.resolve([]);
+  };
+
+  useEffect(() => {
+    loadCatalog();
   }, []);
+
+  function resolveItem(item) {
+    if (!item.riderItemId || !catalogItems.length) return { name: '', price: 0, ekPrice: null };
+    const cat = catalogItems.find((c) => c.id === item.riderItemId);
+    if (!cat) return { name: '', price: 0, ekPrice: null };
+    return { name: cat.name, price: cat.price ?? 0, ekPrice: cat.ekPrice ?? null };
+  }
+
+  function computedPrice(item) {
+    const res = resolveItem(item);
+    if (item.discount === 'EK' && res.ekPrice != null) return res.ekPrice;
+    if (item.discount) {
+      const pct = parseFloat(item.discount);
+      if (!isNaN(pct)) return res.price * (1 - pct / 100);
+    }
+    return res.price;
+  }
 
   // Load bestueckung items when standardbestueckung changes
   useEffect(() => {
@@ -136,105 +172,110 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
 
   const handleAmountChange = (index, value) => {
     const newItems = [...items];
-    newItems[index].amount = value;
+    newItems[index] = { ...newItems[index], amount: value };
     setItems(newItems);
   };
 
-  const handleTextChange = (index, value) => {
+  const handleSearchChange = (index, value) => {
+    setSearchByIndex((prev) => ({ ...prev, [index]: value }));
     const newItems = [...items];
-    newItems[index].text = value;
-    setItems(newItems);
-
-    // Show suggestions if there are matching catalog items
+    if (newItems[index].riderItemId) {
+      newItems[index] = { ...newItems[index], riderItemId: null };
+      setItems(newItems);
+    }
     if (value.length > 0 && catalogItems.length > 0) {
-      const filtered = catalogItems.filter(item =>
-        item.name.toLowerCase().includes(value.toLowerCase())
+      const filtered = catalogItems.filter((cat) =>
+        (cat.name || '').toLowerCase().includes(value.toLowerCase())
       );
       if (filtered.length > 0) {
-        setFilteredSuggestions(prev => ({ ...prev, [index]: filtered }));
-        setShowSuggestions(prev => ({ ...prev, [index]: true }));
+        setFilteredSuggestions((prev) => ({ ...prev, [index]: filtered }));
+        setShowSuggestions((prev) => ({ ...prev, [index]: true }));
       } else {
-        setShowSuggestions(prev => ({ ...prev, [index]: false }));
+        setFilteredSuggestions((prev) => ({ ...prev, [index]: [] }));
+        setShowSuggestions((prev) => ({ ...prev, [index]: true }));
       }
     } else {
-      setShowSuggestions(prev => ({ ...prev, [index]: false }));
+      setShowSuggestions((prev) => ({ ...prev, [index]: false }));
     }
   };
 
   const handleSelectCatalogItem = (index, catalogItem) => {
     const newItems = [...items];
-    newItems[index].text = catalogItem.name;
-    const originalPrice = catalogItem.price;
-    newItems[index].originalPrice = originalPrice.toString();
-    newItems[index].ekPrice = catalogItem.ekPrice || null;
-    
-    // Apply discount if one is set
-    if (newItems[index].discount === 'EK' && catalogItem.ekPrice) {
-      newItems[index].price = catalogItem.ekPrice.toString();
-    } else if (newItems[index].discount) {
-      const discountPercent = parseFloat(newItems[index].discount);
-      newItems[index].price = (originalPrice * (1 - discountPercent / 100)).toFixed(2);
-    } else {
-      newItems[index].price = originalPrice.toString();
-    }
+    newItems[index] = { ...newItems[index], riderItemId: catalogItem.id };
     setItems(newItems);
-    setShowSuggestions(prev => ({ ...prev, [index]: false }));
+    setSearchByIndex((prev) => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
+    setShowSuggestions((prev) => ({ ...prev, [index]: false }));
   };
 
-  const handlePriceChange = (index, value) => {
-    const newItems = [...items];
-    newItems[index].price = value;
-    // Store as original price if no discount is applied
-    if (!newItems[index].discount) {
-      newItems[index].originalPrice = value;
+  const handleRequestAddToCatalog = (index) => {
+    const searchText = (searchByIndex[index] ?? '').trim();
+    if (!searchText) return;
+    setPendingAddName(searchText);
+    setPendingAddRowIndex(index);
+    setModalPrice('');
+    setModalEkPrice('');
+    setAddModalOpen(true);
+  };
+
+  const handleAddToCatalogSubmit = async () => {
+    if (pendingAddRowIndex == null || !pendingAddName.trim() || !window.electronAPI || !window.electronAPI.addRiderItem) return;
+    const parsePrice = (s) => {
+      const t = String(s ?? '').trim().replace(',', '.');
+      const n = parseFloat(t);
+      return Number.isFinite(n) ? n : NaN;
+    };
+    let price = parsePrice(modalPrice);
+    const ekPrice = modalEkPrice === '' || modalEkPrice == null ? null : parsePrice(modalEkPrice);
+    if (!Number.isFinite(price) && Number.isFinite(ekPrice)) price = ekPrice;
+    try {
+      const newItem = await window.electronAPI.addRiderItem({
+        name: pendingAddName.trim(),
+        price: Number.isFinite(price) ? price : 0,
+        ekPrice: Number.isFinite(ekPrice) ? ekPrice : null,
+        category: 'Extra'
+      });
+      await loadCatalog();
+      const newItems = [...items];
+      if (newItem && newItem.id && newItems[pendingAddRowIndex] != null) {
+        newItems[pendingAddRowIndex] = { ...newItems[pendingAddRowIndex], riderItemId: newItem.id };
+        setItems(newItems);
+        setSearchByIndex((prev) => {
+          const next = { ...prev };
+          delete next[pendingAddRowIndex];
+          return next;
+        });
+      }
+      setAddModalOpen(false);
+      setPendingAddName('');
+      setPendingAddRowIndex(null);
+      setModalPrice('');
+      setModalEkPrice('');
+    } catch (err) {
+      console.error('Add rider item error:', err);
     }
-    setItems(newItems);
   };
 
   const handleDiscountChange = (index, discountValue) => {
     const newItems = [...items];
-    newItems[index].discount = discountValue;
-    
-    // Store current price as original if not already stored
-    if (!newItems[index].originalPrice && newItems[index].price) {
-      newItems[index].originalPrice = newItems[index].price;
-    }
-    
-    // Calculate discounted price
-    if (discountValue === 'EK') {
-      // Use EK price if available
-      if (newItems[index].ekPrice) {
-        newItems[index].price = newItems[index].ekPrice.toString();
-      } else {
-        // Keep current price if no EK price available
-        newItems[index].discount = '';
-      }
-    } else if (discountValue && newItems[index].originalPrice) {
-      const discountPercent = parseFloat(discountValue);
-      const originalPrice = parseFloat(newItems[index].originalPrice);
-      if (!isNaN(originalPrice)) {
-        newItems[index].price = (originalPrice * (1 - discountPercent / 100)).toFixed(2);
-      }
-    } else if (!discountValue && newItems[index].originalPrice) {
-      // Reset to original price if discount is removed
-      newItems[index].price = newItems[index].originalPrice;
-    }
-    
+    const res = resolveItem(newItems[index]);
+    if (discountValue === 'EK' && !res.ekPrice) return;
+    newItems[index] = { ...newItems[index], discount: discountValue };
     setItems(newItems);
   };
 
-  // Calculate total for a single item
   const calculateItemTotal = (item) => {
     const amount = parseFloat(item.amount) || 0;
-    const price = parseFloat(item.price) || 0;
+    const price = computedPrice(item);
     return (amount * price).toFixed(2);
   };
 
-  // Check if EK option should be disabled for an item
   const isEkDisabled = (item) => {
-    // Find matching catalog item
-    const catalogItem = catalogItems.find(catItem => catItem.name === item.text);
-    return !catalogItem || !catalogItem.ekPrice;
+    const res = resolveItem(item);
+    return !res.ekPrice;
   };
 
   const handleDocumentsChange = (updatedDocuments) => {
@@ -256,14 +297,12 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
   };
 
   const handleAddLine = () => {
-    setItems([...items, { amount: '', text: '', price: '', discount: '', originalPrice: '', ekPrice: null, checked: false }]);
+    setItems([...items, toStoredItem({})]);
   };
 
   const handleRemoveLine = (index) => {
-    if (items.length > 1) {
-      const newItems = items.filter((_, i) => i !== index);
-      setItems(newItems);
-    }
+    const newItems = items.filter((_, i) => i !== index);
+    setItems(newItems);
   };
 
   return (
@@ -550,31 +589,29 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
               <div className="rider-extras-input-wrapper">
                 <input
                   type="text"
-                  value={item.text}
-                  onChange={(e) => handleTextChange(index, e.target.value)}
+                  value={item.riderItemId ? resolveItem(item).name : (searchByIndex[index] ?? '')}
+                  onChange={(e) => handleSearchChange(index, e.target.value)}
                   onFocus={() => {
-                    if (item.text.length > 0 && catalogItems.length > 0) {
-                      const filtered = catalogItems.filter(catItem =>
-                        catItem.name.toLowerCase().includes(item.text.toLowerCase())
+                    const val = item.riderItemId ? resolveItem(item).name : (searchByIndex[index] ?? '');
+                    if (val.length > 0 && catalogItems.length > 0) {
+                      const filtered = catalogItems.filter((cat) =>
+                        (cat.name || '').toLowerCase().includes(val.toLowerCase())
                       );
                       if (filtered.length > 0) {
-                        setFilteredSuggestions(prev => ({ ...prev, [index]: filtered }));
-                        setShowSuggestions(prev => ({ ...prev, [index]: true }));
+                        setFilteredSuggestions((prev) => ({ ...prev, [index]: filtered }));
+                        setShowSuggestions((prev) => ({ ...prev, [index]: true }));
                       }
                     }
                   }}
                   onBlur={() => {
-                    // Delay hiding suggestions to allow click
-                    setTimeout(() => {
-                      setShowSuggestions(prev => ({ ...prev, [index]: false }));
-                    }, 200);
+                    setTimeout(() => setShowSuggestions((prev) => ({ ...prev, [index]: false })), 200);
                   }}
                   className="rider-extras-input"
                   placeholder="Extra item..."
                 />
-                {showSuggestions[index] && filteredSuggestions[index] && (
+                {showSuggestions[index] && (
                   <div className="suggestions-dropdown">
-                    {filteredSuggestions[index].map((catItem) => (
+                    {(filteredSuggestions[index] || []).map((catItem) => (
                       <div
                         key={catItem.id}
                         className="suggestion-item"
@@ -584,20 +621,29 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
                         }}
                       >
                         <span className="suggestion-name">{catItem.name}</span>
-                        <span className="suggestion-price">€{catItem.price.toFixed(2)}</span>
+                        <span className="suggestion-price">€{(catItem.price ?? 0).toFixed(2)}</span>
                       </div>
                     ))}
+                    {((filteredSuggestions[index] || []).length === 0 && (searchByIndex[index] ?? '').trim().length > 0) && (
+                      <div
+                        className="suggestion-item suggestion-item-add"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleRequestAddToCatalog(index);
+                        }}
+                      >
+                        + &quot;{(searchByIndex[index] || '').trim()}&quot; zum Katalog hinzufügen
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
               <input
-                type="number"
-                value={item.price}
-                onChange={(e) => handlePriceChange(index, e.target.value)}
+                type="text"
+                readOnly
+                value={item.riderItemId ? computedPrice(item).toFixed(2).replace('.', ',') : ''}
                 className="rider-extras-price"
                 placeholder="Preis"
-                min="0"
-                step="0.01"
               />
               <select
                 value={item.discount || ''}
@@ -620,16 +666,14 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
                 €{calculateItemTotal(item)}
               </div>
               <div className="rider-extras-controls">
-                {items.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveLine(index)}
-                    className="remove-line-button"
-                    title="Remove line"
-                  >
-                    ×
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveLine(index)}
+                  className="remove-line-button"
+                  title="Zeile entfernen"
+                >
+                  ×
+                </button>
               </div>
             </div>
           ))}
@@ -699,6 +743,49 @@ function RiderExtrasForm({ formData, onDataChange, highlightedFields = [], print
             </div>
           )}
         </div>
+
+        {addModalOpen && (
+          <div className="rider-add-modal-overlay">
+            <div className="rider-add-modal">
+              <h3>Item zum Katalog hinzufügen</h3>
+              <p className="rider-add-modal-name">{pendingAddName}</p>
+              <div className="rider-add-modal-field">
+                <label className="rider-add-modal-label">VK Preis (€) *</label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  className="rider-add-modal-input"
+                  value={modalPrice}
+                  onChange={(e) => setModalPrice(e.target.value)}
+                  placeholder="0,00"
+                />
+              </div>
+              <div className="rider-add-modal-field">
+                <label className="rider-add-modal-label">EK Preis (€) optional</label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  className="rider-add-modal-input"
+                  value={modalEkPrice}
+                  onChange={(e) => setModalEkPrice(e.target.value)}
+                  placeholder="0,00"
+                />
+              </div>
+              <div className="rider-add-modal-actions">
+                <button
+                  type="button"
+                  className="rider-add-modal-btn rider-add-modal-btn-cancel"
+                  onClick={() => { setAddModalOpen(false); setPendingAddName(''); setPendingAddRowIndex(null); }}
+                >
+                  Abbrechen
+                </button>
+                <button type="button" className="rider-add-modal-btn rider-add-modal-btn-submit" onClick={handleAddToCatalogSubmit}>
+                  Hinzufügen
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

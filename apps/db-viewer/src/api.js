@@ -47,6 +47,35 @@ export async function getEventDocuments(eventId) {
   return request(`/api/events/${eventId}/documents`);
 }
 
+/** Finish event (post prod): run PDF/Zeiterfassung generation, set status = finished. */
+export async function finishEvent(id) {
+  return request(`/api/events/${id}/finish`, { method: 'POST' });
+}
+
+/** Upload a document (PDF) for an event. Optional sectionOrName (e.g. "Belege", "Zusätzlich"). */
+export async function uploadEventDocument(eventId, file, sectionOrName = null) {
+  const url = `${baseUrl}/api/events/${eventId}/documents`;
+  const formData = new FormData();
+  formData.append('file', file);
+  if (sectionOrName) formData.append('sectionOrName', sectionOrName);
+  const res = await fetch(url, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = new Error(res.statusText || `Fehler ${res.status}`);
+    err.status = res.status;
+    let msg;
+    try {
+      const data = await res.json();
+      if (data?.error) msg = data.error;
+    } catch (_) {}
+    err.message = msg || err.message;
+    throw err;
+  }
+  return res.json();
+}
+
 export async function getZeiterfassung(params = {}) {
   const sp = new URLSearchParams();
   if (params.eventId) sp.set('eventId', params.eventId);
@@ -111,5 +140,30 @@ export async function removePersonName(name) {
   return request('/api/catalogs/person-names/remove', {
     method: 'POST',
     body: JSON.stringify({ name: String(name || '').trim() }),
+  });
+}
+
+// --- Catalogs: rider items ---
+export async function getRiderItems() {
+  return request('/api/catalogs/rider-items');
+}
+
+export async function postRiderItem(body) {
+  return request('/api/catalogs/rider-items', {
+    method: 'POST',
+    body: JSON.stringify(body || {}),
+  });
+}
+
+export async function patchRiderItem(id, body) {
+  return request(`/api/catalogs/rider-items/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body || {}),
+  });
+}
+
+export async function deleteRiderItem(id) {
+  return request(`/api/catalogs/rider-items/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
   });
 }

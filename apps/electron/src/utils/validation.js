@@ -278,8 +278,7 @@ const validateAllSectionsDetailed = (formData) => {
 const hasHospitalityExtras = (formData) => {
   const riderExtrasData = formData['rider-extras'] || {};
   const items = riderExtrasData.items || [];
-  // Check if there are any items with text/name filled
-  return items.some(item => item.text && item.text.trim() !== '');
+  return items.some(item => item.riderItemId);
 };
 
 // Function to count filled required fields for each section
