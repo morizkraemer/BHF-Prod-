@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getEvents, deleteEvent, exportEventZip } from '../api';
+import DateRangeDropdown from '../components/DateRangeDropdown';
 
 const STATUS_LABELS = {
   open: 'Offen',
@@ -24,7 +25,9 @@ export default function EventsList() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [statusFilter, setStatusFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStatuses, setSelectedStatuses] = useState([]);
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -50,10 +53,20 @@ export default function EventsList() {
     return () => { cancelled = true; };
   }, []);
 
+  const eventType = (e) => e.formData?.uebersicht?.eventType ?? null;
+  const eventTypeLabel = (e) => EVENT_TYPE_LABELS[eventType(e)] ?? eventType(e) ?? '–';
   const filtered = events.filter((e) => {
-    if (statusFilter && (e.status || 'open') !== statusFilter) return false;
+    const status = e.status || 'open';
+    if (selectedStatuses.length > 0 && !selectedStatuses.includes(status)) return false;
     if (fromDate && (e.eventDate || '') < fromDate) return false;
     if (toDate && (e.eventDate || '') > toDate) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      const name = (e.eventName ?? '').toLowerCase();
+      const type = eventTypeLabel(e).toLowerCase();
+      const date = (e.eventDate ?? '').toLowerCase();
+      if (!name.includes(q) && !type.includes(q) && !date.includes(q)) return false;
+    }
     return true;
   });
 
@@ -89,9 +102,6 @@ export default function EventsList() {
 
   const canExportZip = (status) => ['checked', 'finished', 'archived'].includes(status || '');
 
-  const eventType = (e) => e.formData?.uebersicht?.eventType ?? null;
-  const eventTypeLabel = (e) => EVENT_TYPE_LABELS[eventType(e)] ?? eventType(e) ?? '–';
-
   if (loading) return <div className="loading">Laden…</div>;
   if (error) return <div className="error">Fehler: {error}</div>;
 
@@ -99,25 +109,79 @@ export default function EventsList() {
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 48px)', minHeight: 0 }}>
       <h1 style={{ marginTop: 0, flexShrink: 0 }}>Events</h1>
       <div style={{ marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', flexShrink: 0 }}>
-        <label>
-          Status:{' '}
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="">Alle</option>
-            <option value="open">Offen</option>
-            <option value="closed">Geschlossen</option>
-            <option value="checked">Daten geprüft</option>
-            <option value="finished">Abgeschlossen</option>
-            <option value="archived">Archiviert</option>
-          </select>
-        </label>
-        <label>
-          Von:{' '}
-          <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-        </label>
-        <label>
-          Bis:{' '}
-          <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
-        </label>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Events suchen"
+          style={{ padding: '4px 8px', minWidth: 180 }}
+        />
+        <div style={{ position: 'relative' }}>
+          <button
+            type="button"
+            onClick={() => setStatusDropdownOpen((open) => !open)}
+            style={{
+              padding: '4px 10px',
+              border: '1px solid #e0e0e0',
+              borderRadius: 6,
+              background: '#fff',
+              cursor: 'pointer',
+              fontSize: 14,
+            }}
+          >
+            Status{selectedStatuses.length > 0 ? ` (${selectedStatuses.length})` : ''} ▾
+          </button>
+          {statusDropdownOpen && (
+            <>
+              <div
+                style={{ position: 'fixed', inset: 0, zIndex: 10 }}
+                onClick={() => setStatusDropdownOpen(false)}
+                aria-hidden
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: '100%',
+                  marginTop: 4,
+                  padding: 8,
+                  background: '#fff',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: 6,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  zIndex: 11,
+                  minWidth: 160,
+                }}
+              >
+                {(Object.entries(STATUS_LABELS)).map(([value, label]) => (
+                  <label
+                    key={value}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '4px 0' }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedStatuses.includes(value)}
+                      onChange={() => {
+                        setSelectedStatuses((prev) =>
+                          prev.includes(value) ? prev.filter((s) => s !== value) : [...prev, value]
+                        );
+                      }}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+        <DateRangeDropdown
+          fromDate={fromDate}
+          toDate={toDate}
+          onChange={({ from, to }) => {
+            setFromDate(from);
+            setToDate(to);
+          }}
+        />
       </div>
       {(deleteError || exportError) && (
         <p style={{ marginBottom: 16, color: '#b91c1c', flexShrink: 0 }}>{deleteError || exportError}</p>

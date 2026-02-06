@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getZeiterfassung, getEvents } from '../api';
+import DateRangeDropdown from '../components/DateRangeDropdown';
 
 export default function Zeiterfassung() {
   const [entries, setEntries] = useState([]);
@@ -53,14 +54,15 @@ export default function Zeiterfassung() {
             ))}
           </select>
         </label>
-        <label>
-          Von:{' '}
-          <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-        </label>
-        <label>
-          Bis:{' '}
-          <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
-        </label>
+        <DateRangeDropdown
+          fromDate={fromDate}
+          toDate={toDate}
+          onChange={({ from, to }) => {
+            setFromDate(from);
+            setToDate(to);
+          }}
+          label="Zeitraum"
+        />
         <label>
           Rolle:{' '}
           <select value={role} onChange={(e) => setRole(e.target.value)}>
