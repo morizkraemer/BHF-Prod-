@@ -1,4 +1,4 @@
-import { secuColumns } from 'shared/eventFormSchema';
+import { calculateDuration } from '../../utils/durationUtil';
 
 export default function SecuSection({ data }) {
   const safe = data && typeof data === 'object' ? data : {};
@@ -7,20 +7,24 @@ export default function SecuSection({ data }) {
     <table className="section-table">
       <thead>
         <tr>
-          {secuColumns.map((c) => (
-            <th key={c.key}>{c.label}</th>
-          ))}
+          <th>Name</th>
+          <th>Start</th>
+          <th>Ende</th>
+          <th>Dauer</th>
+          <th>Lohn</th>
         </tr>
       </thead>
       <tbody>
         {list.length === 0 ? (
-          <tr><td colSpan={secuColumns.length} className="section-empty">Keine Einträge.</td></tr>
+          <tr><td colSpan={5} className="section-empty">Keine Einträge.</td></tr>
         ) : (
           list.map((person, i) => (
             <tr key={i}>
-              {secuColumns.map((c) => (
-                <td key={c.key}>{person[c.key] ?? '–'}</td>
-              ))}
+              <td>{person.name ?? '–'}</td>
+              <td>{person.startTime ?? '–'}</td>
+              <td>{person.endTime ?? '–'}</td>
+              <td>{calculateDuration(person.startTime, person.endTime)}</td>
+              <td>{person.wage != null && person.wage !== '' ? person.wage : '–'}</td>
             </tr>
           ))
         )}

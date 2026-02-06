@@ -1,3 +1,5 @@
+import { calculateDuration } from '../../utils/durationUtil';
+
 export default function TontechnikerSection({ data }) {
   const safe = data && typeof data === 'object' ? data : {};
   const personnel = Array.isArray(safe.personnel) ? safe.personnel : [];
@@ -22,21 +24,23 @@ export default function TontechnikerSection({ data }) {
             <tr>
               <th>Name</th>
               <th>Rolle</th>
-              <th>Von</th>
-              <th>Bis</th>
+              <th>Start</th>
+              <th>Ende</th>
+              <th>Dauer</th>
             </tr>
           </thead>
           <tbody>
-            {personnel.map((p, i) => (
-              (p.name || p.startTime || p.endTime) ? (
+            {personnel
+              .filter((p) => (p.name || '').trim() || (p.startTime || '').trim() || (p.endTime || '').trim())
+              .map((p, i) => (
                 <tr key={i}>
                   <td>{p.name ?? '–'}</td>
                   <td>{p.role ?? '–'}</td>
                   <td>{p.startTime ?? '–'}</td>
                   <td>{p.endTime ?? '–'}</td>
+                  <td>{calculateDuration(p.startTime, p.endTime)}</td>
                 </tr>
-              ) : null
-            ))}
+              ))}
           </tbody>
         </table>
       </div>

@@ -49,34 +49,6 @@ function App() {
               Zeiterfassung
             </NavLink>
           </li>
-          <li style={{ marginBottom: 4 }}>
-            <NavLink
-              to="/lohn-mitarbeiter"
-              style={({ isActive }) => ({
-                display: 'block',
-                padding: '8px 12px',
-                borderRadius: 4,
-                background: isActive ? '#e8f0fe' : 'transparent',
-                color: isActive ? '#1967d2' : '#1a1a1a',
-              })}
-            >
-              Lohn & Mitarbeiter
-            </NavLink>
-          </li>
-          <li style={{ marginBottom: 4 }}>
-            <NavLink
-              to="/rider-extras-katalog"
-              style={({ isActive }) => ({
-                display: 'block',
-                padding: '8px 12px',
-                borderRadius: 4,
-                background: isActive ? '#e8f0fe' : 'transparent',
-                color: isActive ? '#1967d2' : '#1a1a1a',
-              })}
-            >
-              Rider Extras Katalog
-            </NavLink>
-          </li>
         </ul>
         <div style={{ borderTop: '1px solid #e0e0e0', marginTop: 12, paddingTop: 12 }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8, paddingLeft: 12 }}>
@@ -95,6 +67,34 @@ function App() {
                 })}
               >
                 Catering Preise
+              </NavLink>
+            </li>
+            <li style={{ marginBottom: 4 }}>
+              <NavLink
+                to="/lohn-mitarbeiter"
+                style={({ isActive }) => ({
+                  display: 'block',
+                  padding: '8px 12px',
+                  borderRadius: 4,
+                  background: isActive ? '#e8f0fe' : 'transparent',
+                  color: isActive ? '#1967d2' : '#1a1a1a',
+                })}
+              >
+                Lohn & Mitarbeiter
+              </NavLink>
+            </li>
+            <li style={{ marginBottom: 4 }}>
+              <NavLink
+                to="/rider-extras-katalog"
+                style={({ isActive }) => ({
+                  display: 'block',
+                  padding: '8px 12px',
+                  borderRadius: 4,
+                  background: isActive ? '#e8f0fe' : 'transparent',
+                  color: isActive ? '#1967d2' : '#1a1a1a',
+                })}
+              >
+                Rider Extras Katalog
               </NavLink>
             </li>
           </ul>

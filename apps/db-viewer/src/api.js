@@ -43,6 +43,11 @@ export async function updateEvent(id, body) {
   });
 }
 
+/** Delete event (only allowed when status === 'open'; backend returns 409 otherwise). */
+export async function deleteEvent(id) {
+  return request(`/api/events/${id}`, { method: 'DELETE' });
+}
+
 export async function getEventDocuments(eventId) {
   return request(`/api/events/${eventId}/documents`);
 }
@@ -169,6 +174,11 @@ export async function deleteRiderItem(id) {
 }
 
 // --- Settings (key-value) ---
+/** GET all settings as object { key: value }. */
+export async function getSettings() {
+  return request('/api/settings');
+}
+
 export async function getSetting(key) {
   return request(`/api/settings/${encodeURIComponent(key)}`);
 }

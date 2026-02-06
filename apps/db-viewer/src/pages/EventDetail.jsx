@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { getEvent, getEventDocuments, getDocumentUrl, updateEvent, finishEvent, uploadEventDocument, getRiderItems, postRiderItem } from '../api';
+import { getEvent, getEventDocuments, getDocumentUrl, updateEvent, finishEvent, uploadEventDocument, getRiderItems, postRiderItem, getSettings } from '../api';
 import { sections } from 'shared/eventFormSchema';
 import UebersichtSection from '../components/eventDetail/UebersichtSection';
 import RiderExtrasSection from '../components/eventDetail/RiderExtrasSection';
@@ -8,12 +8,9 @@ import TontechnikerSection from '../components/eventDetail/TontechnikerSection';
 import SecuSection from '../components/eventDetail/SecuSection';
 import AndereMitarbeiterSection from '../components/eventDetail/AndereMitarbeiterSection';
 import GaesteSection from '../components/eventDetail/GaesteSection';
-import KassenSection from '../components/eventDetail/KassenSection';
+import FehlendeInfosSection, { hasShiftNotesContent } from '../components/eventDetail/FehlendeInfosSection';
 
 const STATUS_LABELS = { open: 'Offen', closed: 'Geschlossen', finished: 'Abgeschlossen' };
-
-/** Section IDs that are shown in post prod (Zeiterfassung/Löhne + Rider Items) – hide their read-only blocks below. */
-const SECTIONS_REPLICATED_IN_POST_PROD = new Set(['rider-extras', 'tontechniker', 'secu', 'andere-mitarbeiter']);
 
 const SECTION_COMPONENTS = {
   'uebersicht': UebersichtSection,
@@ -22,7 +19,6 @@ const SECTION_COMPONENTS = {
   'secu': SecuSection,
   'andere-mitarbeiter': AndereMitarbeiterSection,
   'gaeste': GaesteSection,
-  'kassen': KassenSection,
 };
 
 function parseTimeToHours(timeStr) {
@@ -98,17 +94,25 @@ export default function EventDetail() {
   const [riderSearchQuery, setRiderSearchQuery] = useState('');
   const [riderSearchOpen, setRiderSearchOpen] = useState(false);
   const [savingNewRider, setSavingNewRider] = useState(false);
+  const [settings, setSettings] = useState({});
 
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
-    Promise.all([getEvent(id), getEventDocuments(id)])
-      .then(([ev, docs]) => {
+    Promise.all([
+      getEvent(id),
+      getEventDocuments(id),
+      getSettings().catch(() => ({})),
+      getRiderItems().then((list) => Array.isArray(list) ? list : []).catch(() => []),
+    ])
+      .then(([ev, docs, settingsObj, riderList]) => {
         if (!cancelled) {
           setEvent(ev);
           setDocuments(Array.isArray(docs) ? docs : []);
+          setSettings(settingsObj && typeof settingsObj === 'object' ? settingsObj : {});
+          setRiderItemsCatalog(riderList);
         }
       })
       .catch((err) => {
@@ -119,14 +123,6 @@ export default function EventDetail() {
       });
     return () => { cancelled = true; };
   }, [id]);
-
-  useEffect(() => {
-    if (event?.status === 'closed') {
-      getRiderItems()
-        .then((list) => setRiderItemsCatalog(Array.isArray(list) ? list : []))
-        .catch(() => setRiderItemsCatalog([]));
-    }
-  }, [event?.status]);
 
   if (loading) return <div className="loading">Laden…</div>;
   if (error) return <div className="error">Fehler: {error}</div>;
@@ -281,25 +277,46 @@ export default function EventDetail() {
   return (
     <div>
       <h1 style={{ marginTop: 0 }}>{event.eventName ?? 'Event'}</h1>
-      <section style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 16, marginBottom: 8 }}>Details</h2>
-        <table style={{ maxWidth: 480 }} className="section-table">
-          <tbody>
-            <tr><th style={{ width: 120 }}>Datum</th><td>{event.eventDate ?? '–'}</td></tr>
-            <tr><th>Status</th><td>{STATUS_LABELS[status] ?? status ?? '–'}</td></tr>
-            <tr><th>Phase</th><td>{event.phase ?? '–'}</td></tr>
-            <tr><th>Doors</th><td>{event.doorsTime ?? '–'}</td></tr>
-            <tr><th>Erstellt</th><td>{event.createdAt ? new Date(event.createdAt).toLocaleString() : '–'}</td></tr>
-            <tr><th>Aktualisiert</th><td>{event.updatedAt ? new Date(event.updatedAt).toLocaleString() : '–'}</td></tr>
-          </tbody>
-        </table>
-      </section>
-
       {status === 'finished' && (
         <section style={{ marginBottom: 24, padding: 12, background: '#e8f5e9', borderRadius: 8 }}>
           <strong>Abgeschlossen</strong> – Event wurde abgeschlossen (PDFs und Zeiterfassung wurden erstellt).
         </section>
       )}
+      <div style={{ display: 'flex', gap: 24, marginBottom: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+        <section style={{ minWidth: 280, flex: '1 1 280px', border: '1px solid #e0e0e0', borderRadius: 8, padding: 16, background: '#fff' }}>
+          <h2 style={{ fontSize: 16, marginBottom: 8 }}>Details</h2>
+          <table style={{ maxWidth: 480 }} className="section-table">
+            <tbody>
+              <tr><th style={{ width: 120 }}>Datum</th><td>{event.eventDate ?? '–'}</td></tr>
+              <tr><th>Status</th><td>{STATUS_LABELS[status] ?? status ?? '–'}</td></tr>
+              <tr><th>Phase</th><td>{event.phase ?? '–'}</td></tr>
+              <tr><th>Doors</th><td>{event.doorsTime ?? '–'}</td></tr>
+              <tr><th>Erstellt</th><td>{event.createdAt ? new Date(event.createdAt).toLocaleString() : '–'}</td></tr>
+              <tr><th>Aktualisiert</th><td>{event.updatedAt ? new Date(event.updatedAt).toLocaleString() : '–'}</td></tr>
+            </tbody>
+          </table>
+        </section>
+        <section style={{ minWidth: 280, flex: '1 1 280px', border: '1px solid #e0e0e0', borderRadius: 8, padding: 16, background: '#fff' }}>
+          <h2 style={{ fontSize: 16, marginBottom: 8 }}>Dokumente</h2>
+          <ul style={{ margin: 0, paddingLeft: 20, listStyle: 'none' }}>
+            {documents.length === 0 ? (
+              <li style={{ color: '#666' }}>Keine Dokumente.</li>
+            ) : (
+              documents.map((doc) => (
+                <li key={doc.id} style={{ marginBottom: 6 }}>
+                  <span>{doc.type ?? '–'}</span>
+                  {' · '}
+                  <span>{doc.sectionOrName ?? '–'}</span>
+                  {' — '}
+                  <a href={docUrl(doc.id)} target="_blank" rel="noopener noreferrer">
+                    Öffnen
+                  </a>
+                </li>
+              ))
+            )}
+          </ul>
+        </section>
+      </div>
 
       {status === 'closed' && (
         <section style={{ marginBottom: 24 }} className="post-prod-section">
@@ -479,17 +496,42 @@ export default function EventDetail() {
         </div>
       )}
 
-      {sections.filter((s) => !SECTIONS_REPLICATED_IN_POST_PROD.has(s.id)).map(({ id: sectionId, name: sectionName }) => {
+      {sections.filter((s) => s.id !== 'kassen').map(({ id: sectionId, name: sectionName }) => {
         const data = formData[sectionId] ?? {};
         const SectionComponent = SECTION_COMPONENTS[sectionId];
         if (!SectionComponent) return null;
+        const isRiderExtras = sectionId === 'rider-extras';
+        const isGaeste = sectionId === 'gaeste';
         return (
           <section key={sectionId} className="event-detail-section" style={{ marginBottom: 24 }}>
             <h2 style={{ fontSize: 16, marginBottom: 8 }}>{sectionName}</h2>
-            <SectionComponent data={data} />
+            {isRiderExtras ? (
+              <RiderExtrasSection
+                data={data}
+                uebersicht={formData.uebersicht ?? {}}
+                cateringPrices={settings.cateringPrices ?? {}}
+                bestueckungTotalPrices={settings.bestueckungTotalPrices ?? {}}
+                bestueckungPricingTypes={settings.bestueckungPricingTypes ?? {}}
+                riderItems={riderItemsCatalog}
+              />
+            ) : isGaeste ? (
+              <GaesteSection
+                data={data}
+                pauschalePrices={settings.pauschalePrices ?? {}}
+              />
+            ) : (
+              <SectionComponent data={data} />
+            )}
           </section>
         );
       })}
+
+      {hasShiftNotesContent(formData.shiftNotes) && (
+        <section className="event-detail-section" style={{ marginBottom: 24 }}>
+          <h2 style={{ fontSize: 16, marginBottom: 8 }}>Fehlende Infos</h2>
+          <FehlendeInfosSection data={formData.shiftNotes} />
+        </section>
+      )}
 
       {event.formData && Object.keys(event.formData).length > 0 && (
         <section style={{ marginBottom: 24 }}>
@@ -503,36 +545,6 @@ export default function EventDetail() {
           )}
         </section>
       )}
-
-      <section>
-        <h2 style={{ fontSize: 16, marginBottom: 8 }}>Dokumente</h2>
-        {documents.length === 0 ? (
-          <p style={{ color: '#666' }}>Keine Dokumente.</p>
-        ) : (
-          <table className="section-table">
-            <thead>
-              <tr>
-                <th>Typ</th>
-                <th>Abschnitt / Name</th>
-                <th>Aktion</th>
-              </tr>
-            </thead>
-            <tbody>
-              {documents.map((doc) => (
-                <tr key={doc.id}>
-                  <td>{doc.type ?? '–'}</td>
-                  <td>{doc.sectionOrName ?? '–'}</td>
-                  <td>
-                    <a href={docUrl(doc.id)} target="_blank" rel="noopener noreferrer">
-                      Öffnen
-                    </a>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
     </div>
   );
 }

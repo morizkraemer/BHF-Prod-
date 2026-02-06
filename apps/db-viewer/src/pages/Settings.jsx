@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getSetting, setSetting } from '../api';
+
+const DEBOUNCE_MS = 700;
 
 const defaultCateringPrices = () => ({ warmPerPerson: '', coldPerPerson: '' });
 const defaultBestueckungPrices = () => ({ leer: '', abgeschlossen: '', 'standard-konzert': '', 'standard-tranzit': '' });
@@ -12,15 +14,17 @@ const BESTUECKUNG_OPTIONS = [
   { value: 'standard-tranzit', label: 'Standard Tranzit' },
 ];
 
+const BESTUECKUNG_NO_PRICE = ['leer', 'abgeschlossen'];
+
 export default function Settings() {
   const [cateringPrices, setCateringPrices] = useState(defaultCateringPrices());
   const [bestueckungTotalPrices, setBestueckungTotalPrices] = useState(defaultBestueckungPrices());
   const [bestueckungPricingTypes, setBestueckungPricingTypes] = useState(defaultBestueckungTypes());
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [savingKey, setSavingKey] = useState(null);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
+  const cateringSaveTimeoutRef = useRef(null);
+  const bestueckungSaveTimeoutRef = useRef(null);
 
   useEffect(() => {
     setError(null);
@@ -38,33 +42,37 @@ export default function Settings() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleSaveCateringPrices = async () => {
-    setSaving(true);
-    setError(null);
-    setMessage(null);
-    try {
-      await setSetting('cateringPrices', cateringPrices);
-      setMessage('Catering Preise gespeichert');
-    } catch (err) {
-      setError(err.message || 'Fehler beim Speichern');
-    } finally {
-      setSaving(false);
-    }
+  const scheduleSaveCatering = (nextCateringPrices) => {
+    if (cateringSaveTimeoutRef.current) clearTimeout(cateringSaveTimeoutRef.current);
+    cateringSaveTimeoutRef.current = setTimeout(async () => {
+      setError(null);
+      setMessage(null);
+      try {
+        await setSetting('cateringPrices', nextCateringPrices);
+        setMessage('Catering Preise gespeichert');
+        setTimeout(() => setMessage(null), 3000);
+      } catch (err) {
+        setError(err.message || 'Fehler beim Speichern');
+      }
+      cateringSaveTimeoutRef.current = null;
+    }, DEBOUNCE_MS);
   };
 
-  const handleSaveBestueckungOption = async (key) => {
-    setSavingKey(key);
-    setError(null);
-    setMessage(null);
-    try {
-      await setSetting('bestueckungTotalPrices', bestueckungTotalPrices);
-      await setSetting('bestueckungPricingTypes', bestueckungPricingTypes);
-      setMessage('Backstage Kühlschrank Preise gespeichert');
-    } catch (err) {
-      setError(err.message || 'Fehler beim Speichern');
-    } finally {
-      setSavingKey(null);
-    }
+  const scheduleSaveBestueckung = (nextPrices, nextTypes) => {
+    if (bestueckungSaveTimeoutRef.current) clearTimeout(bestueckungSaveTimeoutRef.current);
+    bestueckungSaveTimeoutRef.current = setTimeout(async () => {
+      setError(null);
+      setMessage(null);
+      try {
+        await setSetting('bestueckungTotalPrices', nextPrices);
+        await setSetting('bestueckungPricingTypes', nextTypes);
+        setMessage('Backstage Kühlschrank Preise gespeichert');
+        setTimeout(() => setMessage(null), 3000);
+      } catch (err) {
+        setError(err.message || 'Fehler beim Speichern');
+      }
+      bestueckungSaveTimeoutRef.current = null;
+    }, DEBOUNCE_MS);
   };
 
   if (loading) {
@@ -87,7 +95,11 @@ export default function Settings() {
           <input
             type="number"
             value={cateringPrices.warmPerPerson}
-            onChange={(e) => setCateringPrices({ ...cateringPrices, warmPerPerson: e.target.value })}
+            onChange={(e) => {
+              const next = { ...cateringPrices, warmPerPerson: e.target.value };
+              setCateringPrices(next);
+              scheduleSaveCatering(next);
+            }}
             placeholder="0.00"
             step="0.01"
             min="0"
@@ -99,80 +111,90 @@ export default function Settings() {
           <input
             type="number"
             value={cateringPrices.coldPerPerson}
-            onChange={(e) => setCateringPrices({ ...cateringPrices, coldPerPerson: e.target.value })}
+            onChange={(e) => {
+              const next = { ...cateringPrices, coldPerPerson: e.target.value };
+              setCateringPrices(next);
+              scheduleSaveCatering(next);
+            }}
             placeholder="0.00"
             step="0.01"
             min="0"
             style={{ width: '100%', maxWidth: 200, padding: '8px 12px', fontSize: 14 }}
           />
         </div>
-        <button
-          type="button"
-          onClick={handleSaveCateringPrices}
-          disabled={saving}
-          style={{ alignSelf: 'flex-start', padding: '8px 16px', fontSize: 14, cursor: saving ? 'not-allowed' : 'pointer' }}
-        >
-          {saving ? 'Speichern…' : 'Speichern'}
-        </button>
       </div>
 
       {/* Backstage Kühlschrank */}
       <h3 style={{ marginBottom: 12, fontSize: 16 }}>Backstage Kühlschrank</h3>
       <p style={{ color: '#666', marginBottom: 16, fontSize: 13 }}>
-        Für jede Option Preisart (Pauschale oder pro Person) und Preis festlegen.
+        Für Standard Konzert und Standard Tranzit Preisart (Pauschale oder pro Person) und Preis festlegen. Leer und Abgeschlossen benötigen keine Preise.
       </p>
-      {BESTUECKUNG_OPTIONS.map((option) => (
-        <div key={option.value} style={{ marginBottom: 20, padding: 12, border: '1px solid #e8e8e8', borderRadius: 8 }}>
-          <h4 style={{ margin: '0 0 12px', fontSize: 14 }}>{option.label}</h4>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div>
-              <span style={{ fontWeight: 600, fontSize: 13, marginRight: 16 }}>Preisart</span>
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginRight: 12, cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name={`pricing-${option.value}`}
-                  value="pauschale"
-                  checked={bestueckungPricingTypes[option.value] === 'pauschale'}
-                  onChange={() => setBestueckungPricingTypes({ ...bestueckungPricingTypes, [option.value]: 'pauschale' })}
-                />
-                Pauschale
-              </label>
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name={`pricing-${option.value}`}
-                  value="perPerson"
-                  checked={bestueckungPricingTypes[option.value] === 'perPerson'}
-                  onChange={() => setBestueckungPricingTypes({ ...bestueckungPricingTypes, [option.value]: 'perPerson' })}
-                />
-                Pro Person
-              </label>
+      {BESTUECKUNG_OPTIONS.map((option) => {
+        const noPrice = BESTUECKUNG_NO_PRICE.includes(option.value);
+        if (noPrice) {
+          return (
+            <div key={option.value} style={{ marginBottom: 12, padding: 12, border: '1px solid #e8e8e8', borderRadius: 8 }}>
+              <h4 style={{ margin: 0, fontSize: 14 }}>{option.label}</h4>
             </div>
-            <div>
-              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 4 }}>
-                {bestueckungPricingTypes[option.value] === 'pauschale' ? 'Pauschale Preis (€)' : 'Preis pro Person (€)'}
-              </label>
-              <input
-                type="number"
-                value={bestueckungTotalPrices[option.value] || ''}
-                onChange={(e) => setBestueckungTotalPrices({ ...bestueckungTotalPrices, [option.value]: e.target.value })}
-                placeholder="0.00"
-                step="0.01"
-                min="0"
-                style={{ width: '100%', maxWidth: 160, padding: '6px 10px', fontSize: 14 }}
-              />
+          );
+        }
+        return (
+          <div key={option.value} style={{ marginBottom: 20, padding: 12, border: '1px solid #e8e8e8', borderRadius: 8 }}>
+            <h4 style={{ margin: '0 0 12px', fontSize: 14 }}>{option.label}</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div>
+                <span style={{ fontWeight: 600, fontSize: 13, marginRight: 16 }}>Preisart</span>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginRight: 12, cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name={`pricing-${option.value}`}
+                    value="pauschale"
+                    checked={bestueckungPricingTypes[option.value] === 'pauschale'}
+                    onChange={() => {
+                      const nextTypes = { ...bestueckungPricingTypes, [option.value]: 'pauschale' };
+                      setBestueckungPricingTypes(nextTypes);
+                      scheduleSaveBestueckung(bestueckungTotalPrices, nextTypes);
+                    }}
+                  />
+                  Pauschale
+                </label>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name={`pricing-${option.value}`}
+                    value="perPerson"
+                    checked={bestueckungPricingTypes[option.value] === 'perPerson'}
+                    onChange={() => {
+                      const nextTypes = { ...bestueckungPricingTypes, [option.value]: 'perPerson' };
+                      setBestueckungPricingTypes(nextTypes);
+                      scheduleSaveBestueckung(bestueckungTotalPrices, nextTypes);
+                    }}
+                  />
+                  Pro Person
+                </label>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 4 }}>
+                  {bestueckungPricingTypes[option.value] === 'pauschale' ? 'Pauschale Preis (€)' : 'Preis pro Person (€)'}
+                </label>
+                <input
+                  type="number"
+                  value={bestueckungTotalPrices[option.value] || ''}
+                  onChange={(e) => {
+                    const nextPrices = { ...bestueckungTotalPrices, [option.value]: e.target.value };
+                    setBestueckungTotalPrices(nextPrices);
+                    scheduleSaveBestueckung(nextPrices, bestueckungPricingTypes);
+                  }}
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  style={{ width: '100%', maxWidth: 160, padding: '6px 10px', fontSize: 14 }}
+                />
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => handleSaveBestueckungOption(option.value)}
-              disabled={savingKey !== null}
-              style={{ alignSelf: 'flex-start', padding: '6px 12px', fontSize: 13, cursor: savingKey !== null ? 'not-allowed' : 'pointer' }}
-            >
-              {savingKey === option.value ? 'Speichern…' : 'Speichern'}
-            </button>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
