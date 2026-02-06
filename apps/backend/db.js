@@ -14,7 +14,7 @@ function getPool() {
 }
 
 /**
- * Get current event (latest open: phase != 'closed').
+ * Get current event (latest open: status = 'open').
  * Returns { id, event_name, event_date, doors_time } or null.
  */
 async function getCurrentEvent() {
@@ -23,7 +23,7 @@ async function getCurrentEvent() {
   const result = await p.query(
     `SELECT id, event_name, event_date, doors_time
      FROM events
-     WHERE phase != 'closed'
+     WHERE status = 'open'
      ORDER BY updated_at DESC
      LIMIT 1`
   );

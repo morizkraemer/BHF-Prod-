@@ -67,6 +67,7 @@ function toEvent(row) {
     doorsTime: row.doors_time ?? null,
     phase: row.phase ?? 'VVA',
     abgeschlossen: row.abgeschlossen ?? false,
+    status: row.status ?? 'open',
     formData: row.form_data ?? {},
     createdAt: row.created_at?.toISOString?.() ?? row.created_at,
     updatedAt: row.updated_at?.toISOString?.() ?? row.updated_at
@@ -77,7 +78,7 @@ function toEvent(row) {
 router.get('/', async (req, res) => {
   try {
     const r = await getPool().query(
-      'SELECT id, event_name, event_date, doors_time, phase, abgeschlossen, form_data, created_at, updated_at FROM events ORDER BY updated_at DESC'
+      'SELECT id, event_name, event_date, doors_time, phase, abgeschlossen, status, form_data, created_at, updated_at FROM events ORDER BY updated_at DESC'
     );
     res.json(r.rows.map(toEvent));
   } catch (err) {
@@ -90,8 +91,8 @@ router.get('/', async (req, res) => {
 router.get('/current', async (req, res) => {
   try {
     const r = await getPool().query(
-      `SELECT id, event_name, event_date, doors_time, phase, abgeschlossen, form_data, created_at, updated_at
-       FROM events WHERE phase != 'closed' ORDER BY updated_at DESC LIMIT 1`
+      `SELECT id, event_name, event_date, doors_time, phase, abgeschlossen, status, form_data, created_at, updated_at
+       FROM events WHERE status = 'open' ORDER BY updated_at DESC LIMIT 1`
     );
     const row = r.rows[0];
     if (!row) return res.status(200).json({ currentEvent: null });
@@ -114,7 +115,7 @@ router.post('/', async (req, res) => {
     const r = await getPool().query(
       `INSERT INTO events (event_name, event_date, doors_time, phase, form_data)
        VALUES ($1, $2, $3, $4, $5::jsonb)
-       RETURNING id, event_name, event_date, doors_time, phase, form_data, created_at, updated_at`,
+       RETURNING id, event_name, event_date, doors_time, phase, abgeschlossen, status, form_data, created_at, updated_at`,
       [eventName, eventDate, doorsTime, phase, JSON.stringify(formData)]
     );
     res.status(201).json(toEvent(r.rows[0]));
@@ -147,7 +148,7 @@ router.get('/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const r = await getPool().query(
-      'SELECT id, event_name, event_date, doors_time, phase, abgeschlossen, form_data, created_at, updated_at FROM events WHERE id = $1',
+      'SELECT id, event_name, event_date, doors_time, phase, abgeschlossen, status, form_data, created_at, updated_at FROM events WHERE id = $1',
       [id]
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'Not found' });
@@ -165,6 +166,7 @@ router.patch('/:id', async (req, res) => {
   const formData = body.formData ?? body.form_data;
   const phase = body.currentPhase ?? body.phase;
   const abgeschlossen = body.abgeschlossen;
+  const status = body.status;
   try {
     const updates = [];
     const values = [id];
@@ -181,6 +183,10 @@ router.patch('/:id', async (req, res) => {
       updates.push(`abgeschlossen = $${n++}`);
       values.push(!!abgeschlossen);
     }
+    if (status !== undefined && ['open', 'closed', 'finished'].includes(status)) {
+      updates.push(`status = $${n++}`);
+      values.push(status);
+    }
     if (formData !== undefined && formData?.uebersicht) {
       const u = formData.uebersicht;
       if (u.eventName !== undefined) { updates.push(`event_name = $${n++}`); values.push(u.eventName); }
@@ -190,14 +196,14 @@ router.patch('/:id', async (req, res) => {
     updates.push('updated_at = now()');
     if (values.length === 1) {
       const r = await getPool().query(
-        'SELECT id, event_name, event_date, doors_time, phase, abgeschlossen, form_data, created_at, updated_at FROM events WHERE id = $1',
+        'SELECT id, event_name, event_date, doors_time, phase, abgeschlossen, status, form_data, created_at, updated_at FROM events WHERE id = $1',
         [id]
       );
       if (r.rows.length === 0) return res.status(404).json({ error: 'Not found' });
       return res.json(toEvent(r.rows[0]));
     }
     const r = await getPool().query(
-      `UPDATE events SET ${updates.join(', ')} WHERE id = $1 RETURNING id, event_name, event_date, doors_time, phase, abgeschlossen, form_data, created_at, updated_at`,
+      `UPDATE events SET ${updates.join(', ')} WHERE id = $1 RETURNING id, event_name, event_date, doors_time, phase, abgeschlossen, status, form_data, created_at, updated_at`,
       values
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'Not found' });
@@ -208,12 +214,50 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
-// POST /api/events/:id/close – close shift: section PDFs, Zeiterfassung entries (DB), set phase closed
+// POST /api/events/:id/close – close shift: only save form_data and set status/phase to closed (no PDFs)
 router.post('/:id/close', async (req, res) => {
   const { id } = req.params;
   const formData = req.body?.formData ?? req.body?.form_data ?? req.body;
+  try {
+    const eventRes = await getPool().query(
+      'SELECT id, status FROM events WHERE id = $1',
+      [id]
+    );
+    if (eventRes.rows.length === 0) return res.status(404).json({ error: 'Event not found' });
+    const event = eventRes.rows[0];
+    if (event.status === 'closed' || event.status === 'finished') {
+      return res.status(409).json({ error: 'Event already closed or finished' });
+    }
+    const data = formData || {};
+    await getPool().query(
+      `UPDATE events SET phase = 'closed', status = 'closed', form_data = $2::jsonb, updated_at = now()
+       WHERE id = $1`,
+      [id, JSON.stringify(data)]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('POST /api/events/:id/close:', err);
+    res.status(500).json({ error: 'Fehler beim Schließen des Shifts.' });
+  }
+});
+
+// POST /api/events/:id/finish – post prod: run PDF/Zeiterfassung generation, set status = finished
+router.post('/:id/finish', async (req, res) => {
+  const { id } = req.params;
   const storagePath = req.app.locals.storagePath;
   try {
+    const eventRes = await getPool().query(
+      'SELECT id, status, form_data FROM events WHERE id = $1',
+      [id]
+    );
+    if (eventRes.rows.length === 0) return res.status(404).json({ error: 'Event not found' });
+    const event = eventRes.rows[0];
+    if (event.status !== 'closed') {
+      return res.status(400).json({
+        error: event.status === 'finished' ? 'Event already finished' : 'Event must be closed before finishing'
+      });
+    }
+    const formData = req.body?.formData ?? req.body?.form_data ?? event.form_data ?? {};
     const result = await runCloseShift({
       eventId: id,
       formData,
@@ -221,13 +265,13 @@ router.post('/:id/close', async (req, res) => {
       pool: getPool()
     });
     if (!result.success) {
-      const status = result.error === 'Event not found' ? 404 : result.error === 'Event already closed' ? 409 : 400;
-      return res.status(status).json({ error: result.error });
+      const statusCode = result.error === 'Event not found' ? 404 : result.error === 'Event already finished' ? 409 : 400;
+      return res.status(statusCode).json({ error: result.error });
     }
     res.json({ success: true, eventFolder: result.eventFolder });
   } catch (err) {
-    console.error('POST /api/events/:id/close:', err);
-    res.status(500).json({ error: 'Fehler beim Schließen des Shifts.' });
+    console.error('POST /api/events/:id/finish:', err);
+    res.status(500).json({ error: 'Fehler beim Abschließen des Events.' });
   }
 });
 

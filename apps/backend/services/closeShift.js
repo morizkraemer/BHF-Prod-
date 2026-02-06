@@ -20,6 +20,7 @@ function toCamelCaseFolderName(str) {
 }
 
 function getSectionName(source, scanName) {
+  if (source === 'postprod') return 'Zusätzlich';
   if (source === 'tontechniker') return 'Technik';
   if (source === 'secu') return 'Security';
   if (source === 'kassen') return (scanName === 'Abrechnungen') ? 'Abrechnungen' : 'Belege';
@@ -50,20 +51,23 @@ async function mergePDFs(pdfPaths) {
 
 /**
  * Resolve document ref (id or filePath) to absolute path. Load documents for event to build id->path.
+ * Also includes post-prod uploads: documents in DB with type = 'scan' not referenced in formData → section "Zusätzlich".
  */
 async function collectScannedDocs(formData, eventId, pool, storagePath) {
-  const docs = await pool.query('SELECT id, file_path FROM documents WHERE event_id = $1', [eventId]);
+  const docs = await pool.query('SELECT id, file_path, type, section_or_name FROM documents WHERE event_id = $1', [eventId]);
   const idToPath = {};
   docs.rows.forEach((r) => {
     idToPath[r.id] = path.join(storagePath, r.file_path);
   });
 
   const out = [];
+  const addedIds = new Set();
   function add(source, scanName, doc, einkaufsbelegPaid) {
     let absPath = null;
     if (doc.id != null) absPath = idToPath[doc.id];
     if (!absPath && doc.filePath) absPath = path.isAbsolute(doc.filePath) ? doc.filePath : path.join(storagePath, doc.filePath);
     if (!absPath) return;
+    if (doc.id != null) addedIds.add(doc.id);
     out.push({ filePath: absPath, source, scanName: scanName || 'unknown', einkaufsbelegPaid });
   }
 
@@ -85,6 +89,14 @@ async function collectScannedDocs(formData, eventId, pool, storagePath) {
   const gaeste = formData.gaeste?.scannedDocuments || [];
   gaeste.forEach((d) => add('gaeste', d.scanName || 'Agenturzettel', d));
 
+  // Post-prod uploads: documents in DB with type = 'scan' not already included via formData
+  for (const r of docs.rows) {
+    if (r.type === 'scan' && !addedIds.has(r.id)) {
+      const absPath = path.join(storagePath, r.file_path);
+      out.push({ filePath: absPath, source: 'postprod', scanName: r.section_or_name || 'Zusätzlich', einkaufsbelegPaid: undefined });
+    }
+  }
+
   return out;
 }
 
@@ -95,15 +107,18 @@ async function collectScannedDocs(formData, eventId, pool, storagePath) {
  */
 async function runCloseShift({ eventId, formData, storagePath, pool }) {
   const eventRes = await pool.query(
-    'SELECT id, event_name, event_date, phase, form_data FROM events WHERE id = $1',
+    'SELECT id, event_name, event_date, phase, status, form_data FROM events WHERE id = $1',
     [eventId]
   );
   if (eventRes.rows.length === 0) {
     return { success: false, error: 'Event not found' };
   }
   const event = eventRes.rows[0];
-  if (event.phase === 'closed') {
-    return { success: false, error: 'Event already closed' };
+  if (event.status === 'finished') {
+    return { success: false, error: 'Event already finished' };
+  }
+  if (event.status !== 'closed') {
+    return { success: false, error: 'Event must be closed before finishing' };
   }
 
   const data = formData || event.form_data || {};
@@ -222,7 +237,7 @@ async function runCloseShift({ eventId, formData, storagePath, pool }) {
   }
 
   await pool.query(
-    `UPDATE events SET phase = 'closed', form_data = $2::jsonb, updated_at = now()
+    `UPDATE events SET phase = 'closed', status = 'finished', form_data = $2::jsonb, updated_at = now()
      WHERE id = $1`,
     [eventId, JSON.stringify(data)]
   );

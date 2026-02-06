@@ -1,35 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getEvents, updateEvent } from '../api';
+import { getEvents } from '../api';
+
+const STATUS_LABELS = { open: 'Offen', closed: 'Geschlossen', finished: 'Abgeschlossen' };
 
 export default function EventsList() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('');
   const [phaseFilter, setPhaseFilter] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
-  const [updatingId, setUpdatingId] = useState(null);
   const navigate = useNavigate();
-
-  const handleAbgeschlossenChange = async (e, eventId) => {
-    e.stopPropagation();
-    const ev = events.find((x) => x.id === eventId);
-    if (!ev || updatingId) return;
-    const next = !ev.abgeschlossen;
-    setUpdatingId(eventId);
-    setError(null);
-    try {
-      const updated = await updateEvent(eventId, { abgeschlossen: next });
-      setEvents((prev) =>
-        prev.map((x) => (x.id === eventId ? { ...x, abgeschlossen: updated.abgeschlossen } : x))
-      );
-    } catch (err) {
-      setError(err.message || 'Fehler beim Aktualisieren');
-    } finally {
-      setUpdatingId(null);
-    }
-  };
 
   useEffect(() => {
     let cancelled = false;
@@ -49,6 +32,7 @@ export default function EventsList() {
   }, []);
 
   const filtered = events.filter((e) => {
+    if (statusFilter && (e.status || 'open') !== statusFilter) return false;
     if (phaseFilter && e.phase !== phaseFilter) return false;
     if (fromDate && (e.eventDate || '') < fromDate) return false;
     if (toDate && (e.eventDate || '') > toDate) return false;
@@ -62,6 +46,15 @@ export default function EventsList() {
     <div>
       <h1 style={{ marginTop: 0 }}>Events</h1>
       <div style={{ marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+        <label>
+          Status:{' '}
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="">Alle</option>
+            <option value="open">Offen</option>
+            <option value="closed">Geschlossen</option>
+            <option value="finished">Abgeschlossen</option>
+          </select>
+        </label>
         <label>
           Phase:{' '}
           <select value={phaseFilter} onChange={(e) => setPhaseFilter(e.target.value)}>
@@ -86,9 +79,9 @@ export default function EventsList() {
             <tr>
               <th>Datum</th>
               <th>Event</th>
+              <th>Status</th>
               <th>Phase</th>
               <th>Event Typ</th>
-              <th>Abgeschlossen</th>
             </tr>
           </thead>
           <tbody>
@@ -100,17 +93,9 @@ export default function EventsList() {
               >
                 <td>{e.eventDate ?? '–'}</td>
                 <td>{e.eventName ?? '–'}</td>
+                <td>{STATUS_LABELS[e.status] ?? e.status ?? '–'}</td>
                 <td>{e.phase ?? '–'}</td>
                 <td>{e.formData?.uebersicht?.eventType ?? '–'}</td>
-                <td onClick={(ev) => ev.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={!!e.abgeschlossen}
-                    disabled={updatingId === e.id}
-                    onChange={(ev) => handleAbgeschlossenChange(ev, e.id)}
-                    title={e.abgeschlossen ? 'Abgeschlossen' : 'Nicht abgeschlossen'}
-                  />
-                </td>
               </tr>
             ))}
           </tbody>
