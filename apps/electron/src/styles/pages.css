@@ -89,12 +89,43 @@
 }
 
 .tontechniker-personnel-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   padding: 20px;
   text-align: center;
   color: #7f8c8d;
   font-style: italic;
   background-color: #f9f9f9;
   border-radius: 6px;
+}
+
+.tontechniker-confirm-no-personnel {
+  margin-top: 8px;
+}
+
+.tontechniker-confirm-no-personnel-button {
+  padding: 10px 20px;
+  background-color: #e67e22;
+  color: white;
+  border: 1px solid #d35400;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  width: 100%;
+}
+
+.tontechniker-confirm-no-personnel-button:hover {
+  background-color: #d35400;
+  border-color: #d35400;
+  color: white;
+}
+
+.tontechniker-confirm-no-personnel-state {
+  display: inline-block;
+  padding: 10px 0;
+  color: #2e7d32;
+  font-size: 14px;
 }
 
 /* Secu Form */
@@ -255,6 +286,18 @@
   justify-content: center;
 }
 
+.secu-personnel-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  text-align: center;
+  color: #7f8c8d;
+  font-style: italic;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+}
+
 .secu-personnel-section .add-line-button {
   padding: 10px 20px;
   background-color: #f1f3f4;
@@ -278,6 +321,34 @@
 
 .secu-personnel-section .add-line-button:active {
   background-color: #dadce0;
+}
+
+.secu-confirm-no-personnel {
+  margin-top: 8px;
+}
+
+.secu-confirm-no-personnel-button {
+  padding: 10px 20px;
+  background-color: #e67e22;
+  color: white;
+  border: 1px solid #d35400;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  width: 100%;
+}
+
+.secu-confirm-no-personnel-button:hover {
+  background-color: #d35400;
+  border-color: #d35400;
+  color: white;
+}
+
+.secu-confirm-no-personnel-state {
+  display: inline-block;
+  padding: 10px 0;
+  color: #2e7d32;
+  font-size: 14px;
 }
 
 .secu-personnel-role-disabled {
@@ -471,12 +542,43 @@
 }
 
 .andere-mitarbeiter-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   padding: 20px;
   text-align: center;
   color: #7f8c8d;
   font-style: italic;
   background-color: #f9f9f9;
   border-radius: 6px;
+}
+
+.andere-mitarbeiter-confirm-no-personnel {
+  margin-top: 8px;
+}
+
+.andere-mitarbeiter-confirm-no-personnel-button {
+  padding: 10px 20px;
+  background-color: #e67e22;
+  color: white;
+  border: 1px solid #d35400;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  width: 100%;
+}
+
+.andere-mitarbeiter-confirm-no-personnel-button:hover {
+  background-color: #d35400;
+  border-color: #d35400;
+  color: white;
+}
+
+.andere-mitarbeiter-confirm-no-personnel-state {
+  display: inline-block;
+  padding: 10px 0;
+  color: #2e7d32;
+  font-size: 14px;
 }
 
 /* Positionen Section */

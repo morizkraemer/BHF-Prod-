@@ -31,9 +31,12 @@ function AndereMitarbeiterForm({ formData, onDataChange, highlightedFields = [] 
 
   useEffect(() => {
     if (onDataChange) {
-      onDataChange({ mitarbeiter });
+      onDataChange({
+        mitarbeiter,
+        noPersonnelConfirmed: mitarbeiter.length > 0 ? false : formData?.noPersonnelConfirmed
+      });
     }
-  }, [mitarbeiter, onDataChange]);
+  }, [mitarbeiter, formData?.noPersonnelConfirmed, onDataChange]);
 
   const handleListChange = (payload) => {
     if (payload && Array.isArray(payload.mitarbeiter)) {
@@ -64,11 +67,26 @@ function AndereMitarbeiterForm({ formData, onDataChange, highlightedFields = [] 
               extraFields={[
                 { key: 'category', label: 'Kategorie', options: CATEGORY_OPTIONS, placeholder: 'Kategorie wählen *', required: true }
               ]}
-              emptyMessage="Keine Mitarbeiter hinzugefügt"
+              emptyMessage={formData?.noPersonnelConfirmed ? "Keine Mitarbeiter bestätigt" : "Keine Mitarbeiter hinzugefügt"}
               addButtonLabel="+ Add Person"
               sectionClass="andere-mitarbeiter"
               highlightedFields={highlightedFields}
               highlightPrefix="Andere Mitarbeiter Person"
+              emptyStateFooter={mitarbeiter.length === 0 ? (
+                <div className="andere-mitarbeiter-confirm-no-personnel">
+                  {formData?.noPersonnelConfirmed ? (
+                    <span className="andere-mitarbeiter-confirm-no-personnel-state">Bestätigt</span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="andere-mitarbeiter-confirm-no-personnel-button"
+                      onClick={() => onDataChange({ ...formData, noPersonnelConfirmed: true })}
+                    >
+                      Keine Mitarbeiter
+                    </button>
+                  )}
+                </div>
+              ) : null}
             />
           ) : (
             <div className="andere-mitarbeiter-empty">PersonnelListForm nicht geladen</div>

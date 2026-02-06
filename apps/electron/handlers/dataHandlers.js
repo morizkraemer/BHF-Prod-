@@ -82,9 +82,21 @@ function registerDataHandlers(ipcMain, shiftDataStore, settingsStore) {
     }
   });
 
-  // Clear all shift data (called when shift is closed) – local only; close-shift already closed event on API
-  ipcMain.handle('clear-shift-data', () => {
+  // Clear all shift data (reset shift): when serverUrl set, delete current open event from API; then clear local
+  ipcMain.handle('clear-shift-data', async () => {
     try {
+      const serverUrl = getServerUrl(settingsStore);
+      if (serverUrl) {
+        try {
+          const current = await api.getCurrentEventFull(serverUrl);
+          if (current && current.id) {
+            await api.deleteEvent(serverUrl, current.id);
+          }
+        } catch (err) {
+          console.warn('clear-shift-data API delete:', err.message);
+        }
+      }
+
       shiftDataStore.clear();
       shiftDataStore.set('currentShiftData', null);
       shiftDataStore.set('currentPhase', 'VVA');

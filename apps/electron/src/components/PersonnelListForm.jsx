@@ -22,7 +22,8 @@ function PersonnelListForm({
   addButtonLabel = '+ Add Person',
   sectionClass = 'personnel-list',
   highlightedFields = [],
-  highlightPrefix = 'Person'
+  highlightPrefix = 'Person',
+  emptyStateFooter = null
 }) {
   const normalize = (arr) =>
     (Array.isArray(arr) ? arr : []).map((p) => ({
@@ -95,9 +96,18 @@ function PersonnelListForm({
       </div>
 
       {list.length === 0 ? (
-        <div className={emptyClass}>{emptyMessage}</div>
+        <>
+          <div className={emptyClass}>
+            <div>{emptyMessage}</div>
+            {emptyStateFooter}
+          </div>
+          <button type="button" onClick={handleAdd} className="add-line-button">
+            {addButtonLabel}
+          </button>
+        </>
       ) : (
-        list.map((person, index) => (
+        <>
+          {list.map((person, index) => (
           <div key={index} className={lineClass}>
             <div className={`${nameClass}-combo`}>
               {PersonNameSelect && getNames && addName ? (
@@ -187,12 +197,12 @@ function PersonnelListForm({
               <button type="button" onClick={() => handleRemove(index)} className="remove-line-button" title="Remove">×</button>
             </div>
           </div>
-        ))
+          ))}
+          <button type="button" onClick={handleAdd} className="add-line-button">
+            {addButtonLabel}
+          </button>
+        </>
       )}
-
-      <button type="button" onClick={handleAdd} className="add-line-button">
-        {addButtonLabel}
-      </button>
     </div>
   );
 }

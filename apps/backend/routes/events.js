@@ -214,6 +214,34 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
+// DELETE /api/events/:id – delete current open shift (reset); only allowed when status = open
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+  const storagePath = req.app.locals.storagePath;
+  try {
+    const eventRes = await getPool().query(
+      'SELECT id, status FROM events WHERE id = $1',
+      [id]
+    );
+    if (eventRes.rows.length === 0) return res.status(404).json({ error: 'Event not found' });
+    const event = eventRes.rows[0];
+    if (event.status !== 'open') {
+      return res.status(409).json({ error: 'Only open events can be deleted (reset shift)' });
+    }
+    await getPool().query('DELETE FROM events WHERE id = $1', [id]);
+    const eventDir = path.join(storagePath, 'events', id);
+    try {
+      await fs.rm(eventDir, { recursive: true });
+    } catch (dirErr) {
+      if (dirErr.code !== 'ENOENT') console.error('Delete event folder:', dirErr);
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('DELETE /api/events/:id:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
 // POST /api/events/:id/close – close shift: only save form_data and set status/phase to closed (no PDFs)
 router.post('/:id/close', async (req, res) => {
   const { id } = req.params;

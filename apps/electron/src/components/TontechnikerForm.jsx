@@ -38,9 +38,13 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
 
   useEffect(() => {
     if (onDataChange) {
-      onDataChange({ personnel, scannedImages });
+      onDataChange({
+        personnel,
+        scannedImages,
+        noPersonnelConfirmed: personnel.length > 0 ? false : formData?.noPersonnelConfirmed
+      });
     }
-  }, [personnel, scannedImages, onDataChange]);
+  }, [personnel, scannedImages, formData?.noPersonnelConfirmed, onDataChange]);
 
   const handlePersonnelDataChange = (payload) => {
     if (payload && Array.isArray(payload.personnel)) {
@@ -74,11 +78,26 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
               roleMode="select"
               getRoles={() => tonLichtRoles}
               roles={tonLichtRoles}
-              emptyMessage="Keine Ton/Licht-Personen hinzugefügt"
+              emptyMessage={formData?.noPersonnelConfirmed ? "Keine Ton/Lichtperson bestätigt" : "Keine Ton/Licht-Personen hinzugefügt"}
               addButtonLabel="+ Add Person"
               sectionClass="tontechniker-personnel"
               highlightedFields={highlightedFields}
               highlightPrefix="Ton/Licht Person"
+              emptyStateFooter={personnel.length === 0 ? (
+                <div className="tontechniker-confirm-no-personnel">
+                  {formData?.noPersonnelConfirmed ? (
+                    <span className="tontechniker-confirm-no-personnel-state">Bestätigt</span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="tontechniker-confirm-no-personnel-button"
+                      onClick={() => onDataChange({ ...formData, noPersonnelConfirmed: true })}
+                    >
+                      Keine Ton/Lichtperson
+                    </button>
+                  )}
+                </div>
+              ) : null}
             />
           ) : (
             <div className="tontechniker-personnel-empty">PersonnelListForm nicht geladen</div>

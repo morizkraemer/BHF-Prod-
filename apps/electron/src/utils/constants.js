@@ -15,11 +15,12 @@ const settingsSection = { id: 'settings', name: 'Settings' };
 const getInitialFormData = () => ({
   uebersicht: {},
   'rider-extras': {},
-  tontechniker: { personnel: [], scannedImages: [] },
+  tontechniker: { personnel: [], scannedImages: [], noPersonnelConfirmed: false },
   kassen: {},
   secu: {
-    securityPersonnel: [{ name: '', startTime: '', endTime: '' }],
-    scannedDocuments: []
+    securityPersonnel: [],
+    scannedDocuments: [],
+    noPersonnelConfirmed: false
   },
   'andere-mitarbeiter': {
     mitarbeiter: []

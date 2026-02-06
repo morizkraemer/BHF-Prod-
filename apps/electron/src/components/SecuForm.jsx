@@ -36,10 +36,11 @@ function SecuForm({ formData, onDataChange, highlightedFields = [], printedTempl
       onDataChange({
         securityPersonnel,
         scannedDocuments,
-        hasWebFormPdfs: webFormPdfs.length > 0
+        hasWebFormPdfs: webFormPdfs.length > 0,
+        noPersonnelConfirmed: securityPersonnel.length > 0 ? false : formData?.noPersonnelConfirmed
       });
     }
-  }, [securityPersonnel, scannedDocuments, webFormPdfs.length, onDataChange]);
+  }, [securityPersonnel, scannedDocuments, webFormPdfs.length, formData?.noPersonnelConfirmed, onDataChange]);
 
   const handlePersonnelDataChange = (payload) => {
     if (payload && Array.isArray(payload.securityPersonnel)) {
@@ -75,11 +76,26 @@ function SecuForm({ formData, onDataChange, highlightedFields = [], printedTempl
               addName={window.electronAPI?.addSecuName ?? null}
               roleMode="fixed"
               fixedRoleName="Secu"
-              emptyMessage="Kein Sicherheitspersonal hinzugefügt"
+              emptyMessage={formData?.noPersonnelConfirmed ? "Kein Sicherheitspersonal bestätigt" : "Kein Sicherheitspersonal hinzugefügt"}
               addButtonLabel="+ Add Person"
               sectionClass="secu-personnel"
               highlightedFields={highlightedFields}
               highlightPrefix="Secu Person"
+              emptyStateFooter={securityPersonnel.length === 0 ? (
+                <div className="secu-confirm-no-personnel">
+                  {formData?.noPersonnelConfirmed ? (
+                    <span className="secu-confirm-no-personnel-state">Bestätigt</span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="secu-confirm-no-personnel-button"
+                      onClick={() => onDataChange({ ...formData, noPersonnelConfirmed: true })}
+                    >
+                      Kein Sicherheitspersonal
+                    </button>
+                  )}
+                </div>
+              ) : null}
             />
           ) : (
             <div className="secu-personnel-empty">PersonnelListForm nicht geladen</div>

@@ -182,6 +182,10 @@ async function closeEvent(baseUrl, id, formData) {
   return request(baseUrl, 'POST', `/api/events/${id}/close`, { formData });
 }
 
+async function deleteEvent(baseUrl, id) {
+  return request(baseUrl, 'DELETE', `/api/events/${id}`);
+}
+
 // --- Documents ---
 async function getEventDocuments(baseUrl, eventId) {
   return request(baseUrl, 'GET', `/api/events/${eventId}/documents`);
@@ -249,6 +253,7 @@ module.exports = {
   createEvent,
   updateEvent,
   closeEvent,
+  deleteEvent,
   getEventDocuments,
   uploadEventDocument,
   getDocumentUrl

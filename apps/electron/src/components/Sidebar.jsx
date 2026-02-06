@@ -17,7 +17,12 @@ function Sidebar({
         {window.AppConstants.sections.map(section => {
           const count = getRequiredFieldsCount(section.id);
           const isComplete = (count.total > 0 && count.filled === count.total) || count.total === 0;
-          
+          const isAmber = !!count.isAmber;
+          const counterClass = isAmber
+            ? 'sidebar-item-counter-amber'
+            : isComplete
+              ? 'sidebar-item-counter-complete'
+              : '';
           return (
             <button
               key={section.id}
@@ -25,7 +30,7 @@ function Sidebar({
               onClick={() => setActiveSection(section.id)}
             >
               <span className="sidebar-item-name">{section.name}</span>
-              <span className={`sidebar-item-counter ${isComplete ? 'sidebar-item-counter-complete' : ''}`}>
+              <span className={`sidebar-item-counter ${counterClass}`}>
                 {count.total > 0 ? `${count.filled}/${count.total}` : '—'}
               </span>
             </button>

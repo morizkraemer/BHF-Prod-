@@ -206,9 +206,15 @@ const validateAllSectionsDetailed = (formData) => {
       errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Gescannte Bilder' });
     }
   }
+  if (tonPersonnel.length === 0 && !tontechnikerData.noPersonnelConfirmed) {
+    errors.push({ section: 'Ton/Lichttechnik', sectionId: 'tontechniker', field: 'Bestätigung: Keine Person' });
+  }
   
   // Secu section
   const securityPersonnel = secuData.securityPersonnel || [];
+  if (securityPersonnel.length === 0 && !secuData.noPersonnelConfirmed) {
+    errors.push({ section: 'Secu', sectionId: 'secu', field: 'Bestätigung: Keine Person' });
+  }
   if (securityPersonnel.length > 0) {
     securityPersonnel.forEach((person, index) => {
       if (!person.name || person.name.trim() === '') {
@@ -231,6 +237,9 @@ const validateAllSectionsDetailed = (formData) => {
   // Andere Mitarbeiter section
   const andereMitarbeiterData = formData['andere-mitarbeiter'] || {};
   const mitarbeiter = andereMitarbeiterData.mitarbeiter || [];
+  if (mitarbeiter.length === 0 && !andereMitarbeiterData.noPersonnelConfirmed) {
+    errors.push({ section: 'Andere Mitarbeiter', sectionId: 'andere-mitarbeiter', field: 'Bestätigung: Keine Person' });
+  }
   if (mitarbeiter.length > 0) {
     mitarbeiter.forEach((person, index) => {
       if (!person.name || person.name.trim() === '') {
@@ -305,6 +314,10 @@ const getRequiredFieldsCount = (sectionId, formData) => {
     
     case 'tontechniker': {
       const personnel = data.personnel || [];
+      if (personnel.length === 0) {
+        const confirmed = !!data.noPersonnelConfirmed;
+        return { filled: confirmed ? 1 : 0, total: 1, isAmber: !confirmed };
+      }
       let tontechnikerRequired = 0;
       let tontechnikerFilled = 0;
       personnel.forEach((p) => {
@@ -322,7 +335,7 @@ const getRequiredFieldsCount = (sectionId, formData) => {
         const scannedImages = data.scannedImages || [];
         if (scannedImages.length > 0) tontechnikerFilled++;
       }
-      return { filled: tontechnikerFilled, total: tontechnikerRequired };
+      return { filled: tontechnikerFilled, total: tontechnikerRequired, isAmber: false };
     }
     
     case 'rider-extras':
@@ -343,8 +356,8 @@ const getRequiredFieldsCount = (sectionId, formData) => {
       // Each security person's fields are required if there are any personnel entries
       const securityPersonnel = data.securityPersonnel || [];
       if (securityPersonnel.length === 0) {
-        // No personnel = no required fields
-        return { filled: 0, total: 0 };
+        const confirmed = !!data.noPersonnelConfirmed;
+        return { filled: confirmed ? 1 : 0, total: 1, isAmber: !confirmed };
       }
       
       // For each person, name, startTime, and endTime are required
@@ -365,14 +378,14 @@ const getRequiredFieldsCount = (sectionId, formData) => {
         secuFilled++;
       }
       
-      return { filled: secuFilled, total: secuRequired };
+      return { filled: secuFilled, total: secuRequired, isAmber: false };
     
     case 'andere-mitarbeiter':
       // Each person's fields are required if there are any entries
       const mitarbeiter = data.mitarbeiter || [];
       if (mitarbeiter.length === 0) {
-        // No personnel = no required fields
-        return { filled: 0, total: 0 };
+        const confirmed = !!data.noPersonnelConfirmed;
+        return { filled: confirmed ? 1 : 0, total: 1, isAmber: !confirmed };
       }
       
       // For each person, name, startTime, endTime, and category are required
@@ -386,7 +399,7 @@ const getRequiredFieldsCount = (sectionId, formData) => {
         if (person.category && person.category !== '') andereMitarbeiterFilled++;
       });
       
-      return { filled: andereMitarbeiterFilled, total: andereMitarbeiterRequired };
+      return { filled: andereMitarbeiterFilled, total: andereMitarbeiterRequired, isAmber: false };
     
     case 'kassen':
       // Required: at least one scan for receipts and abrechnungen
@@ -721,9 +734,25 @@ const getAllFieldsStatus = (formData) => {
       isFilled: scannedImages.length > 0
     });
   }
+  if (tonPersonnel.length === 0) {
+    fields.push({
+      section: 'Ton/Lichttechnik',
+      sectionId: 'tontechniker',
+      field: 'Bestätigung: Keine Person',
+      isFilled: !!tontechnikerData.noPersonnelConfirmed
+    });
+  }
   
   // Secu section
   const securityPersonnel = secuData.securityPersonnel || [];
+  if (securityPersonnel.length === 0) {
+    fields.push({
+      section: 'Secu',
+      sectionId: 'secu',
+      field: 'Bestätigung: Keine Person',
+      isFilled: !!secuData.noPersonnelConfirmed
+    });
+  }
   if (securityPersonnel.length > 0) {
     securityPersonnel.forEach((person, index) => {
       fields.push({
@@ -757,6 +786,14 @@ const getAllFieldsStatus = (formData) => {
   
   // Andere Mitarbeiter section
   const mitarbeiter = andereMitarbeiterData.mitarbeiter || [];
+  if (mitarbeiter.length === 0) {
+    fields.push({
+      section: 'Andere Mitarbeiter',
+      sectionId: 'andere-mitarbeiter',
+      field: 'Bestätigung: Keine Person',
+      isFilled: !!andereMitarbeiterData.noPersonnelConfirmed
+    });
+  }
   if (mitarbeiter.length > 0) {
     mitarbeiter.forEach((person, index) => {
       fields.push({
