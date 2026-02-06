@@ -52,9 +52,39 @@ export async function getEventDocuments(eventId) {
   return request(`/api/events/${eventId}/documents`);
 }
 
-/** Finish event (post prod): run PDF/Zeiterfassung generation, set status = finished. */
+/** Finish event (post prod): Zeiterfassung entries only, set status = finished. No PDFs. */
 export async function finishEvent(id) {
   return request(`/api/events/${id}/finish`, { method: 'POST' });
+}
+
+/** Set event status to archived (only allowed when status is finished). */
+export async function archiveEvent(id) {
+  return updateEvent(id, { status: 'archived' });
+}
+
+/** Build event folder (section PDFs) and download as zip. Returns blob URL for download. */
+export async function exportEventZip(id) {
+  const url = `${baseUrl}/api/events/${id}/export-zip`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    const err = new Error(res.statusText || `Fehler ${res.status}`);
+    err.status = res.status;
+    try {
+      const data = await res.json();
+      if (data?.error) err.message = data.error;
+    } catch (_) {}
+    throw err;
+  }
+  const blob = await res.blob();
+  const disposition = res.headers.get('Content-Disposition');
+  const match = disposition && disposition.match(/filename="?([^";]+)"?/);
+  const filename = match ? match[1] : `event-${id}.zip`;
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(blobUrl);
 }
 
 /** Upload a document (PDF) for an event. Optional sectionOrName (e.g. "Belege", "Zusätzlich"). */

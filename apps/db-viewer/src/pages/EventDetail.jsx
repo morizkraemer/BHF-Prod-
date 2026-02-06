@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { getEvent, getEventDocuments, getDocumentUrl, updateEvent, finishEvent, uploadEventDocument, getRiderItems, postRiderItem, getSettings } from '../api';
+import { getEvent, getEventDocuments, getDocumentUrl, updateEvent, finishEvent, archiveEvent, uploadEventDocument, getRiderItems, postRiderItem, getSettings } from '../api';
 import { sections } from 'shared/eventFormSchema';
 import UebersichtSection from '../components/eventDetail/UebersichtSection';
 import RiderExtrasSection from '../components/eventDetail/RiderExtrasSection';
@@ -10,7 +10,29 @@ import AndereMitarbeiterSection from '../components/eventDetail/AndereMitarbeite
 import GaesteSection from '../components/eventDetail/GaesteSection';
 import FehlendeInfosSection, { hasShiftNotesContent } from '../components/eventDetail/FehlendeInfosSection';
 
-const STATUS_LABELS = { open: 'Offen', closed: 'Geschlossen', finished: 'Abgeschlossen' };
+const STATUS_LABELS = {
+  open: 'Offen',
+  closed: 'Geschlossen',
+  checked: 'Daten geprüft',
+  finished: 'Abgeschlossen',
+  archived: 'Archiviert',
+};
+
+const STATUS_HEADER_BG = {
+  open: '#e0f2fe',
+  closed: '#fef3c7',
+  checked: '#d1fae5',
+  finished: '#e8f5e9',
+  archived: '#f5f5f5',
+};
+
+const STATUS_HEADER_DESC = {
+  open: ' – In Bearbeitung',
+  closed: ' – Daten prüfen',
+  checked: ' – Post-prod',
+  finished: ' – Zeiterfassung erstellt',
+  archived: ' – Abgerechnet',
+};
 
 const SECTION_COMPONENTS = {
   'uebersicht': UebersichtSection,
@@ -87,6 +109,8 @@ export default function EventDetail() {
   const [rawJsonOpen, setRawJsonOpen] = useState(false);
   const [editRow, setEditRow] = useState(null);
   const [finishing, setFinishing] = useState(false);
+  const [settingChecked, setSettingChecked] = useState(false);
+  const [archiving, setArchiving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [postProdError, setPostProdError] = useState(null);
   const [riderItemsCatalog, setRiderItemsCatalog] = useState([]);
@@ -157,6 +181,20 @@ export default function EventDetail() {
     }
   };
 
+  const handleSetChecked = async () => {
+    if (!id || settingChecked) return;
+    setPostProdError(null);
+    setSettingChecked(true);
+    try {
+      const updated = await updateEvent(id, { status: 'checked' });
+      setEvent(updated);
+    } catch (err) {
+      setPostProdError(err.message || 'Fehler beim Setzen');
+    } finally {
+      setSettingChecked(false);
+    }
+  };
+
   const handleFinish = async () => {
     if (!id || finishing) return;
     setPostProdError(null);
@@ -169,6 +207,21 @@ export default function EventDetail() {
       setPostProdError(err.message || 'Fehler beim Abschließen');
     } finally {
       setFinishing(false);
+    }
+  };
+
+  const handleArchive = async () => {
+    if (!id || archiving) return;
+    setPostProdError(null);
+    setArchiving(true);
+    try {
+      await archiveEvent(id);
+      const updated = await getEvent(id);
+      setEvent(updated);
+    } catch (err) {
+      setPostProdError(err.message || 'Fehler beim Abrechnen');
+    } finally {
+      setArchiving(false);
     }
   };
 
@@ -274,13 +327,46 @@ export default function EventDetail() {
     return cat.price ?? 0;
   };
 
+  const primaryButton =
+    status === 'closed' ? (
+      <button type="button" onClick={handleSetChecked} disabled={settingChecked} style={{ padding: '8px 16px', fontWeight: 'bold' }}>
+        {settingChecked ? 'Wird gesetzt…' : 'Daten geprüft'}
+      </button>
+    ) : status === 'checked' ? (
+      <button type="button" onClick={handleFinish} disabled={finishing} style={{ padding: '8px 16px', fontWeight: 'bold' }}>
+        {finishing ? 'Wird abgeschlossen…' : 'Event abschließen'}
+      </button>
+    ) : status === 'finished' ? (
+      <button type="button" onClick={handleArchive} disabled={archiving} style={{ padding: '8px 16px', fontWeight: 'bold' }}>
+        {archiving ? 'Wird abgerechnet…' : 'Event abrechnen'}
+      </button>
+    ) : null;
+
+  const statusLabel = STATUS_LABELS[status] ?? status ?? '–';
+  const statusDesc = STATUS_HEADER_DESC[status] ?? '';
+  const headerBg = STATUS_HEADER_BG[status] ?? '#fff';
+
   return (
     <div>
       <h1 style={{ marginTop: 0 }}>{event.eventName ?? 'Event'}</h1>
-      {status === 'finished' && (
-        <section style={{ marginBottom: 24, padding: 12, background: '#e8f5e9', borderRadius: 8 }}>
-          <strong>Abgeschlossen</strong> – Event wurde abgeschlossen (PDFs und Zeiterfassung wurden erstellt).
-        </section>
+      <section
+        style={{
+          marginBottom: 24,
+          padding: 12,
+          background: headerBg,
+          borderRadius: 8,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 12,
+        }}
+      >
+        <span><strong>{statusLabel}</strong>{statusDesc}</span>
+        {primaryButton}
+      </section>
+      {postProdError && (status === 'closed' || status === 'checked' || status === 'finished') && (
+        <p style={{ color: '#c62828', marginBottom: 16 }}>{postProdError}</p>
       )}
       <div style={{ display: 'flex', gap: 24, marginBottom: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
         <section style={{ minWidth: 280, flex: '1 1 280px', border: '1px solid #e0e0e0', borderRadius: 8, padding: 16, background: '#fff' }}>
@@ -288,11 +374,13 @@ export default function EventDetail() {
           <table style={{ maxWidth: 480 }} className="section-table">
             <tbody>
               <tr><th style={{ width: 120 }}>Datum</th><td>{event.eventDate ?? '–'}</td></tr>
-              <tr><th>Status</th><td>{STATUS_LABELS[status] ?? status ?? '–'}</td></tr>
-              <tr><th>Phase</th><td>{event.phase ?? '–'}</td></tr>
-              <tr><th>Doors</th><td>{event.doorsTime ?? '–'}</td></tr>
-              <tr><th>Erstellt</th><td>{event.createdAt ? new Date(event.createdAt).toLocaleString() : '–'}</td></tr>
-              <tr><th>Aktualisiert</th><td>{event.updatedAt ? new Date(event.updatedAt).toLocaleString() : '–'}</td></tr>
+              <tr><th>Geöffnet</th><td>{event.openedAt ? new Date(event.openedAt).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '–'}</td></tr>
+              <tr><th>Geschlossen</th><td>{event.closedAt ? new Date(event.closedAt).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '–'}</td></tr>
+              <tr><th>Geprüft</th><td>{event.checkedAt ? new Date(event.checkedAt).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '–'}</td></tr>
+              <tr><th>Abgeschlossen</th><td>{event.finishedAt ? new Date(event.finishedAt).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '–'}</td></tr>
+              <tr><th>Archiviert</th><td>{event.archivedAt ? new Date(event.archivedAt).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '–'}</td></tr>
+              <tr><th>Erstellt</th><td>{event.createdAt ? new Date(event.createdAt).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '–'}</td></tr>
+              <tr><th>Aktualisiert</th><td>{event.updatedAt ? new Date(event.updatedAt).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '–'}</td></tr>
             </tbody>
           </table>
         </section>
@@ -318,10 +406,9 @@ export default function EventDetail() {
         </section>
       </div>
 
-      {status === 'closed' && (
+      {status === 'checked' && (
         <section style={{ marginBottom: 24 }} className="post-prod-section">
           <h2 style={{ fontSize: 16, marginBottom: 8 }}>Post prod</h2>
-          {postProdError && <p style={{ color: '#c62828', marginBottom: 8 }}>{postProdError}</p>}
 
           <h3 style={{ fontSize: 14, marginBottom: 6 }}>Zeiterfassung / Löhne</h3>
           {wageRows.length === 0 ? (
@@ -466,9 +553,6 @@ export default function EventDetail() {
             {uploading && <span style={{ marginLeft: 8 }}>Wird hochgeladen…</span>}
           </div>
 
-          <button type="button" onClick={handleFinish} disabled={finishing} style={{ padding: '8px 16px', fontWeight: 'bold' }}>
-            {finishing ? 'Wird abgeschlossen…' : 'Event abschließen'}
-          </button>
         </section>
       )}
 

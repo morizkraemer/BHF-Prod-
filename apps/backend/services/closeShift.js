@@ -101,11 +101,11 @@ async function collectScannedDocs(formData, eventId, pool, storagePath) {
 }
 
 /**
- * Run close-shift for event: section PDFs, Zeiterfassung, document rows, set phase closed.
- * @param {{ eventId: string, formData: object, storagePath: string, pool: object }}
- * @returns {{ success: boolean, eventFolder?: string, error?: string }}
+ * Run Zeiterfassung inserts and set status = finished. No PDFs, no folder.
+ * @param {{ eventId: string, formData: object, pool: object }}
+ * @returns {{ success: boolean, error?: string }}
  */
-async function runCloseShift({ eventId, formData, storagePath, pool }) {
+async function runFinishEventOnly({ eventId, formData, pool }) {
   const eventRes = await pool.query(
     'SELECT id, event_name, event_date, phase, status, form_data FROM events WHERE id = $1',
     [eventId]
@@ -114,13 +114,93 @@ async function runCloseShift({ eventId, formData, storagePath, pool }) {
     return { success: false, error: 'Event not found' };
   }
   const event = eventRes.rows[0];
-  if (event.status === 'finished') {
+  if (event.status === 'finished' || event.status === 'archived') {
     return { success: false, error: 'Event already finished' };
   }
-  if (event.status !== 'closed') {
-    return { success: false, error: 'Event must be closed before finishing' };
+  if (event.status !== 'checked') {
+    return { success: false, error: 'Event must be in status "checked" before finishing' };
   }
 
+  const data = formData || event.form_data || {};
+  const eventDate = data.uebersicht?.date || (event.event_date ? event.event_date.toISOString().slice(0, 10) : new Date().toISOString().split('T')[0]);
+
+  const { secuRows, tonLichtRows, andereRows } = collectZeiterfassungData(data, eventDate);
+  const hasTimeData = secuRows.length > 0 || tonLichtRows.length > 0 || andereRows.length > 0;
+  if (hasTimeData) {
+    let sectionRoleNames = null;
+    try {
+      const sr = await pool.query("SELECT value FROM settings WHERE key = 'sectionRoleNames'");
+      if (sr.rows.length > 0 && sr.rows[0].value) {
+        sectionRoleNames = sr.rows[0].value;
+      }
+    } catch (err) {
+      console.warn('runFinishEventOnly sectionRoleNames:', err.message);
+    }
+    const dbEntries = collectZeiterfassungEntriesForDb(eventId, data, eventDate, sectionRoleNames);
+
+    let roleWagesMap = {};
+    try {
+      const rw = await pool.query('SELECT name, hourly_wage FROM roles');
+      for (const row of rw.rows) {
+        const k = (row.name || '').trim();
+        if (k) roleWagesMap[k] = row.hourly_wage != null ? Number(row.hourly_wage) : 0;
+      }
+    } catch (err) {
+      console.warn('runFinishEventOnly roles lookup:', err.message);
+    }
+    let personCustomWagesMap = {};
+    try {
+      const pw = await pool.query('SELECT person_name_key, hourly_wage FROM person_wages');
+      for (const row of pw.rows) {
+        const key = (row.person_name_key || '').trim().toLowerCase();
+        if (key) personCustomWagesMap[key] = row.hourly_wage != null ? Number(row.hourly_wage) : 0;
+      }
+    } catch (err) {
+      console.warn('runFinishEventOnly person_wages lookup:', err.message);
+    }
+
+    for (const e of dbEntries) {
+      if ((e.wage === 0 || e.wage == null) && (e.person_name || '').trim()) {
+        const personKey = (e.person_name || '').trim().toLowerCase();
+        const wageNum = (e.role === 'Andere Mitarbeiter')
+          ? personCustomWagesMap[personKey]
+          : (personCustomWagesMap[personKey] ?? roleWagesMap[e.role]);
+        if (wageNum != null && Number.isFinite(wageNum)) {
+          e.wage = wageNum;
+          e.amount = Math.round(e.hours * e.wage * 100) / 100;
+        }
+      }
+      await pool.query(
+        `INSERT INTO zeiterfassung_entries (event_id, role, event_name, entry_date, person_name, wage, start_time, end_time, hours, amount, category)
+         VALUES ($1, $2, $3, $4::date, $5, $6, $7, $8, $9, $10, $11)`,
+        [e.event_id, e.role, e.event_name, e.entry_date, e.person_name, e.wage, e.start_time, e.end_time, e.hours, e.amount, e.category]
+      );
+    }
+  }
+
+  await pool.query(
+    `UPDATE events SET phase = 'closed', status = 'finished', form_data = $2::jsonb, updated_at = now(), finished_at = now()
+     WHERE id = $1`,
+    [eventId, JSON.stringify(data)]
+  );
+
+  return { success: true };
+}
+
+/**
+ * Build event folder with section PDFs and insert document rows. Does not update event status.
+ * @param {{ eventId: string, formData: object, storagePath: string, pool: object }}
+ * @returns {{ success: boolean, eventFolder?: string, error?: string }}
+ */
+async function runExportEventFolder({ eventId, formData, storagePath, pool }) {
+  const eventRes = await pool.query(
+    'SELECT id, event_name, event_date, form_data FROM events WHERE id = $1',
+    [eventId]
+  );
+  if (eventRes.rows.length === 0) {
+    return { success: false, error: 'Event not found' };
+  }
+  const event = eventRes.rows[0];
   const data = formData || event.form_data || {};
   const uebersicht = data.uebersicht || {};
   const eventName = uebersicht.eventName || event.event_name || 'Unbekanntes Event';
@@ -174,26 +254,51 @@ async function runCloseShift({ eventId, formData, storagePath, pool }) {
         [eventId, section, relativePath]
       );
     } catch (err) {
-      console.warn('closeShift section PDF:', section, err.message);
+      console.warn('runExportEventFolder section PDF:', section, err.message);
     }
   }
 
+  return { success: true, eventFolder: eventFolderPath };
+}
+
+/**
+ * Run close-shift for event: section PDFs, Zeiterfassung, document rows, set phase closed.
+ * Kept for backward compatibility; finish route now uses runFinishEventOnly.
+ * @param {{ eventId: string, formData: object, storagePath: string, pool: object }}
+ * @returns {{ success: boolean, eventFolder?: string, error?: string }}
+ */
+async function runCloseShift({ eventId, formData, storagePath, pool }) {
+  const eventRes = await pool.query(
+    'SELECT id, event_name, event_date, phase, status, form_data FROM events WHERE id = $1',
+    [eventId]
+  );
+  if (eventRes.rows.length === 0) {
+    return { success: false, error: 'Event not found' };
+  }
+  const event = eventRes.rows[0];
+  if (event.status === 'finished' || event.status === 'archived') {
+    return { success: false, error: 'Event already finished' };
+  }
+  if (event.status !== 'closed' && event.status !== 'checked') {
+    return { success: false, error: 'Event must be closed or checked before running full close shift' };
+  }
+
+  const folderResult = await runExportEventFolder({ eventId, formData, storagePath, pool });
+  if (!folderResult.success) return folderResult;
+
+  const data = formData || event.form_data || {};
+  const eventDate = data.uebersicht?.date || (event.event_date ? event.event_date.toISOString().slice(0, 10) : new Date().toISOString().split('T')[0]);
   const { secuRows, tonLichtRows, andereRows } = collectZeiterfassungData(data, eventDate);
   const hasTimeData = secuRows.length > 0 || tonLichtRows.length > 0 || andereRows.length > 0;
   if (hasTimeData) {
-    // Section–role mapping from settings (default: Secu, Ton/Licht, Andere Mitarbeiter)
     let sectionRoleNames = null;
     try {
       const sr = await pool.query("SELECT value FROM settings WHERE key = 'sectionRoleNames'");
-      if (sr.rows.length > 0 && sr.rows[0].value) {
-        sectionRoleNames = sr.rows[0].value;
-      }
+      if (sr.rows.length > 0 && sr.rows[0].value) sectionRoleNames = sr.rows[0].value;
     } catch (err) {
       console.warn('closeShift sectionRoleNames:', err.message);
     }
     const dbEntries = collectZeiterfassungEntriesForDb(eventId, data, eventDate, sectionRoleNames);
-
-    // Role wages (role name -> hourly_wage number)
     let roleWagesMap = {};
     try {
       const rw = await pool.query('SELECT name, hourly_wage FROM roles');
@@ -204,7 +309,6 @@ async function runCloseShift({ eventId, formData, storagePath, pool }) {
     } catch (err) {
       console.warn('closeShift roles lookup:', err.message);
     }
-    // Person custom wage overrides (normalized name -> hourly_wage number)
     let personCustomWagesMap = {};
     try {
       const pw = await pool.query('SELECT person_name_key, hourly_wage FROM person_wages');
@@ -215,11 +319,9 @@ async function runCloseShift({ eventId, formData, storagePath, pool }) {
     } catch (err) {
       console.warn('closeShift person_wages lookup:', err.message);
     }
-
     for (const e of dbEntries) {
       if ((e.wage === 0 || e.wage == null) && (e.person_name || '').trim()) {
         const personKey = (e.person_name || '').trim().toLowerCase();
-        // Andere Mitarbeiter: always use person wage only (no role fallback)
         const wageNum = (e.role === 'Andere Mitarbeiter')
           ? personCustomWagesMap[personKey]
           : (personCustomWagesMap[personKey] ?? roleWagesMap[e.role]);
@@ -235,14 +337,12 @@ async function runCloseShift({ eventId, formData, storagePath, pool }) {
       );
     }
   }
-
   await pool.query(
-    `UPDATE events SET phase = 'closed', status = 'finished', form_data = $2::jsonb, updated_at = now()
+    `UPDATE events SET phase = 'closed', status = 'finished', form_data = $2::jsonb, updated_at = now(), finished_at = now()
      WHERE id = $1`,
     [eventId, JSON.stringify(data)]
   );
-
-  return { success: true, eventFolder: eventFolderPath };
+  return { success: true, eventFolder: folderResult.eventFolder };
 }
 
-module.exports = { runCloseShift, toCamelCaseFolderName, getSectionName, mergePDFs, collectScannedDocs };
+module.exports = { runCloseShift, runFinishEventOnly, runExportEventFolder, toCamelCaseFolderName, getSectionName, mergePDFs, collectScannedDocs };

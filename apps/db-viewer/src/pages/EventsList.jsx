@@ -1,13 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getEvents, deleteEvent } from '../api';
+import { getEvents, deleteEvent, exportEventZip } from '../api';
 
-const STATUS_LABELS = { open: 'Offen', closed: 'Geschlossen', finished: 'Abgeschlossen' };
+const STATUS_LABELS = {
+  open: 'Offen',
+  closed: 'Geschlossen',
+  checked: 'Daten geprüft',
+  finished: 'Abgeschlossen',
+  archived: 'Archiviert',
+};
 
 const ROW_BG = {
   open: '#e0f2fe',
   closed: '#fef3c7',
-  finished: '#d1fae5',
+  checked: '#d1fae5',
+  finished: '#ffffff',
+  archived: '#ffffff',
 };
 
 const EVENT_TYPE_LABELS = { konzert: 'Konzert', club: 'Club', andere: 'Andere', einmietung: 'Einmietung' };
@@ -21,6 +29,8 @@ export default function EventsList() {
   const [toDate, setToDate] = useState('');
   const [openMenuId, setOpenMenuId] = useState(null);
   const [deleteError, setDeleteError] = useState(null);
+  const [exportingId, setExportingId] = useState(null);
+  const [exportError, setExportError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -63,6 +73,22 @@ export default function EventsList() {
     }
   };
 
+  const handleExportZip = async (e, eventId) => {
+    e.stopPropagation();
+    setOpenMenuId(null);
+    setExportError(null);
+    setExportingId(eventId);
+    try {
+      await exportEventZip(eventId);
+    } catch (err) {
+      setExportError(err.message || 'ZIP-Export fehlgeschlagen.');
+    } finally {
+      setExportingId(null);
+    }
+  };
+
+  const canExportZip = (status) => ['checked', 'finished', 'archived'].includes(status || '');
+
   const eventType = (e) => e.formData?.uebersicht?.eventType ?? null;
   const eventTypeLabel = (e) => EVENT_TYPE_LABELS[eventType(e)] ?? eventType(e) ?? '–';
 
@@ -75,11 +101,13 @@ export default function EventsList() {
       <div style={{ marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', flexShrink: 0 }}>
         <label>
           Status:{' '}
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="">Alle</option>
             <option value="open">Offen</option>
             <option value="closed">Geschlossen</option>
+            <option value="checked">Daten geprüft</option>
             <option value="finished">Abgeschlossen</option>
+            <option value="archived">Archiviert</option>
           </select>
         </label>
         <label>
@@ -91,8 +119,8 @@ export default function EventsList() {
           <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
         </label>
       </div>
-      {deleteError && (
-        <p style={{ marginBottom: 16, color: '#b91c1c', flexShrink: 0 }}>{deleteError}</p>
+      {(deleteError || exportError) && (
+        <p style={{ marginBottom: 16, color: '#b91c1c', flexShrink: 0 }}>{deleteError || exportError}</p>
       )}
       <div style={{ flex: 1, minHeight: 0, overflow: 'auto', background: '#fff', borderRadius: 8, border: '1px solid #e0e0e0' }}>
         <table>
@@ -127,6 +155,7 @@ export default function EventsList() {
                         ev.stopPropagation();
                         setOpenMenuId((id) => (id === e.id ? null : e.id));
                         setDeleteError(null);
+                        setExportError(null);
                       }}
                       style={{
                         background: 'none',
@@ -164,9 +193,29 @@ export default function EventsList() {
                             borderRadius: 6,
                             boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                             zIndex: 11,
-                            minWidth: 120,
+                            minWidth: 160,
                           }}
                         >
+                          {canExportZip(e.status) && (
+                            <li>
+                              <button
+                                type="button"
+                                onClick={(ev) => handleExportZip(ev, e.id)}
+                                disabled={exportingId === e.id}
+                                style={{
+                                  display: 'block',
+                                  width: '100%',
+                                  padding: '8px 12px',
+                                  textAlign: 'left',
+                                  border: 'none',
+                                  background: 'none',
+                                  cursor: exportingId === e.id ? 'wait' : 'pointer',
+                                }}
+                              >
+                                {exportingId === e.id ? 'Wird erstellt…' : 'Als ZIP herunterladen'}
+                              </button>
+                            </li>
+                          )}
                           <li>
                             <button
                               type="button"

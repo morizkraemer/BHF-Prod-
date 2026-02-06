@@ -10,8 +10,9 @@ const path = require('path');
 const fs = require('fs').promises;
 const { randomUUID } = require('crypto');
 const multer = require('multer');
+const archiver = require('archiver');
 const { getPool } = require('../db');
-const { runCloseShift } = require('../services/closeShift');
+const { runFinishEventOnly, runExportEventFolder } = require('../services/closeShift');
 const { toEntry: toZeiterfassungEntry } = require('./zeiterfassung');
 
 const router = express.Router();
@@ -59,6 +60,8 @@ function poolOr503(req, res, next) {
 
 router.use(poolOr503);
 
+const EVENT_SELECT_COLS = 'id, event_name, event_date, doors_time, phase, abgeschlossen, status, form_data, created_at, updated_at, opened_at, closed_at, checked_at, finished_at, archived_at';
+
 function toEvent(row) {
   return {
     id: row.id,
@@ -70,7 +73,12 @@ function toEvent(row) {
     status: row.status ?? 'open',
     formData: row.form_data ?? {},
     createdAt: row.created_at?.toISOString?.() ?? row.created_at,
-    updatedAt: row.updated_at?.toISOString?.() ?? row.updated_at
+    updatedAt: row.updated_at?.toISOString?.() ?? row.updated_at,
+    openedAt: row.opened_at?.toISOString?.() ?? row.opened_at ?? null,
+    closedAt: row.closed_at?.toISOString?.() ?? row.closed_at ?? null,
+    checkedAt: row.checked_at?.toISOString?.() ?? row.checked_at ?? null,
+    finishedAt: row.finished_at?.toISOString?.() ?? row.finished_at ?? null,
+    archivedAt: row.archived_at?.toISOString?.() ?? row.archived_at ?? null
   };
 }
 
@@ -78,7 +86,7 @@ function toEvent(row) {
 router.get('/', async (req, res) => {
   try {
     const r = await getPool().query(
-      'SELECT id, event_name, event_date, doors_time, phase, abgeschlossen, status, form_data, created_at, updated_at FROM events ORDER BY updated_at DESC'
+      `SELECT ${EVENT_SELECT_COLS} FROM events ORDER BY updated_at DESC`
     );
     res.json(r.rows.map(toEvent));
   } catch (err) {
@@ -91,8 +99,7 @@ router.get('/', async (req, res) => {
 router.get('/current', async (req, res) => {
   try {
     const r = await getPool().query(
-      `SELECT id, event_name, event_date, doors_time, phase, abgeschlossen, status, form_data, created_at, updated_at
-       FROM events WHERE status = 'open' ORDER BY updated_at DESC LIMIT 1`
+      `SELECT ${EVENT_SELECT_COLS} FROM events WHERE status = 'open' ORDER BY updated_at DESC LIMIT 1`
     );
     const row = r.rows[0];
     if (!row) return res.status(200).json({ currentEvent: null });
@@ -113,9 +120,9 @@ router.post('/', async (req, res) => {
   const formData = body.formData ?? body.form_data ?? {};
   try {
     const r = await getPool().query(
-      `INSERT INTO events (event_name, event_date, doors_time, phase, form_data)
-       VALUES ($1, $2, $3, $4, $5::jsonb)
-       RETURNING id, event_name, event_date, doors_time, phase, abgeschlossen, status, form_data, created_at, updated_at`,
+      `INSERT INTO events (event_name, event_date, doors_time, phase, form_data, opened_at)
+       VALUES ($1, $2, $3, $4, $5::jsonb, now())
+       RETURNING ${EVENT_SELECT_COLS}`,
       [eventName, eventDate, doorsTime, phase, JSON.stringify(formData)]
     );
     res.status(201).json(toEvent(r.rows[0]));
@@ -148,7 +155,7 @@ router.get('/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const r = await getPool().query(
-      'SELECT id, event_name, event_date, doors_time, phase, abgeschlossen, status, form_data, created_at, updated_at FROM events WHERE id = $1',
+      `SELECT ${EVENT_SELECT_COLS} FROM events WHERE id = $1`,
       [id]
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'Not found' });
@@ -183,7 +190,19 @@ router.patch('/:id', async (req, res) => {
       updates.push(`abgeschlossen = $${n++}`);
       values.push(!!abgeschlossen);
     }
-    if (status !== undefined && ['open', 'closed', 'finished'].includes(status)) {
+    if (status !== undefined && ['open', 'closed', 'checked', 'finished', 'archived'].includes(status)) {
+      // Only allow setting archived when current status is finished
+      if (status === 'archived') {
+        const cur = await getPool().query('SELECT status FROM events WHERE id = $1', [id]);
+        if (cur.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+        if (cur.rows[0].status !== 'finished') {
+          return res.status(400).json({ error: 'Only finished events can be archived' });
+        }
+        updates.push('archived_at = now()');
+      }
+      if (status === 'checked') {
+        updates.push('checked_at = now()');
+      }
       updates.push(`status = $${n++}`);
       values.push(status);
     }
@@ -196,14 +215,14 @@ router.patch('/:id', async (req, res) => {
     updates.push('updated_at = now()');
     if (values.length === 1) {
       const r = await getPool().query(
-        'SELECT id, event_name, event_date, doors_time, phase, abgeschlossen, status, form_data, created_at, updated_at FROM events WHERE id = $1',
+        `SELECT ${EVENT_SELECT_COLS} FROM events WHERE id = $1`,
         [id]
       );
       if (r.rows.length === 0) return res.status(404).json({ error: 'Not found' });
       return res.json(toEvent(r.rows[0]));
     }
     const r = await getPool().query(
-      `UPDATE events SET ${updates.join(', ')} WHERE id = $1 RETURNING id, event_name, event_date, doors_time, phase, abgeschlossen, status, form_data, created_at, updated_at`,
+      `UPDATE events SET ${updates.join(', ')} WHERE id = $1 RETURNING ${EVENT_SELECT_COLS}`,
       values
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'Not found' });
@@ -253,12 +272,12 @@ router.post('/:id/close', async (req, res) => {
     );
     if (eventRes.rows.length === 0) return res.status(404).json({ error: 'Event not found' });
     const event = eventRes.rows[0];
-    if (event.status === 'closed' || event.status === 'finished') {
+    if (['closed', 'checked', 'finished', 'archived'].includes(event.status)) {
       return res.status(409).json({ error: 'Event already closed or finished' });
     }
     const data = formData || {};
     await getPool().query(
-      `UPDATE events SET phase = 'closed', status = 'closed', form_data = $2::jsonb, updated_at = now()
+      `UPDATE events SET phase = 'closed', status = 'closed', form_data = $2::jsonb, updated_at = now(), closed_at = now()
        WHERE id = $1`,
       [id, JSON.stringify(data)]
     );
@@ -269,8 +288,40 @@ router.post('/:id/close', async (req, res) => {
   }
 });
 
-// POST /api/events/:id/finish – post prod: run PDF/Zeiterfassung generation, set status = finished
+// POST /api/events/:id/finish – Zeiterfassung entries only, set status = finished. No PDFs.
 router.post('/:id/finish', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const eventRes = await getPool().query(
+      'SELECT id, status, form_data FROM events WHERE id = $1',
+      [id]
+    );
+    if (eventRes.rows.length === 0) return res.status(404).json({ error: 'Event not found' });
+    const event = eventRes.rows[0];
+    if (event.status !== 'checked') {
+      return res.status(400).json({
+        error: event.status === 'finished' || event.status === 'archived' ? 'Event already finished' : 'Event must be in status "checked" before finishing'
+      });
+    }
+    const formData = req.body?.formData ?? req.body?.form_data ?? event.form_data ?? {};
+    const result = await runFinishEventOnly({
+      eventId: id,
+      formData,
+      pool: getPool()
+    });
+    if (!result.success) {
+      const statusCode = result.error === 'Event not found' ? 404 : result.error === 'Event already finished' ? 409 : 400;
+      return res.status(statusCode).json({ error: result.error });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('POST /api/events/:id/finish:', err);
+    res.status(500).json({ error: 'Fehler beim Abschließen des Events.' });
+  }
+});
+
+// GET /api/events/:id/export-zip – build event folder (section PDFs), return as zip download
+router.get('/:id/export-zip', async (req, res) => {
   const { id } = req.params;
   const storagePath = req.app.locals.storagePath;
   try {
@@ -280,26 +331,34 @@ router.post('/:id/finish', async (req, res) => {
     );
     if (eventRes.rows.length === 0) return res.status(404).json({ error: 'Event not found' });
     const event = eventRes.rows[0];
-    if (event.status !== 'closed') {
-      return res.status(400).json({
-        error: event.status === 'finished' ? 'Event already finished' : 'Event must be closed before finishing'
-      });
+    if (!['checked', 'finished', 'archived'].includes(event.status)) {
+      return res.status(400).json({ error: 'Export only available for events in status checked, finished, or archived' });
     }
-    const formData = req.body?.formData ?? req.body?.form_data ?? event.form_data ?? {};
-    const result = await runCloseShift({
+    const formData = event.form_data ?? {};
+    const result = await runExportEventFolder({
       eventId: id,
       formData,
       storagePath,
       pool: getPool()
     });
     if (!result.success) {
-      const statusCode = result.error === 'Event not found' ? 404 : result.error === 'Event already finished' ? 409 : 400;
-      return res.status(statusCode).json({ error: result.error });
+      return res.status(result.error === 'Event not found' ? 404 : 400).json({ error: result.error });
     }
-    res.json({ success: true, eventFolder: result.eventFolder });
+    const eventFolderPath = result.eventFolder;
+    const eventFolderName = path.basename(eventFolderPath);
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${eventFolderName}.zip"`);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    archive.on('error', (err) => {
+      console.error('export-zip archiver:', err);
+      if (!res.headersSent) res.status(500).json({ error: 'Failed to create zip' });
+    });
+    archive.pipe(res);
+    archive.directory(eventFolderPath, eventFolderName);
+    await archive.finalize();
   } catch (err) {
-    console.error('POST /api/events/:id/finish:', err);
-    res.status(500).json({ error: 'Fehler beim Abschließen des Events.' });
+    console.error('GET /api/events/:id/export-zip:', err);
+    if (!res.headersSent) res.status(500).json({ error: 'Database error' });
   }
 });
 
