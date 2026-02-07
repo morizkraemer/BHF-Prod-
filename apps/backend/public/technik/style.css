@@ -1,0 +1,377 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  color: #1a1a1a;
+  background: #f5f5f5;
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+}
+
+main {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  padding-top: max(1.5rem, env(safe-area-inset-top));
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+}
+
+@media (min-width: 480px) {
+  main {
+    max-width: 540px;
+    padding: 2rem;
+    padding-top: max(2rem, env(safe-area-inset-top));
+    padding-bottom: max(2rem, env(safe-area-inset-bottom));
+  }
+}
+
+@media (min-width: 768px) {
+  main {
+    max-width: 720px;
+    padding: 2.5rem;
+    padding-top: max(2.5rem, env(safe-area-inset-top));
+    padding-bottom: max(2.5rem, env(safe-area-inset-bottom));
+  }
+}
+
+h1 {
+  margin: 0 0 1.25rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+@media (min-width: 480px) {
+  h1 {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+form {
+  background: #fff;
+  padding: 1.25rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+@media (min-width: 480px) {
+  form {
+    padding: 1.5rem;
+    border-radius: 10px;
+  }
+}
+
+@media (min-width: 768px) {
+  form {
+    padding: 2rem;
+  }
+}
+
+.technik-form-name-wrap {
+  width: 100%;
+}
+
+.technik-form-event-info {
+  background: #f0f0f0;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.technik-form-event-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.technik-form-event-title {
+  font-weight: 600;
+  color: #333;
+}
+
+.technik-form-event-refresh {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  color: #333;
+  background: #e0e0e0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.technik-form-event-refresh:hover {
+  background: #d0d0d0;
+}
+
+.technik-form-event-hint {
+  margin: 0.75rem 0 0;
+  padding: 0.5rem 0 0;
+  border-top: 1px solid #ddd;
+  font-size: 0.8rem;
+  color: #666;
+  line-height: 1.3;
+}
+
+.technik-form-event-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.technik-form-event-row:first-child {
+  margin-top: 0;
+}
+
+.technik-form-event-label {
+  font-weight: 600;
+  min-width: 4rem;
+  color: #555;
+}
+
+.technik-form-event-value {
+  color: #1a1a1a;
+}
+
+.technik-form-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 0.625rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  font-family: inherit;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.technik-form-textarea:focus {
+  outline: none;
+  border-color: #333;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+
+.technik-form-checkboxes {
+  margin-top: 1.5rem;
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.technik-form-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0;
+  font-weight: 500;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.technik-form-checkbox {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.15rem;
+  accent-color: #333;
+  cursor: pointer;
+}
+
+.technik-form-checkbox-label span {
+  flex: 1;
+}
+
+.technik-form-row-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.technik-form-top-row {
+  margin-top: 0;
+  min-width: 0;
+}
+
+.technik-form-row-pair .technik-form-top-row label {
+  margin-top: 0;
+}
+
+.technik-form-table-row {
+  margin-top: 1rem;
+}
+
+.technik-form-table-row:first-of-type {
+  margin-top: 0;
+}
+
+/* Section gap before Zusatztechnik so spacing matches row-pair blocks */
+.technik-form-zusatz-section {
+  margin-top: 1.5rem;
+}
+
+.technik-form-zusatz-section > label:first-child {
+  margin-top: 0;
+}
+
+.technik-form-signature-label {
+  display: block;
+  margin-top: 2rem;
+  margin-bottom: 0.35rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.technik-form-signature-pad {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fafafa;
+}
+
+.technik-form-signature-canvas {
+  display: block;
+  width: 100%;
+  height: 120px;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+@media (min-width: 768px) {
+  .technik-form-signature-pad {
+    max-width: 100%;
+  }
+  .technik-form-signature-canvas {
+    height: 140px;
+  }
+}
+
+.technik-form-signature-clear {
+  display: block;
+  width: 100%;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  color: #666;
+  background: #eee;
+  border: none;
+  border-top: 1px solid #ddd;
+  cursor: pointer;
+}
+
+.technik-form-signature-clear:hover {
+  background: #e0e0e0;
+}
+
+label {
+  display: block;
+  margin-top: 1rem;
+  margin-bottom: 0.35rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+label:first-of-type {
+  margin-top: 0;
+}
+
+.technik-form-required-hint {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.technik-form-mobile .technik-form-required-hint + label {
+  margin-top: 0;
+}
+
+.technik-form-input,
+.technik-form-mobile .person-name-select-input {
+  width: 100%;
+  height: 2.75rem;
+  padding: 0 0.75rem;
+  font-size: 1rem;
+  line-height: 2.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.technik-form-mobile input[type="text"],
+.technik-form-mobile .person-name-select-input {
+  padding: 0.625rem 0.75rem;
+  line-height: 1.5;
+}
+
+.technik-form-mobile input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.technik-form-mobile input:focus,
+.technik-form-mobile .person-name-select-input:focus {
+  outline: none;
+  border-color: #333;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+
+.technik-form-mobile button[type="submit"] {
+  width: 100%;
+  min-height: 2.75rem;
+  margin-top: 1.25rem;
+  padding: 0.625rem 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: #333;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.technik-form-mobile button[type="submit"]:active {
+  opacity: 0.9;
+}
+
+.technik-form-mobile button[type="submit"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.message {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.message.success {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.message.error {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.message:empty {
+  display: none;
+}

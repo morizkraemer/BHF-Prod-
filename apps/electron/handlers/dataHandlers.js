@@ -82,6 +82,38 @@ function registerDataHandlers(ipcMain, shiftDataStore, settingsStore) {
     }
   });
 
+  // Get current event from API (for renderer: list Technik/Secu docs by eventId). Returns { id, eventName, eventDate, doorsTime } or null.
+  ipcMain.handle('get-current-event', async () => {
+    try {
+      const serverUrl = getServerUrl(settingsStore);
+      if (!serverUrl) return null;
+      const eventObj = await api.getCurrentEventFull(serverUrl);
+      if (!eventObj) return null;
+      return {
+        id: eventObj.id,
+        eventName: eventObj.eventName ?? eventObj.event_name ?? '',
+        eventDate: eventObj.eventDate ?? (eventObj.event_date != null ? eventObj.event_date.toISOString?.().slice(0, 10) : '') ?? '',
+        doorsTime: eventObj.doorsTime ?? eventObj.doors_time ?? '',
+      };
+    } catch (err) {
+      console.warn('get-current-event:', err.message);
+      return null;
+    }
+  });
+
+  // Get documents for an event from API (for renderer: filter by section technik/secu).
+  ipcMain.handle('get-event-documents', async (event, eventId) => {
+    try {
+      const serverUrl = getServerUrl(settingsStore);
+      if (!serverUrl || !eventId) return [];
+      const list = await api.getEventDocuments(serverUrl, eventId);
+      return Array.isArray(list) ? list : [];
+    } catch (err) {
+      console.warn('get-event-documents:', err.message);
+      return [];
+    }
+  });
+
   // Clear all shift data (reset shift): when serverUrl set, delete current open event from API; then clear local
   ipcMain.handle('clear-shift-data', async () => {
     try {

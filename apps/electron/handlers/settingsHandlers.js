@@ -23,6 +23,11 @@ function registerSettingsHandlers(ipcMain, store, mainWindow, dialog, shell, shi
     return value;
   });
 
+  ipcMain.handle('open-external-url', (event, url) => {
+    if (typeof url !== 'string' || !url.trim()) return;
+    shell.openExternal(url.trim());
+  });
+
   // IPC Handlers for saved Tech Names (settings object for form pre-fill; distinct from tech person catalog)
   const defaultTechNames = () => ({ soundEngineerName: '', lightingTechName: '' });
   ipcMain.handle('get-saved-tech-names', async () => {

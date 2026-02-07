@@ -140,10 +140,10 @@ router.post('/secu-add-name', express.json(), async (req, res) => {
       ['secu', name]
     );
     if (existing.rows.length > 0) {
-      return res.json({ ok: true });
+      return res.json({ ok: true, name });
     }
     await getPool().query('INSERT INTO person_names (type, name) VALUES ($1, $2)', ['secu', name]);
-    res.json({ ok: true });
+    res.json({ ok: true, name });
   } catch (err) {
     console.error('POST /api/secu-add-name:', err);
     res.status(500).json({ error: 'Database error' });

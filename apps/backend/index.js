@@ -9,6 +9,7 @@ const eventsRouter = require('./routes/events');
 const zeiterfassungRouter = require('./routes/zeiterfassung');
 const documentsRouter = require('./routes/documents');
 const { router: secuFormRouter, handleSecuSubmit } = require('./routes/secuForm');
+const { router: technikFormRouter, handleTechnikSubmit } = require('./routes/technikForm');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,7 +26,9 @@ app.use('/api/events', eventsRouter);
 app.use('/api/zeiterfassung', zeiterfassungRouter);
 app.use('/api/documents', documentsRouter);
 app.post('/api/forms/secu/submit', handleSecuSubmit);
+app.post('/api/forms/technik/submit', handleTechnikSubmit);
 app.use('/api', secuFormRouter);
+app.use('/api', technikFormRouter);
 
 app.get('/api/health', async (_req, res) => {
   const db = await checkDb();
@@ -60,7 +63,14 @@ app.get('/forms/secu', (_req, res) => {
 app.get('/forms/secu/', (_req, res) => {
   res.sendFile(path.join(publicDir, 'secu', 'index.html'));
 });
-// Static: /secu/* and /src/* for form assets
+// Technik form: serve at GET /forms/technik (and /forms/technik/)
+app.get('/forms/technik', (_req, res) => {
+  res.sendFile(path.join(publicDir, 'technik', 'index.html'));
+});
+app.get('/forms/technik/', (_req, res) => {
+  res.sendFile(path.join(publicDir, 'technik', 'index.html'));
+});
+// Static: /secu/*, /technik/* and /src/* for form assets
 app.use(express.static(publicDir));
 
 async function ensureStorageDir() {

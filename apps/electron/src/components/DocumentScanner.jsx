@@ -288,6 +288,10 @@ function DocumentScanner({
   };
 
   const handlePreviewDocument = (scan) => {
+    if (scan.documentUrl && window.electronAPI?.openExternalUrl) {
+      window.electronAPI.openExternalUrl(scan.documentUrl);
+      return;
+    }
     setPreviewDocument(scan);
   };
 

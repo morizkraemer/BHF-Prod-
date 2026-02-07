@@ -18,6 +18,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Server URL (backend API)
   getServerUrl: () => ipcRenderer.invoke('get-server-url'),
   setServerUrl: (url) => ipcRenderer.invoke('set-server-url', url),
+  getCurrentEvent: () => ipcRenderer.invoke('get-current-event'),
+  getEventDocuments: (eventId) => ipcRenderer.invoke('get-event-documents', eventId),
+  openExternalUrl: (url) => ipcRenderer.invoke('open-external-url', url),
 
   // Scanner operations
   listScanners: () => ipcRenderer.invoke('list-scanners'),

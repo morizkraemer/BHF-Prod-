@@ -2,7 +2,7 @@ const { useState, useEffect } = React;
 
 const PersonnelListForm = window.PersonnelListForm;
 
-function TontechnikerForm({ formData, onDataChange, highlightedFields = [], printedTemplates = {}, onTemplatePrinted }) {
+function TontechnikerForm({ formData, onDataChange, highlightedFields = [], printedTemplates = {}, onTemplatePrinted, shiftDate }) {
   const initialPersonnel = () => {
     const list = formData?.personnel;
     if (Array.isArray(list) && list.length > 0) {
@@ -18,6 +18,7 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
 
   const [personnel, setPersonnel] = useState(initialPersonnel);
   const [scannedImages, setScannedImages] = useState(formData?.scannedImages ?? []);
+  const [technikWebFormPdfs, setTechnikWebFormPdfs] = useState([]);
   const [roles, setRoles] = useState([]);
 
   useEffect(() => {
@@ -35,6 +36,45 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
       setScannedImages(formData.scannedImages);
     }
   }, [formData?.personnel?.length, formData?.scannedImages?.length]);
+
+  useEffect(() => {
+    const hasDate = typeof shiftDate === 'string' && shiftDate.trim();
+    if (!hasDate || !window.electronAPI?.getServerUrl || !window.electronAPI?.getCurrentEvent || !window.electronAPI?.getEventDocuments) {
+      setTechnikWebFormPdfs([]);
+      return;
+    }
+    window.electronAPI.getServerUrl().then((serverUrl) => {
+      const url = (serverUrl || '').trim();
+      if (!url) {
+        setTechnikWebFormPdfs([]);
+        return;
+      }
+      window.electronAPI.getCurrentEvent().then((current) => {
+        if (!current || !current.id) {
+          setTechnikWebFormPdfs([]);
+          return;
+        }
+        window.electronAPI.getEventDocuments(current.id).then((list) => {
+          const technikDocs = (list || []).filter((d) => (d.sectionOrName || d.section_or_name || '') === 'technik');
+          const mapped = technikDocs.map((d) => {
+            const docId = d.id;
+            const baseUrl = url.replace(/\/$/, '');
+            const filePath = d.filePath || d.file_path || '';
+            const filename = filePath ? filePath.split('/').pop() : `Technikfeedback-${docId}.pdf`;
+            return {
+              id: 'technik-doc-' + docId,
+              documentUrl: `${baseUrl}/api/documents/${docId}`,
+              filename: filename || 'Technik-Feedback.pdf',
+              scanName: 'Technik-Feedback',
+              type: 'pdf',
+              readOnly: true
+            };
+          });
+          setTechnikWebFormPdfs(mapped);
+        }).catch(() => setTechnikWebFormPdfs([]));
+      }).catch(() => setTechnikWebFormPdfs([]));
+    }).catch(() => setTechnikWebFormPdfs([]));
+  }, [shiftDate]);
 
   useEffect(() => {
     if (onDataChange) {
@@ -58,8 +98,39 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
   };
 
   const handleDocumentsChange = (updatedDocuments) => {
-    setScannedImages(updatedDocuments);
+    setScannedImages(updatedDocuments.filter((d) => !d.readOnly));
   };
+
+  const handleRemoveReadOnlyDocument = (doc) => {
+    if (doc?.documentUrl) return;
+    if (doc?.filePath && window.electronAPI?.deleteLanFormPdf) {
+      window.electronAPI.deleteLanFormPdf(doc.filePath).then((result) => {
+        if (result?.ok && shiftDate) {
+          window.electronAPI.getCurrentEvent().then((current) => {
+            if (current?.id) {
+              window.electronAPI.getServerUrl().then((serverUrl) => {
+                if (!(serverUrl || '').trim()) return;
+                window.electronAPI.getEventDocuments(current.id).then((list) => {
+                  const technikDocs = (list || []).filter((d) => (d.sectionOrName || d.section_or_name || '') === 'technik');
+                  const mapped = technikDocs.map((d) => ({
+                    id: 'technik-doc-' + d.id,
+                    documentUrl: `${(serverUrl || '').replace(/\/$/, '')}/api/documents/${d.id}`,
+                    filename: (d.filePath || d.file_path || '').split('/').pop() || 'Technik-Feedback.pdf',
+                    scanName: 'Technik-Feedback',
+                    type: 'pdf',
+                    readOnly: true
+                  }));
+                  setTechnikWebFormPdfs(mapped);
+                }).catch(() => {});
+              });
+            }
+          });
+        }
+      });
+    }
+  };
+
+  const displayDocuments = [...technikWebFormPdfs, ...scannedImages];
 
   // Ton/Licht: show only roles that are not Secu
   const tonLichtRoles = roles.filter((r) => (r.name || '').trim().toLowerCase() !== 'secu');
@@ -106,8 +177,9 @@ function TontechnikerForm({ formData, onDataChange, highlightedFields = [], prin
 
         <div className={`scanner-box ${(highlightedFields || []).includes('Gescannte Bilder') ? 'field-highlighted-group' : ''}`}>
           <DocumentScanner
-            scannedDocuments={scannedImages}
+            scannedDocuments={displayDocuments}
             onDocumentsChange={handleDocumentsChange}
+            onRemoveReadOnlyDocument={handleRemoveReadOnlyDocument}
             showScannedList={true}
             className="tontechniker-scanner"
             defaultSource="feeder"

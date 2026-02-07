@@ -540,9 +540,14 @@ function SettingsForm() {
           </button>
         </div>
         {serverUrl && serverUrl.trim() && (
-          <p className="settings-description" style={{ marginTop: '8px' }}>
-            Security-Zettel Formular (mobil/Tablet): <a href={`${serverUrl.replace(/\/$/, '')}/forms/secu`} target="_blank" rel="noopener noreferrer">{serverUrl.replace(/\/$/, '')}/forms/secu</a>
-          </p>
+          <>
+            <p className="settings-description" style={{ marginTop: '8px' }}>
+              Security-Zettel Formular (mobil/Tablet): <a href={`${serverUrl.replace(/\/$/, '')}/forms/secu`} target="_blank" rel="noopener noreferrer">{serverUrl.replace(/\/$/, '')}/forms/secu</a>
+            </p>
+            <p className="settings-description" style={{ marginTop: '4px' }}>
+              Technik-Feedback Formular (mobil/Tablet): <a href={`${serverUrl.replace(/\/$/, '')}/forms/technik`} target="_blank" rel="noopener noreferrer">{serverUrl.replace(/\/$/, '')}/forms/technik</a>
+            </p>
+          </>
         )}
       </div>
 

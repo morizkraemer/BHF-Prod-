@@ -63,6 +63,7 @@ function MainContent({
             onTemplatePrinted={(templateKey) => {
               setPrintedTemplates(prev => ({ ...prev, [templateKey]: true }));
             }}
+            shiftDate={formData.uebersicht?.date}
           />
         );
       case 'secu':
